@@ -1,0 +1,36 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --cream:        #FAF6EF;
+  --warm:         #F5EDD8;
+  --orange:       #E8622A;
+  --orange-light: #F28B5E;
+  --brown:        #4A2C0E;
+  --brown-mid:    #7A4A20;
+  --green:        #3D6B47;
+  --green-light:  #6BA37A;
+  --gray:         #8A7B6B;
+  --gray-light:   #E8E0D4;
+  --white:        #FFFFFF;
+  --font-serif:   'Playfair Display', Georgia, serif;
+  --font-sans:    'DM Sans', system-ui, sans-serif;
+  --shadow:       0 4px 24px rgba(74,44,14,0.10);
+  --shadow-lg:    0 12px 48px rgba(74,44,14,0.16);
+  --radius:       14px;
+  --radius-sm:    8px;
+  --transition:   150ms ease;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}

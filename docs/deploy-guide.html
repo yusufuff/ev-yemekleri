@@ -1,0 +1,1117 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ev Yemekleri — Deploy Kılavuzu</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=JetBrains+Mono:wght@400;600&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:       #0F0D0A;
+  --surface:  #1A1612;
+  --surface2: #231F1A;
+  --border:   rgba(255,255,255,0.08);
+  --orange:   #E8622A;
+  --orange2:  #F28B5E;
+  --green:    #4ADE80;
+  --blue:     #60A5FA;
+  --yellow:   #FBBF24;
+  --red:      #F87171;
+  --text:     #F5F0E8;
+  --muted:    #8A7B6B;
+  --code-bg:  #0D1117;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.7;
+  min-height: 100vh;
+}
+
+/* ── Sidebar nav ── */
+.layout { display: flex; min-height: 100vh; }
+
+.sidebar {
+  width: 260px; flex-shrink: 0;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  position: sticky; top: 0;
+  height: 100vh; overflow-y: auto;
+  padding: 28px 0 40px;
+}
+
+.sidebar-logo {
+  padding: 0 20px 24px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 16px;
+}
+
+.sidebar-logo .brand {
+  font-family: 'Playfair Display', serif;
+  font-size: 16px; font-weight: 900;
+  color: var(--orange);
+  letter-spacing: 0.5px;
+}
+
+.sidebar-logo .sub {
+  font-size: 11px; color: var(--muted);
+  margin-top: 2px; letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+
+.nav-section { padding: 8px 20px 4px; font-size: 10px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; }
+
+.nav-link {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 20px; font-size: 13px; color: var(--muted);
+  text-decoration: none; transition: all 0.15s;
+  border-left: 2px solid transparent;
+}
+.nav-link:hover { color: var(--text); background: rgba(255,255,255,0.04); }
+.nav-link.active { color: var(--orange); border-left-color: var(--orange); background: rgba(232,98,42,0.08); }
+.nav-link .step-num {
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--surface2); color: var(--muted);
+  font-size: 10px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.nav-link.done .step-num { background: var(--green); color: #000; }
+
+/* ── Main ── */
+.main {
+  flex: 1; padding: 48px 56px 80px;
+  max-width: 860px;
+}
+
+/* ── Header ── */
+.page-hero {
+  margin-bottom: 48px;
+  padding-bottom: 32px;
+  border-bottom: 1px solid var(--border);
+}
+
+.page-hero .eyebrow {
+  font-size: 11px; letter-spacing: 3px; text-transform: uppercase;
+  color: var(--orange); margin-bottom: 12px; font-weight: 600;
+}
+
+.page-hero h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 42px; font-weight: 900; line-height: 1.15;
+  color: var(--text); margin-bottom: 14px;
+}
+
+.page-hero h1 span { color: var(--orange); }
+
+.page-hero .desc {
+  font-size: 15px; color: var(--muted); max-width: 560px; line-height: 1.7;
+}
+
+/* ── Progress bar ── */
+.progress-bar {
+  display: flex; gap: 0; margin-bottom: 48px;
+  background: var(--surface2);
+  border-radius: 10px; padding: 16px 20px;
+  border: 1px solid var(--border);
+  flex-wrap: wrap; gap: 6px;
+}
+
+.pb-step {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 12px; font-weight: 600;
+}
+
+.pb-step:not(:last-child)::after {
+  content: '→'; color: var(--muted); margin-left: 6px; font-size: 11px;
+}
+
+.pb-dot {
+  width: 22px; height: 22px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 800; flex-shrink: 0;
+}
+
+.pb-dot.done   { background: var(--green);  color: #000; }
+.pb-dot.active { background: var(--orange); color: #fff; }
+.pb-dot.todo   { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+
+.pb-label.done   { color: var(--green); }
+.pb-label.active { color: var(--orange); }
+.pb-label.todo   { color: var(--muted); }
+
+/* ── Bölümler ── */
+section { margin-bottom: 56px; }
+
+.section-header {
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 24px; padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.section-num {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--orange); color: white;
+  font-size: 14px; font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+
+.section-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 22px; font-weight: 700; color: var(--text);
+}
+
+.section-tag {
+  margin-left: auto; font-size: 11px; font-weight: 700;
+  padding: 3px 10px; border-radius: 20px; letter-spacing: 0.5px;
+}
+.tag-supabase { background: rgba(62,207,142,0.15); color: #3ECF8E; }
+.tag-vercel   { background: rgba(255,255,255,0.08); color: var(--text); }
+.tag-ci       { background: rgba(96,165,250,0.15); color: var(--blue); }
+.tag-domain   { background: rgba(251,191,36,0.15); color: var(--yellow); }
+.tag-monitor  { background: rgba(248,113,113,0.15); color: var(--red); }
+
+/* ── Kartlar ── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px; padding: 20px 22px;
+  margin-bottom: 14px;
+}
+
+.card-title {
+  font-size: 14px; font-weight: 700; color: var(--text);
+  margin-bottom: 12px; display: flex; align-items: center; gap: 8px;
+}
+
+/* ── Kod blokları ── */
+.code-block {
+  background: var(--code-bg);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 10px; overflow: hidden;
+  margin: 12px 0;
+}
+
+.code-header {
+  background: rgba(255,255,255,0.04);
+  padding: 8px 14px;
+  display: flex; justify-content: space-between; align-items: center;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.code-lang {
+  font-family: var(--font-mono);
+  font-size: 10px; color: var(--muted); letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.code-copy {
+  font-size: 11px; color: var(--muted); cursor: pointer;
+  background: none; border: none; font-family: 'DM Sans', sans-serif;
+  transition: color 0.15s;
+}
+.code-copy:hover { color: var(--orange); }
+
+.code-body {
+  padding: 16px 18px; overflow-x: auto;
+}
+
+.code-body code {
+  font-family: var(--font-mono);
+  font-size: 13px; line-height: 1.7; color: #E6EDF3;
+  white-space: pre;
+}
+
+/* Token renkleri */
+.t-comment { color: #6A737D; }
+.t-string  { color: #A5D6FF; }
+.t-key     { color: #FF7B72; }
+.t-val     { color: #79C0FF; }
+.t-cmd     { color: #FBBF24; }
+.t-flag    { color: #4ADE80; }
+.t-env     { color: #E879F9; }
+
+/* ── Adım listesi ── */
+.steps-list { display: flex; flex-direction: column; gap: 0; }
+
+.step-item {
+  display: flex; gap: 16px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--border);
+}
+.step-item:last-child { border-bottom: none; }
+
+.step-icon {
+  width: 36px; height: 36px; flex-shrink: 0;
+  background: var(--surface2); border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+  border: 1px solid var(--border);
+}
+
+.step-content { flex: 1; }
+.step-head { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+.step-desc { font-size: 13px; color: var(--muted); line-height: 1.6; }
+
+/* ── Env var tablosu ── */
+.env-table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+.env-table th {
+  font-size: 10px; letter-spacing: 1px; text-transform: uppercase;
+  color: var(--muted); padding: 8px 12px; text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+.env-table td {
+  padding: 10px 12px; font-size: 12.5px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  vertical-align: top;
+}
+.env-table tr:last-child td { border-bottom: none; }
+.env-table tr:hover td { background: rgba(255,255,255,0.02); }
+
+.env-key { font-family: var(--font-mono); color: var(--blue); font-size: 12px; }
+.env-source { font-size: 11px; color: var(--orange); font-weight: 600; }
+.env-note   { font-size: 11px; color: var(--muted); }
+
+/* Zorunluluk badge */
+.req-badge {
+  display: inline-block; padding: 1px 7px; border-radius: 6px;
+  font-size: 10px; font-weight: 700; letter-spacing: 0.3px;
+}
+.req-must   { background: rgba(248,113,113,0.15); color: var(--red); }
+.req-opt    { background: rgba(74,222,128,0.1); color: var(--green); }
+
+/* ── Checklist ── */
+.checklist { display: flex; flex-direction: column; gap: 8px; }
+
+.check-item {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 10px 14px;
+  background: var(--surface2); border-radius: 10px;
+  border: 1px solid var(--border); font-size: 13px;
+  cursor: pointer; transition: border-color 0.15s;
+}
+.check-item:hover { border-color: rgba(255,255,255,0.15); }
+
+.check-item input { margin-top: 2px; accent-color: var(--green); flex-shrink: 0; }
+.check-item label { cursor: pointer; color: var(--text); line-height: 1.5; }
+.check-item input:checked + label { color: var(--muted); text-decoration: line-through; }
+
+.check-section-title {
+  font-size: 12px; font-weight: 700; color: var(--orange);
+  letter-spacing: 1px; text-transform: uppercase;
+  margin: 16px 0 8px; padding-left: 4px;
+}
+
+/* ── Alert ── */
+.alert {
+  display: flex; gap: 12px; align-items: flex-start;
+  padding: 14px 16px; border-radius: 10px; margin: 14px 0;
+  font-size: 13px; line-height: 1.6;
+}
+.alert-warn  { background: rgba(251,191,36,0.1); border: 1px solid rgba(251,191,36,0.25); color: #FDE68A; }
+.alert-info  { background: rgba(96,165,250,0.1); border: 1px solid rgba(96,165,250,0.2); color: #BFDBFE; }
+.alert-good  { background: rgba(74,222,128,0.08); border: 1px solid rgba(74,222,128,0.2); color: #BBF7D0; }
+.alert-icon  { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+
+/* ── GitHub secrets tablosu ── */
+.secrets-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+}
+
+.secret-item {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 10px; padding: 12px 14px;
+}
+.secret-name { font-family: var(--font-mono); font-size: 11.5px; color: var(--blue); margin-bottom: 4px; }
+.secret-desc { font-size: 11px; color: var(--muted); line-height: 1.5; }
+
+/* ── Monitoring kartları ── */
+.monitor-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.monitor-card {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 12px; padding: 16px;
+}
+.monitor-card .icon { font-size: 24px; margin-bottom: 8px; }
+.monitor-card .name { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+.monitor-card .desc { font-size: 12px; color: var(--muted); line-height: 1.5; }
+.monitor-card .plan { font-size: 11px; color: var(--green); font-weight: 600; margin-top: 8px; }
+
+/* ── Back to top ── */
+.back-top {
+  position: fixed; bottom: 28px; right: 28px;
+  background: var(--orange); color: white;
+  width: 40px; height: 40px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; cursor: pointer; border: none;
+  box-shadow: 0 4px 16px rgba(232,98,42,0.4);
+  transition: transform 0.2s;
+}
+.back-top:hover { transform: translateY(-3px); }
+
+/* Responsive */
+@media (max-width: 900px) {
+  .sidebar { display: none; }
+  .main { padding: 32px 24px 60px; }
+  .page-hero h1 { font-size: 30px; }
+  .secrets-grid, .monitor-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<div class="layout">
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <div class="brand">EV YEMEKLERİ</div>
+    <div class="sub">Deploy Kılavuzu</div>
+  </div>
+
+  <div class="nav-section">Kurulum</div>
+  <a href="#supabase" class="nav-link active">
+    <span class="step-num done">✓</span> Supabase Prod
+  </a>
+  <a href="#vercel" class="nav-link">
+    <span class="step-num">2</span> Vercel Deploy
+  </a>
+  <a href="#env-vars" class="nav-link">
+    <span class="step-num">3</span> Env Değişkenleri
+  </a>
+  <a href="#github-secrets" class="nav-link">
+    <span class="step-num">4</span> GitHub Secrets
+  </a>
+
+  <div class="nav-section" style="margin-top:12px;">Yapılandırma</div>
+  <a href="#domain" class="nav-link">
+    <span class="step-num">5</span> Domain & SSL
+  </a>
+  <a href="#iyzico-prod" class="nav-link">
+    <span class="step-num">6</span> İyzico Prod
+  </a>
+  <a href="#monitoring" class="nav-link">
+    <span class="step-num">7</span> Monitoring
+  </a>
+
+  <div class="nav-section" style="margin-top:12px;">Kontrol</div>
+  <a href="#checklist" class="nav-link">
+    <span class="step-num">8</span> Launch Checklist
+  </a>
+</nav>
+
+<!-- MAIN -->
+<main class="main">
+
+  <!-- HERO -->
+  <div class="page-hero">
+    <div class="eyebrow">Production Deployment</div>
+    <h1>Vercel + Supabase<br><span>Canlı Ortam Kurulumu</span></h1>
+    <p class="desc">Next.js 14, Supabase (Frankfurt), Vercel Edge Network ve GitHub Actions CI/CD ile tam production kurulumu.</p>
+  </div>
+
+  <!-- PROGRESS -->
+  <div class="progress-bar">
+    <div class="pb-step"><div class="pb-dot done">✓</div><span class="pb-label done">Geliştirme</span></div>
+    <div class="pb-step"><div class="pb-dot active">2</div><span class="pb-label active">Supabase Prod</span></div>
+    <div class="pb-step"><div class="pb-dot todo">3</div><span class="pb-label todo">Vercel</span></div>
+    <div class="pb-step"><div class="pb-dot todo">4</div><span class="pb-label todo">Domain</span></div>
+    <div class="pb-step"><div class="pb-dot todo">5</div><span class="pb-label todo">İyzico</span></div>
+    <div class="pb-step"><div class="pb-dot todo">6</div><span class="pb-label todo">🚀 Canlı</span></div>
+  </div>
+
+  <!-- ─── 1. SUPABASE PROD ─── -->
+  <section id="supabase">
+    <div class="section-header">
+      <div class="section-num">1</div>
+      <div class="section-title">Supabase Production Kurulumu</div>
+      <span class="section-tag tag-supabase">Supabase</span>
+    </div>
+
+    <div class="alert alert-warn">
+      <span class="alert-icon">⚠️</span>
+      <div>Mevcut <code>dev</code> projenizi <strong>production için kullanmayın.</strong> Yeni bir proje oluşturun — data, RLS ve bakım açısından temiz başlamak kritiktir.</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📋 Yeni Proje Oluşturma</div>
+      <div class="steps-list">
+        <div class="step-item">
+          <div class="step-icon">🌍</div>
+          <div class="step-content">
+            <div class="step-head">Bölge: eu-central-1 (Frankfurt)</div>
+            <div class="step-desc">KVKK uyumu için Türkiye'ye en yakın Supabase bölgesi. <a href="https://supabase.com/dashboard/new/org" style="color:var(--orange);">supabase.com/dashboard</a> → New Project</div>
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-icon">🔑</div>
+          <div class="step-content">
+            <div class="step-head">Güçlü DB Parolası</div>
+            <div class="step-desc">En az 32 karakter. Kaydedin — sonra değiştirmek karmaşıklaşır.</div>
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-icon">💲</div>
+          <div class="step-content">
+            <div class="step-head">Plan: Pro ($25/ay)</div>
+            <div class="step-desc">Günlük backup, 8GB storage, Realtime için gerekli. Free plan production için yeterli değil.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🗃️ Migration'ları Uygulama</div>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">bash</span>
+          <button class="code-copy" onclick="copyCode(this)">Kopyala</button>
+        </div>
+        <div class="code-body"><code><span class="t-comment"># 1. Supabase CLI kurulumu (homebrew / npm)</span>
+brew install supabase/tap/supabase
+<span class="t-comment"># veya:</span>
+npm install -g supabase
+
+<span class="t-comment"># 2. Prod projesine bağlan</span>
+supabase login
+supabase link --project-ref <span class="t-env">PROJE_ID</span>
+
+<span class="t-comment"># 3. Migration'ları uygula (001 → 010)</span>
+supabase db push
+
+<span class="t-comment"># 4. Seed verilerini YÜKLEMEYİN — sadece prod schema</span>
+<span class="t-comment"># supabase db reset  ← BU KOMUTU ÇALIŞTIRMAYIN (tüm datayı siler)</span>
+
+<span class="t-comment"># 5. Type'ları üret (opsiyonel — local geliştirme için)</span>
+supabase gen types typescript --project-id <span class="t-env">PROJE_ID</span> <span class="t-flag">--schema</span> public > types/database.ts</code></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🔐 Supabase Auth Ayarları</div>
+      <div class="steps-list">
+        <div class="step-item">
+          <div class="step-icon">📧</div>
+          <div class="step-content">
+            <div class="step-head">Auth → URL Configuration</div>
+            <div class="step-desc">Site URL: <code style="color:var(--blue);">https://ev-yemekleri.com</code><br>
+            Redirect URLs: <code style="color:var(--blue);">https://ev-yemekleri.com/**</code></div>
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-icon">📱</div>
+          <div class="step-content">
+            <div class="step-head">Phone Auth → Netgsm entegrasyonu</div>
+            <div class="step-desc">Auth → Providers → Phone → Custom SMS Provider seçin. Netgsm webhook URL'ini girin.</div>
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-icon">⏰</div>
+          <div class="step-content">
+            <div class="step-head">OTP süresi: 10 dakika</div>
+            <div class="step-desc">Auth → Settings → OTP Expiry → 600 saniye.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🗄️ Storage Bucket Ayarları</div>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">sql — Supabase SQL Editor'da çalıştırın</span>
+        </div>
+        <div class="code-body"><code><span class="t-comment">-- Bucket'ları public/private olarak doğrulayın</span>
+SELECT name, public FROM storage.buckets;
+
+<span class="t-comment">-- Beklenen çıktı:</span>
+<span class="t-comment">--  avatars         | false  (imzalı URL ile erişim)</span>
+<span class="t-comment">--  menu-photos      | true   (CDN üzerinden herkese açık)</span>
+<span class="t-comment">--  chef-documents   | false  (admin erişimi)</span>
+<span class="t-comment">--  blog-images      | true   (herkese açık)</span>
+
+<span class="t-comment">-- Storage CDN (önbellek) — Production'da etkinleştirin</span>
+<span class="t-comment">-- Dashboard → Storage → Settings → CDN caching → ON</span></code></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🔒 RLS Doğrulaması</div>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">sql</span>
+        </div>
+        <div class="code-body"><code><span class="t-comment">-- Tüm tablolarda RLS aktif olduğunu doğrulayın</span>
+SELECT tablename, rowsecurity
+FROM pg_tables
+WHERE schemaname = 'public'
+ORDER BY tablename;
+
+<span class="t-comment">-- Tüm satırlar "rowsecurity = true" olmalı</span>
+<span class="t-comment">-- false olan tablo varsa:</span>
+ALTER TABLE &lt;tablo_adi&gt; ENABLE ROW LEVEL SECURITY;</code></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">⏰ pg_cron Aktivasyonu</div>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">sql</span>
+        </div>
+        <div class="code-body"><code><span class="t-comment">-- Cron job'ların aktif olduğunu kontrol edin</span>
+SELECT jobname, schedule, active FROM cron.job;
+
+<span class="t-comment">-- Beklenen çıktı:</span>
+<span class="t-comment">--  reset_daily_stock    | 0 3 * * *   | true</span>
+<span class="t-comment">--  archive_old_orders   | 0 2 * * 0   | true</span>
+<span class="t-comment">--  cleanup_expired_otps | */15 * * * * | true</span>
+<span class="t-comment">-- ... (010_cron.sql'deki tüm job'lar)</span></code></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── 2. VERCEL DEPLOY ─── -->
+  <section id="vercel">
+    <div class="section-header">
+      <div class="section-num">2</div>
+      <div class="section-title">Vercel Deploy</div>
+      <span class="section-tag tag-vercel">Vercel</span>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🚀 İlk Deploy Adımları</div>
+      <div class="steps-list">
+        <div class="step-item">
+          <div class="step-icon">🐙</div>
+          <div class="step-content">
+            <div class="step-head">GitHub'a push edin</div>
+            <div class="step-desc">
+              <div class="code-block" style="margin-top:8px;">
+                <div class="code-body"><code>git init
+git add .
+git commit -m "feat: initial production setup"
+git remote add origin https://github.com/KULLANICI/ev-yemekleri.git
+git push -u origin main</code></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-icon">▲</div>
+          <div class="step-content">
+            <div class="step-head">Vercel'de proje oluşturun</div>
+            <div class="step-desc"><a href="https://vercel.com/new" style="color:var(--orange);">vercel.com/new</a> → GitHub repo'nuzu seçin → Framework: Next.js (otomatik algılanır)</div>
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-icon">🌍</div>
+          <div class="step-content">
+            <div class="step-head">Bölge: fra1 (Frankfurt)</div>
+            <div class="step-desc">Project Settings → Functions → Serverless Function Region → fra1. Supabase ile aynı bölge — gecikme minimuma iner.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">⚙️ Vercel CLI ile Deploy</div>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">bash</span>
+          <button class="code-copy" onclick="copyCode(this)">Kopyala</button>
+        </div>
+        <div class="code-body"><code><span class="t-comment"># Vercel CLI</span>
+npm install -g vercel
+
+<span class="t-comment"># İlk bağlantı (browser açılır)</span>
+vercel login
+vercel link
+
+<span class="t-comment"># Env değişkenlerini import et (.env.local → Vercel)</span>
+vercel env pull .env.local     <span class="t-comment"># Vercel → local (preview env)</span>
+
+<span class="t-comment"># Production'a deploy</span>
+vercel --prod
+
+<span class="t-comment"># Deploy loglarını izle</span>
+vercel logs --follow</code></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🏗️ Build Optimizasyonu</div>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">next.config.ts — eklemeler</span>
+        </div>
+        <div class="code-body"><code>const nextConfig = {
+  <span class="t-comment">// Mevcut ayarlara ekleyin:</span>
+
+  <span class="t-comment">// Bundle analyzer (sadece geliştirmede)</span>
+  <span class="t-key">experimental</span>: {
+    <span class="t-key">optimizePackageImports</span>: [<span class="t-string">'@supabase/supabase-js'</span>],
+  },
+
+  <span class="t-comment">// Prod'da source map kapatın</span>
+  <span class="t-key">productionBrowserSourceMaps</span>: <span class="t-val">false</span>,
+
+  <span class="t-comment">// Sıkıştırma</span>
+  <span class="t-key">compress</span>: <span class="t-val">true</span>,
+
+  <span class="t-comment">// Edge Runtime için paketleri dışla</span>
+  <span class="t-key">serverExternalPackages</span>: [<span class="t-string">'iyzipay'</span>],
+}</code></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── 3. ENV DEĞIŞKENLERI ─── -->
+  <section id="env-vars">
+    <div class="section-header">
+      <div class="section-num">3</div>
+      <div class="section-title">Vercel Ortam Değişkenleri</div>
+    </div>
+
+    <div class="alert alert-info">
+      <span class="alert-icon">ℹ️</span>
+      <div>Vercel Dashboard → Project → Settings → Environment Variables'tan girilir. <strong>Asla</strong> .env.local'ı commit etmeyin — .gitignore'a eklendiğini doğrulayın.</div>
+    </div>
+
+    <div class="card">
+      <table class="env-table">
+        <thead>
+          <tr>
+            <th>Değişken</th>
+            <th>Nereden?</th>
+            <th>Zorunlu?</th>
+            <th>Not</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="env-key">NEXT_PUBLIC_SUPABASE_URL</span></td>
+            <td><span class="env-source">Supabase → API</span></td>
+            <td><span class="req-badge req-must">Zorunlu</span></td>
+            <td class="env-note">https://PROJE.supabase.co</td>
+          </tr>
+          <tr>
+            <td><span class="env-key">NEXT_PUBLIC_SUPABASE_ANON_KEY</span></td>
+            <td><span class="env-source">Supabase → API</span></td>
+            <td><span class="req-badge req-must">Zorunlu</span></td>
+            <td class="env-note">Public — tarayıcıda da kullanılır</td>
+          </tr>
+          <tr>
+            <td><span class="env-key">SUPABASE_SERVICE_ROLE_KEY</span></td>
+            <td><span class="env-source">Supabase → API</span></td>
+            <td><span class="req-badge req-must">Zorunlu</span></td>
+            <td class="env-note">⚠️ Sadece server-side. Hiçbir zaman client'a</td>
+          </tr>
+          <tr>
+            <td><span class="env-key">IYZICO_API_KEY</span></td>
+            <td><span class="env-source">İyzico Dashboard</span></td>
+            <td><span class="req-badge req-must">Zorunlu</span></td>
+            <td class="env-note">Prod key — sandbox değil</td>
+          </tr>
+          <tr>
+            <td><span class="env-key">IYZICO_SECRET_KEY</span></td>
+            <td><span class="env-source">İyzico Dashboard</span></td>
+            <td><span class="req-badge req-must">Zorunlu</span></td>
+            <td class="env-note">Prod secret</td>
+          </tr>
+          <tr>
+            <td><span class="env-key">IYZICO_BASE_URL</span></td>
+            <td>—</td>
+            <td><span class="req-badge req-must">Zorunlu</span></td>
+            <td class="env-note">https://api.iyzipay.com (sandbox değil!)</td>
+          </tr>
+          <tr>
+            <td><span class="env-key">IYZICO_CALLBACK_URL</span></td>
+            <td>—</td>
+            <td><span class="req-badge req-must">Zorunlu</span></td>
+            <td class="env-note">https://ev-yemekleri.com/api/payments/callback</td>
+          </tr>
+          <tr>
+            <td><span class="env-key">NETGSM_USERCODE</span></td>
+            <td><span class="env-source">Netgsm Paneli</span></td>
+            <td><span class="req-badge req-must">Zorunlu</span></td>
+            <td class="env-note">OTP SMS için</td>
+          </tr>
+          <tr>
+            <td><span class="env-key">NETGSM_PASSWORD</span></td>
+            <td><span class="env-source">Netgsm Paneli</span></td>
+            <td><span class="req-badge req-must">Zorunlu</span></td>
+            <td class="env-note">—</td>
+          </tr>
+          <tr>
+            <td><span class="env-key">NEXT_PUBLIC_GOOGLE_MAPS_KEY</span></td>
+            <td><span class="env-source">Google Cloud</span></td>
+            <td><span class="req-badge req-must">Zorunlu</span></td>
+            <td class="env-note">Maps + Places + Geocoding API'leri açık olmalı</td>
+          </tr>
+          <tr>
+            <td><span class="env-key">UPSTASH_REDIS_REST_URL</span></td>
+            <td><span class="env-source">Upstash Console</span></td>
+            <td><span class="req-badge req-must">Zorunlu</span></td>
+            <td class="env-note">Rate limiting için</td>
+          </tr>
+          <tr>
+            <td><span class="env-key">UPSTASH_REDIS_REST_TOKEN</span></td>
+            <td><span class="env-source">Upstash Console</span></td>
+            <td><span class="req-badge req-must">Zorunlu</span></td>
+            <td class="env-note">—</td>
+          </tr>
+          <tr>
+            <td><span class="env-key">FIREBASE_PROJECT_ID</span></td>
+            <td><span class="env-source">Firebase Console</span></td>
+            <td><span class="req-badge req-opt">Opsiyonel</span></td>
+            <td class="env-note">Push bildirimleri için</td>
+          </tr>
+          <tr>
+            <td><span class="env-key">RESEND_API_KEY</span></td>
+            <td><span class="env-source">resend.com</span></td>
+            <td><span class="req-badge req-opt">Opsiyonel</span></td>
+            <td class="env-note">E-posta bildirimleri</td>
+          </tr>
+          <tr>
+            <td><span class="env-key">NEXT_PUBLIC_APP_URL</span></td>
+            <td>—</td>
+            <td><span class="req-badge req-must">Zorunlu</span></td>
+            <td class="env-note">https://ev-yemekleri.com</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ─── 4. GITHUB SECRETS ─── -->
+  <section id="github-secrets">
+    <div class="section-header">
+      <div class="section-num">4</div>
+      <div class="section-title">GitHub Secrets (CI/CD)</div>
+      <span class="section-tag tag-ci">GitHub Actions</span>
+    </div>
+
+    <div class="alert alert-info">
+      <span class="alert-icon">ℹ️</span>
+      <div>GitHub → Repo → Settings → Secrets and variables → Actions → <strong>New repository secret</strong></div>
+    </div>
+
+    <div class="secrets-grid">
+      <div class="secret-item">
+        <div class="secret-name">VERCEL_TOKEN</div>
+        <div class="secret-desc">Vercel Dashboard → Account Settings → Tokens → Create</div>
+      </div>
+      <div class="secret-item">
+        <div class="secret-name">VERCEL_ORG_ID</div>
+        <div class="secret-desc"><code>vercel link</code> sonrası .vercel/project.json'dan</div>
+      </div>
+      <div class="secret-item">
+        <div class="secret-name">VERCEL_PROJECT_ID</div>
+        <div class="secret-desc">.vercel/project.json → projectId</div>
+      </div>
+      <div class="secret-item">
+        <div class="secret-name">SUPABASE_PROJECT_ID</div>
+        <div class="secret-desc">Supabase URL'indeki PROJE_ID kısmı</div>
+      </div>
+      <div class="secret-item">
+        <div class="secret-name">SUPABASE_DB_PASSWORD</div>
+        <div class="secret-desc">Proje oluşturulurken girilen DB parolası</div>
+      </div>
+      <div class="secret-item">
+        <div class="secret-name">NEXT_PUBLIC_SUPABASE_URL</div>
+        <div class="secret-desc">Build sırasında gerekli (public env)</div>
+      </div>
+      <div class="secret-item">
+        <div class="secret-name">NEXT_PUBLIC_SUPABASE_ANON_KEY</div>
+        <div class="secret-desc">Build sırasında gerekli</div>
+      </div>
+      <div class="secret-item">
+        <div class="secret-name">SUPABASE_SERVICE_ROLE_KEY</div>
+        <div class="secret-desc">Migration doğrulaması için</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── 5. DOMAIN ─── -->
+  <section id="domain">
+    <div class="section-header">
+      <div class="section-num">5</div>
+      <div class="section-title">Domain & SSL</div>
+      <span class="section-tag tag-domain">DNS</span>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🌐 Vercel'e Domain Bağlama</div>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">bash</span>
+        </div>
+        <div class="code-body"><code><span class="t-comment"># Vercel CLI ile domain ekle</span>
+vercel domains add ev-yemekleri.com
+vercel domains add www.ev-yemekleri.com
+
+<span class="t-comment"># DNS Provider'ınızda (Cloudflare / GoDaddy vb.):</span>
+<span class="t-comment"># A     @    76.76.19.19       (Vercel IP)</span>
+<span class="t-comment"># CNAME www  cname.vercel-dns.com</span>
+
+<span class="t-comment"># SSL otomatik olarak Let's Encrypt ile sağlanır.</span>
+<span class="t-comment"># DNS propagasyonu 5-30 dakika sürebilir.</span>
+
+<span class="t-comment"># Doğrulama:</span>
+vercel domains inspect ev-yemekleri.com</code></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🔒 Güvenlik Başlıkları (next.config.ts zaten içeriyor)</div>
+      <div class="steps-list">
+        <div class="step-item">
+          <div class="step-icon">🛡️</div>
+          <div class="step-content">
+            <div class="step-head">HSTS (Strict-Transport-Security)</div>
+            <div class="step-desc">Vercel otomatik olarak HTTPS zorlar. Ek HSTS başlığı eklemek isterseniz next.config.ts headers() içine ekleyin.</div>
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-icon">🌐</div>
+          <div class="step-content">
+            <div class="step-head">www → apex redirect</div>
+            <div class="step-desc">Vercel Dashboard → Project → Domains → www.ev-yemekleri.com → Redirect to ev-yemekleri.com</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── 6. İYZICO PROD ─── -->
+  <section id="iyzico-prod">
+    <div class="section-header">
+      <div class="section-num">6</div>
+      <div class="section-title">İyzico Production Geçişi</div>
+    </div>
+
+    <div class="alert alert-warn">
+      <span class="alert-icon">⚠️</span>
+      <div>İyzico Marketplace hesabı açmak <strong>5-10 iş günü</strong> sürebilir. Önceden başvurun.</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📋 Başvuru Süreci</div>
+      <div class="steps-list">
+        <div class="step-item">
+          <div class="step-icon">1️⃣</div>
+          <div class="step-content">
+            <div class="step-head">İyzico Marketplace Başvurusu</div>
+            <div class="step-desc"><a href="https://merchant.iyzipay.com" style="color:var(--orange);">merchant.iyzipay.com</a> → Kayıt Ol → Şirket bilgilerini girin (vergi no, IBAN, faaliyet belgesi)</div>
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-icon">2️⃣</div>
+          <div class="step-content">
+            <div class="step-head">Sub Merchant (Aşçı) Kaydı API'si</div>
+            <div class="step-desc">Her aşçı onaylandığında otomatik sub merchant oluşturulur. <code>profil-ayarlari</code> sayfasında IBAN girildiğinde tetiklenir. İyzico dönen <code>subMerchantKey</code> → <code>chef_profiles.iyzico_sub_merchant_key</code>'e kaydedilir.</div>
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-icon">3️⃣</div>
+          <div class="step-content">
+            <div class="step-head">Callback URL İyzico Panelinde de Girilmeli</div>
+            <div class="step-desc">İyzico Dashboard → Entegrasyon → Callback URL: <code style="color:var(--blue);">https://ev-yemekleri.com/api/payments/callback</code></div>
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-icon">4️⃣</div>
+          <div class="step-content">
+            <div class="step-head">Komisyon Oranı: %10</div>
+            <div class="step-desc">Siparişlerde <code>platform_fee = subtotal * 0.10</code> otomatik hesaplanıyor. İyzico panel ödeme planında da aynı oran girilmeli.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🧪 Prod Öncesi Test Senaryosu</div>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">Test kartları</span>
+        </div>
+        <div class="code-body"><code><span class="t-comment"># İyzico test kartları (sandbox'ta kullanın)</span>
+Başarılı ödeme:
+  Kart no : 5528 7900 0000 0008
+  SKT     : 12/30   CVC : 123
+
+3D Secure tetikler:
+  Kart no : 4766 6200 0000 0001
+  SKT     : 12/30   CVC : 123
+
+Reddedilen:
+  Kart no : 5528 7900 0000 0016
+  SKT     : 12/30   CVC : 123</code></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── 7. MONİTORİNG ─── -->
+  <section id="monitoring">
+    <div class="section-header">
+      <div class="section-num">7</div>
+      <div class="section-title">Monitoring & Alerting</div>
+      <span class="section-tag tag-monitor">Uptime</span>
+    </div>
+
+    <div class="monitor-grid">
+      <div class="monitor-card">
+        <div class="icon">📊</div>
+        <div class="name">Vercel Analytics</div>
+        <div class="desc">Web Vitals (LCP, FID, CLS), sayfa görüntülenme, coğrafi dağılım. Dashboard'dan tek tıkla aktif edilir.</div>
+        <div class="plan">✅ Pro planla ücretsiz</div>
+      </div>
+      <div class="monitor-card">
+        <div class="icon">🔔</div>
+        <div class="name">UptimeRobot</div>
+        <div class="desc"><code>/api/health</code> endpoint'ini 5 dakikada bir kontrol eder. Çevrimdışı olursa SMS/e-posta gönderir.</div>
+        <div class="plan">✅ Ücretsiz plan yeterli</div>
+      </div>
+      <div class="monitor-card">
+        <div class="icon">🐛</div>
+        <div class="name">Sentry</div>
+        <div class="desc">Client ve server hata takibi. Gerçek kullanıcıların yaşadığı hataları stack trace ile yakalarsınız.</div>
+        <div class="plan">✅ 5K event/ay ücretsiz</div>
+      </div>
+      <div class="monitor-card">
+        <div class="icon">📈</div>
+        <div class="name">Supabase Dashboard</div>
+        <div class="desc">API latency, DB sorgu süresi, Realtime bağlantı sayısı, Storage kullanımı — gerçek zamanlı.</div>
+        <div class="plan">✅ Pro planla dahil</div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:16px;">
+      <div class="card-title">⚙️ Sentry Kurulumu (5 dakika)</div>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">bash</span>
+          <button class="code-copy" onclick="copyCode(this)">Kopyala</button>
+        </div>
+        <div class="code-body"><code><span class="t-cmd">npx</span> @sentry/wizard@latest -i nextjs
+
+<span class="t-comment"># Wizard şunları otomatik yapar:</span>
+<span class="t-comment"># - sentry.client.config.ts oluşturur</span>
+<span class="t-comment"># - sentry.server.config.ts oluşturur</span>
+<span class="t-comment"># - instrumentation.ts günceller</span>
+<span class="t-comment"># - next.config.ts'e withSentryConfig ekler</span>
+
+<span class="t-comment"># .env.local'a ekle:</span>
+<span class="t-env">SENTRY_DSN</span>=https://xxx@yyy.ingest.sentry.io/zzz
+<span class="t-env">SENTRY_ORG</span>=ev-yemekleri
+<span class="t-env">SENTRY_PROJECT</span>=ev-yemekleri-nextjs</code></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── 8. CHECKLIST ─── -->
+  <section id="checklist">
+    <div class="section-header">
+      <div class="section-num">8</div>
+      <div class="section-title">Launch Checklist</div>
+    </div>
+
+    <div class="checklist">
+      <div class="check-section-title">🗃️ Veritabanı</div>
+      <label class="check-item"><input type="checkbox"> <label>Supabase prod projesi oluşturuldu (Frankfurt, Pro plan)</label></label>
+      <label class="check-item"><input type="checkbox"> <label>Migration 001–010 uygulandı (<code>supabase db push</code>)</label></label>
+      <label class="check-item"><input type="checkbox"> <label>Tüm tablolarda RLS aktif (<code>rowsecurity = true</code>)</label></label>
+      <label class="check-item"><input type="checkbox"> <label>pg_cron job'ları aktif (7 job)</label></label>
+      <label class="check-item"><input type="checkbox"> <label>Storage bucket'ları ve policy'leri doğrulandı</label></label>
+      <label class="check-item"><input type="checkbox"> <label>Auth URL Configuration güncellendi (prod domain)</label></label>
+      <label class="check-item"><input type="checkbox"> <label>Phone auth Netgsm ile entegre edildi</label></label>
+
+      <div class="check-section-title" style="margin-top:8px;">🚀 Deploy</div>
+      <label class="check-item"><input type="checkbox"> <label>GitHub repo oluşturuldu ve kod push edildi</label></label>
+      <label class="check-item"><input type="checkbox"> <label>Vercel projesi oluşturuldu (fra1 bölgesi)</label></label>
+      <label class="check-item"><input type="checkbox"> <label>Tüm env değişkenleri Vercel'e girildi</label></label>
+      <label class="check-item"><input type="checkbox"> <label>GitHub Secrets set edildi (8 secret)</label></label>
+      <label class="check-item"><input type="checkbox"> <label>İlk deploy başarıyla tamamlandı</label></label>
+      <label class="check-item"><input type="checkbox"> <label><code>/api/health</code> HTTP 200 dönüyor</label></label>
+
+      <div class="check-section-title" style="margin-top:8px;">🌐 Domain & Güvenlik</div>
+      <label class="check-item"><input type="checkbox"> <label>Domain Vercel'e bağlandı ve SSL aktif</label></label>
+      <label class="check-item"><input type="checkbox"> <label>www → apex yönlendirmesi çalışıyor</label></label>
+      <label class="check-item"><input type="checkbox"> <label>Google Maps API key domain kısıtlaması eklendi</label></label>
+      <label class="check-item"><input type="checkbox"> <label>İyzico callback URL prod domain ile güncellendi</label></label>
+      <label class="check-item"><input type="checkbox"> <label>.env.local .gitignore'da (git history'de yok)</label></label>
+
+      <div class="check-section-title" style="margin-top:8px;">💳 Ödeme</div>
+      <label class="check-item"><input type="checkbox"> <label>İyzico Marketplace hesabı onaylandı</label></label>
+      <label class="check-item"><input type="checkbox"> <label>IYZICO_BASE_URL production'a çevrildi (sandbox değil)</label></label>
+      <label class="check-item"><input type="checkbox"> <label>Test ödeme tamamlandı (gerçek kart ile küçük tutar)</label></label>
+      <label class="check-item"><input type="checkbox"> <label>Ödeme callback doğrulama çalışıyor</label></label>
+
+      <div class="check-section-title" style="margin-top:8px;">📊 Monitoring</div>
+      <label class="check-item"><input type="checkbox"> <label>UptimeRobot'ta <code>/api/health</code> monitor oluşturuldu</label></label>
+      <label class="check-item"><input type="checkbox"> <label>Sentry entegrasyonu aktif (hata bildirimleri geliyor)</label></label>
+      <label class="check-item"><input type="checkbox"> <label>Vercel Analytics aktifleştirildi</label></label>
+      <label class="check-item"><input type="checkbox"> <label>Supabase email uyarıları açık (DB boyutu, API limiti)</label></label>
+
+      <div class="check-section-title" style="margin-top:8px;">🧪 Fonksiyonel Test</div>
+      <label class="check-item"><input type="checkbox"> <label>OTP ile kayıt / giriş akışı çalışıyor</label></label>
+      <label class="check-item"><input type="checkbox"> <label>Aşçı profili oluşturma ve menü ekleme</label></label>
+      <label class="check-item"><input type="checkbox"> <label>Keşif sayfası konum izni ve aşçı listeleme</label></label>
+      <label class="check-item"><input type="checkbox"> <label>Sipariş verme → ödeme → callback akışı</label></label>
+      <label class="check-item"><input type="checkbox"> <label>Realtime sipariş güncellemesi (iki farklı pencere)</label></label>
+      <label class="check-item"><input type="checkbox"> <label>Aşçı-alıcı mesajlaşma çalışıyor</label></label>
+      <label class="check-item"><input type="checkbox"> <label>Mobil görünüm (iOS Safari + Android Chrome)</label></label>
+    </div>
+
+    <div class="alert alert-good" style="margin-top: 24px;">
+      <span class="alert-icon">🎉</span>
+      <div><strong>Tebrikler!</strong> Tüm adımları tamamladıysanız Ev Yemekleri platformu canlıya hazır. İlk müşterinizi karşılamaya hazır olun!</div>
+    </div>
+  </section>
+
+</main>
+</div>
+
+<button class="back-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="Başa dön">↑</button>
+
+<script>
+// Aktif section takibi
+const sections = document.querySelectorAll('section[id]')
+const navLinks  = document.querySelectorAll('.nav-link')
+
+window.addEventListener('scroll', () => {
+  let current = ''
+  sections.forEach(s => {
+    if (window.scrollY >= s.offsetTop - 100) current = s.id
+  })
+  navLinks.forEach(l => {
+    l.classList.remove('active')
+    if (l.getAttribute('href') === '#' + current) l.classList.add('active')
+  })
+})
+
+// Kod kopyala
+function copyCode(btn) {
+  const code = btn.closest('.code-block').querySelector('code').innerText
+  navigator.clipboard.writeText(code).then(() => {
+    btn.textContent = '✓ Kopyalandı'
+    setTimeout(() => btn.textContent = 'Kopyala', 2000)
+  })
+}
+
+// Checklist kalıcılık
+const checks = document.querySelectorAll('.check-item input')
+checks.forEach((c, i) => {
+  c.checked = localStorage.getItem('chk_' + i) === '1'
+  c.addEventListener('change', () => localStorage.setItem('chk_' + i, c.checked ? '1' : '0'))
+})
+</script>
+
+</body>
+</html>

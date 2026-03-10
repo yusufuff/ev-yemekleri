@@ -1,0 +1,71 @@
+# supabase/config.toml
+# Supabase CLI local development konfigürasyonu
+# Dokümantasyon: https://supabase.com/docs/guides/cli/config
+
+project_id = "jaeqfnipppinqghzcybn"
+
+[api]
+# REST API port'u
+port = 54321
+# GraphQL desteği (isteğe bağlı)
+enabled = true
+schemas = ["public", "storage"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+# PostgreSQL port'u
+port = 54322
+shadow_port = 54320
+major_version = 15
+
+[studio]
+# Supabase Studio (Admin UI) port'u
+port = 54323
+# API URL (Studio'nun bağlandığı yer)
+api_url = "http://127.0.0.1"
+
+[inbucket]
+# E-posta test sunucusu — prod'da Resend kullanılır
+port = 54324
+smtp_port = 54325
+pop3_port = 54326
+
+[storage]
+# Storage API port'u
+file_size_limit = "10MiB"
+
+[auth]
+# JWT ve auth ayarları
+site_url = "http://localhost:3000"
+# OTP/magic link yönlendirme
+additional_redirect_urls = ["http://localhost:3000/**"]
+# JWT TTL (saniye)
+jwt_expiry = 3600
+# Refresh token TTL (saniye) — 30 gün
+refresh_token_rotation_enabled = true
+security_update_password_require_reauthentication = false
+
+[auth.email]
+# Dev'de e-posta onayı kapalı
+enable_confirmations = false
+double_confirm_changes = false
+
+[auth.sms]
+# Telefon OTP — Netgsm entegrasyonu için
+# Prod'da NETGSM provider kullanılır
+# Dev'de Twilio Verify veya test modu aktif edilir
+enable_confirmations = false
+
+# SMS provider (production konfigürasyonu):
+# [auth.sms.twilio]
+# account_sid = ""
+# message_service_sid = ""
+# auth_token = ""
+
+[analytics]
+enabled = false
+
+[functions.default]
+# Edge Functions (kullanılmıyor — Next.js API Routes tercih edildi)
+verify_jwt = true
