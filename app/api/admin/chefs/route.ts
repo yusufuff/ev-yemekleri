@@ -72,7 +72,7 @@ export async function PATCH(req: NextRequest) {
   const update = updateMap[action]
   if (!update) return NextResponse.json({ error: 'Unknown action' }, { status: 400 })
 
-  const { error } = await supabase.from('chef_profiles').update(update as any).eq('id', chef_id)
+  const { error } = await (supabase.from('chef_profiles') as any).update(update).eq('id', chef_id)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   // AÅŸÃ§Ä±ya bildirim gÃ¶nder
@@ -119,5 +119,6 @@ export async function PATCH(req: NextRequest) {
 
   return NextResponse.json({ ok: true, message: labels[action] })
 }
+
 
 
