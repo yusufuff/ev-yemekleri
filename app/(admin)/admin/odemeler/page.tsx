@@ -7,7 +7,7 @@ interface Payout {
   chef_id:     string
   amount:      number
   status:      'pending' | 'processing' | 'paid' | 'failed'
-  iban:        string
+  iban_last4:  string
   created_at:  string
   processed_at?: string
   chef: {
