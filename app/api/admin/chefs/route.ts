@@ -1,15 +1,15 @@
-import { NextRequest, NextResponse } from 'next/server'
+﻿import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseServerClient, getSupabaseAdminClient, getCurrentUser } from '@/lib/supabase/server'
 
 export const dynamic = 'force-dynamic'
 
 async function adminGuard() {
-  const user = await getCurrentUser()
+  const user = await getCurrentUser() as any
   if (!user || user.role !== 'admin') return null
   return user
 }
 
-// ── GET — aşçı listesi (filtreli) ────────────────────────────────────────────
+// â”€â”€ GET â€” aÅŸÃ§Ä± listesi (filtreli) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export async function GET(req: NextRequest) {
   const admin = await adminGuard()
   if (!admin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
@@ -36,8 +36,8 @@ export async function GET(req: NextRequest) {
     .range(from, from + limit - 1)
 
   if (search) {
-    // users tablosundan arama yapamayız doğrudan join ile; RPC kullanın üretimde
-    // Şimdilik kısıtlı çalışır
+    // users tablosundan arama yapamayÄ±z doÄŸrudan join ile; RPC kullanÄ±n Ã¼retimde
+    // Åimdilik kÄ±sÄ±tlÄ± Ã§alÄ±ÅŸÄ±r
   }
 
   const { data, count, error } = await query
@@ -46,7 +46,7 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({ chefs: data, total: count, page, limit })
 }
 
-// ── PATCH — onayla / reddet / askıya al ───────────────────────────────────────
+// â”€â”€ PATCH â€” onayla / reddet / askÄ±ya al â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export async function PATCH(req: NextRequest) {
   const admin = await adminGuard()
   if (!admin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
@@ -75,7 +75,7 @@ export async function PATCH(req: NextRequest) {
   const { error } = await supabase.from('chef_profiles').update(update).eq('id', chef_id)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  // Aşçıya bildirim gönder
+  // AÅŸÃ§Ä±ya bildirim gÃ¶nder
   const { data: chef } = await supabase
     .from('chef_profiles')
     .select('user_id')
@@ -84,18 +84,18 @@ export async function PATCH(req: NextRequest) {
 
   if (chef) {
     const messages: Record<string, string> = {
-      approve:   '🎉 Başvurunuz onaylandı! Artık sipariş almaya başlayabilirsiniz.',
-      reject:    `Başvurunuz incelendi ve onaylanmadı. ${reason ? `Sebep: ${reason}` : ''}`,
-      suspend:   'Hesabınız geçici olarak askıya alındı. Destek için iletişime geçin.',
-      unsuspend: 'Hesabınız yeniden aktifleştirildi.',
+      approve:   'ğŸ‰ BaÅŸvurunuz onaylandÄ±! ArtÄ±k sipariÅŸ almaya baÅŸlayabilirsiniz.',
+      reject:    `BaÅŸvurunuz incelendi ve onaylanmadÄ±. ${reason ? `Sebep: ${reason}` : ''}`,
+      suspend:   'HesabÄ±nÄ±z geÃ§ici olarak askÄ±ya alÄ±ndÄ±. Destek iÃ§in iletiÅŸime geÃ§in.',
+      unsuspend: 'HesabÄ±nÄ±z yeniden aktifleÅŸtirildi.',
     }
 
-    // Notifications tablosuna INSERT için service_role gerekiyor (RLS)
+    // Notifications tablosuna INSERT iÃ§in service_role gerekiyor (RLS)
     const adminSupabase = await getSupabaseAdminClient()
     await adminSupabase.from('notifications').insert({
       user_id: chef.user_id,
       type:    'chef_' + action,
-      title:   action === 'approve' ? 'Başvurunuz Onaylandı!' : 'Hesap Güncelleme',
+      title:   action === 'approve' ? 'BaÅŸvurunuz OnaylandÄ±!' : 'Hesap GÃ¼ncelleme',
       body:    messages[action],
       data:    { chef_id, reason },
     }).then(() => {})
@@ -111,11 +111,12 @@ export async function PATCH(req: NextRequest) {
   }).then(() => {})
 
   const labels: Record<string, string> = {
-    approve:   'Aşçı onaylandı',
-    reject:    'Başvuru reddedildi',
-    suspend:   'Hesap askıya alındı',
-    unsuspend: 'Hesap aktifleştirildi',
+    approve:   'AÅŸÃ§Ä± onaylandÄ±',
+    reject:    'BaÅŸvuru reddedildi',
+    suspend:   'Hesap askÄ±ya alÄ±ndÄ±',
+    unsuspend: 'Hesap aktifleÅŸtirildi',
   }
 
   return NextResponse.json({ ok: true, message: labels[action] })
 }
+

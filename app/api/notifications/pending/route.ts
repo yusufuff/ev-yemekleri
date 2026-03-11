@@ -1,18 +1,18 @@
-/**
+﻿/**
  * GET /api/notifications/pending
- * Service Worker background sync tarafından çağrılır.
- * Kullanıcının okunmamış bildirimlerini döner ve okundu olarak işaretler.
+ * Service Worker background sync tarafÄ±ndan Ã§aÄŸrÄ±lÄ±r.
+ * KullanÄ±cÄ±nÄ±n okunmamÄ±ÅŸ bildirimlerini dÃ¶ner ve okundu olarak iÅŸaretler.
  */
 import { NextResponse } from 'next/server'
 import { getSupabaseServerClient, getCurrentUser } from '@/lib/supabase/server'
 
 export async function GET() {
-  const user = await getCurrentUser()
+  const user = await getCurrentUser() as any
   if (!user) return NextResponse.json({ notifications: [] })
 
   const supabase = await getSupabaseServerClient()
 
-  // Okunmamış bildirimleri çek
+  // OkunmamÄ±ÅŸ bildirimleri Ã§ek
   const { data: notifications, error } = await supabase
     .from('notifications')
     .select('id, type, title, body, data, created_at')
@@ -25,7 +25,7 @@ export async function GET() {
     return NextResponse.json({ notifications: [] })
   }
 
-  // Okundu olarak işaretle
+  // Okundu olarak iÅŸaretle
   await supabase
     .from('notifications')
     .update({ is_read: true })
@@ -34,3 +34,4 @@ export async function GET() {
 
   return NextResponse.json({ notifications })
 }
+

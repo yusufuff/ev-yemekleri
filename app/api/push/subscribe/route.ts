@@ -1,21 +1,21 @@
-/**
- * POST /api/push/subscribe  — push aboneliği kaydet / FCM token güncelle
- * DELETE /api/push/subscribe — aboneliği sil
+﻿/**
+ * POST /api/push/subscribe  â€” push aboneliÄŸi kaydet / FCM token gÃ¼ncelle
+ * DELETE /api/push/subscribe â€” aboneliÄŸi sil
  */
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
 import { getCurrentUser } from '@/lib/supabase/server'
 
-// Web Push için opsiyonel — firebase-admin kuruluysa aktif olur
+// Web Push iÃ§in opsiyonel â€” firebase-admin kuruluysa aktif olur
 // import { getMessaging } from 'firebase-admin/messaging'
 // import { initFirebaseAdmin } from '@/lib/firebase/admin'
 
 export async function POST(req: NextRequest) {
-  const user = await getCurrentUser()
+  const user = await getCurrentUser() as any
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const body: {
-    // Web Push (tarayıcı)
+    // Web Push (tarayÄ±cÄ±)
     endpoint?: string
     p256dh?:   string
     auth?:     string
@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
 
   const supabase = await getSupabaseServerClient()
 
-  // FCM token güncelle (mobil / Firebase)
+  // FCM token gÃ¼ncelle (mobil / Firebase)
   if (body.fcm_token) {
     const { error } = await supabase
       .from('users')
@@ -35,11 +35,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, type: 'fcm' })
   }
 
-  // Web Push aboneliği kaydet
+  // Web Push aboneliÄŸi kaydet
   if (body.endpoint) {
     // push_subscriptions tablosuna kaydet (migration'a eklenebilir)
-    // Şimdilik users tablosundaki fcm_token alanına endpoint'i yazıyoruz
-    // Production'da ayrı bir tablo önerilir
+    // Åimdilik users tablosundaki fcm_token alanÄ±na endpoint'i yazÄ±yoruz
+    // Production'da ayrÄ± bir tablo Ã¶nerilir
     const { error } = await supabase
       .from('users')
       .update({
@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  const user = await getCurrentUser()
+  const user = await getCurrentUser() as any
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const supabase = await getSupabaseServerClient()
@@ -68,3 +68,4 @@ export async function DELETE(req: NextRequest) {
 
   return NextResponse.json({ ok: true })
 }
+

@@ -1,15 +1,15 @@
-import { NextRequest, NextResponse } from 'next/server'
+﻿import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseServerClient, getSupabaseAdminClient, getCurrentUser } from '@/lib/supabase/server'
 
 export const dynamic = 'force-dynamic'
 
 async function adminGuard() {
-  const user = await getCurrentUser()
+  const user = await getCurrentUser() as any
   if (!user || user.role !== 'admin') return null
   return user
 }
 
-// ── GET — ödeme talepleri ─────────────────────────────────────────────────────
+// â”€â”€ GET â€” Ã¶deme talepleri â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export async function GET(req: NextRequest) {
   const admin = await adminGuard()
   if (!admin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
@@ -38,7 +38,7 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({ payouts: data, total: count, page, limit })
 }
 
-// ── PATCH — onayla / reddet ───────────────────────────────────────────────────
+// â”€â”€ PATCH â€” onayla / reddet â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export async function PATCH(req: NextRequest) {
   const admin = await adminGuard()
   if (!admin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
@@ -49,8 +49,8 @@ export async function PATCH(req: NextRequest) {
   const supabase = await getSupabaseServerClient()
 
   if (action === 'approve') {
-    // Gerçek İyzico payout API'si burada çağrılır
-    // Şimdilik durumu güncelle
+    // GerÃ§ek Ä°yzico payout API'si burada Ã§aÄŸrÄ±lÄ±r
+    // Åimdilik durumu gÃ¼ncelle
     const { error } = await supabase
       .from('payouts')
       .update({ status: 'processing', processed_at: new Date().toISOString() })
@@ -59,7 +59,7 @@ export async function PATCH(req: NextRequest) {
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-    // Aşçıya bildirim
+    // AÅŸÃ§Ä±ya bildirim
     const { data: payout } = await supabase
       .from('payouts')
       .select('chef_id, amount, chef_profiles(user_id)')
@@ -69,13 +69,13 @@ export async function PATCH(req: NextRequest) {
     if (payout) {
       const userId = (payout as any).chef_profiles?.user_id
       if (userId) {
-        // Notifications INSERT için service_role gerekiyor (RLS)
+        // Notifications INSERT iÃ§in service_role gerekiyor (RLS)
         const adminSupabase = await getSupabaseAdminClient()
         await adminSupabase.from('notifications').insert({
           user_id: userId,
           type:    'payout_processing',
-          title:   'Ödeme İşleme Alındı',
-          body:    `₺${payout.amount.toLocaleString('tr-TR')} tutarındaki ödeme talebiniz onaylandı ve işleme alındı.`,
+          title:   'Ã–deme Ä°ÅŸleme AlÄ±ndÄ±',
+          body:    `â‚º${payout.amount.toLocaleString('tr-TR')} tutarÄ±ndaki Ã¶deme talebiniz onaylandÄ± ve iÅŸleme alÄ±ndÄ±.`,
           data:    { payout_id },
         }).then(() => {})
       }
@@ -86,7 +86,7 @@ export async function PATCH(req: NextRequest) {
       target_id: payout_id, target_type: 'payout',
     }).then(() => {})
 
-    return NextResponse.json({ ok: true, message: 'Ödeme işleme alındı' })
+    return NextResponse.json({ ok: true, message: 'Ã–deme iÅŸleme alÄ±ndÄ±' })
   }
 
   if (action === 'reject') {
@@ -97,7 +97,7 @@ export async function PATCH(req: NextRequest) {
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-    // Bakiyeyi geri yükle
+    // Bakiyeyi geri yÃ¼kle
     const { data: payout } = await supabase
       .from('payouts')
       .select('chef_id, amount')
@@ -106,7 +106,7 @@ export async function PATCH(req: NextRequest) {
 
     if (payout) {
       // chef_profiles.pending_payout_amount azalt, bakiyeye geri ekle
-      // Bu işlem production'da transaction ile yapılmalı
+      // Bu iÅŸlem production'da transaction ile yapÄ±lmalÄ±
     }
 
     await supabase.from('audit_logs').insert({
@@ -114,8 +114,9 @@ export async function PATCH(req: NextRequest) {
       target_id: payout_id, target_type: 'payout',
     }).then(() => {})
 
-    return NextResponse.json({ ok: true, message: 'Ödeme talebi reddedildi' })
+    return NextResponse.json({ ok: true, message: 'Ã–deme talebi reddedildi' })
   }
 
   return NextResponse.json({ error: 'Unknown action' }, { status: 400 })
 }
+

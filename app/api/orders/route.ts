@@ -1,19 +1,19 @@
-/**
- * POST /api/orders — Yeni sipariş oluştur
- * GET  /api/orders — Kullanıcının siparişlerini listele
+﻿/**
+ * POST /api/orders â€” Yeni sipariÅŸ oluÅŸtur
+ * GET  /api/orders â€” KullanÄ±cÄ±nÄ±n sipariÅŸlerini listele
  *
- * Sipariş akışı:
- * 1. Stok kontrolü (race condition'a karşı DB transaction)
- * 2. İyzico ödeme başlat
+ * SipariÅŸ akÄ±ÅŸÄ±:
+ * 1. Stok kontrolÃ¼ (race condition'a karÅŸÄ± DB transaction)
+ * 2. Ä°yzico Ã¶deme baÅŸlat
  * 3. orders + order_items INSERT
- * 4. Aşçıya FCM push
- * 5. İsteğe bağlı: Netgsm SMS
+ * 4. AÅŸÃ§Ä±ya FCM push
+ * 5. Ä°steÄŸe baÄŸlÄ±: Netgsm SMS
  */
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { getSupabaseServerClient, getCurrentUser } from '@/lib/supabase/server'
 
-// ─── Şemalar ──────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Åemalar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const createOrderSchema = z.object({
   chef_id:       z.string().uuid(),
@@ -22,19 +22,19 @@ const createOrderSchema = z.object({
     quantity:     z.number().int().min(1).max(20),
   })).min(1),
   delivery_type:  z.enum(['pickup', 'delivery']),
-  address_id:     z.string().uuid().optional(),  // delivery için zorunlu
+  address_id:     z.string().uuid().optional(),  // delivery iÃ§in zorunlu
   coupon_code:    z.string().optional(),
   credit_amount:  z.number().min(0).optional(),
   notes:          z.string().max(200).optional(),
 })
 
-// ─── POST /api/orders ─────────────────────────────────────────────────────────
+// â”€â”€â”€ POST /api/orders â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function POST(req: NextRequest) {
   try {
-    const user = await getCurrentUser()
+    const user = await getCurrentUser() as any
     if (!user) {
-      return NextResponse.json({ error: 'Giriş yapmanız gerekiyor.' }, { status: 401 })
+      return NextResponse.json({ error: 'GiriÅŸ yapmanÄ±z gerekiyor.' }, { status: 401 })
     }
 
     const body = await req.json()
@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
 
     const supabase = await getSupabaseServerClient()
 
-    // 1. Stok kontrolü
+    // 1. Stok kontrolÃ¼
     const { data: menuItems, error: menuErr } = await supabase
       .from('menu_items')
       .select('id, name, price, remaining_stock, is_active')
@@ -55,17 +55,17 @@ export async function POST(req: NextRequest) {
       .eq('chef_id', chef_id)
 
     if (menuErr || !menuItems) {
-      return NextResponse.json({ error: 'Menü bilgisi alınamadı.' }, { status: 400 })
+      return NextResponse.json({ error: 'MenÃ¼ bilgisi alÄ±namadÄ±.' }, { status: 400 })
     }
 
     for (const item of items) {
       const found = menuItems.find(m => m.id === item.menu_item_id)
       if (!found || !found.is_active) {
-        return NextResponse.json({ error: `"${found?.name}" artık mevcut değil.` }, { status: 409 })
+        return NextResponse.json({ error: `"${found?.name}" artÄ±k mevcut deÄŸil.` }, { status: 409 })
       }
       if (found.remaining_stock !== null && found.remaining_stock < item.quantity) {
         return NextResponse.json(
-          { error: `"${found.name}" için yeterli stok yok. Kalan: ${found.remaining_stock}` },
+          { error: `"${found.name}" iÃ§in yeterli stok yok. Kalan: ${found.remaining_stock}` },
           { status: 409 }
         )
       }
@@ -80,7 +80,7 @@ export async function POST(req: NextRequest) {
     const platformFee  = Math.round(subtotal * 0.10 * 100) / 100
     const chefEarning  = Math.round((subtotal - platformFee) * 100) / 100
 
-    // 3. Kupon kontrolü
+    // 3. Kupon kontrolÃ¼
     let discount = 0
     if (coupon_code) {
       const { data: coupon } = await supabase
@@ -102,10 +102,10 @@ export async function POST(req: NextRequest) {
 
     const finalAmount = Math.max(0, subtotal - discount)
 
-    // 4. Sipariş order_number üret
+    // 4. SipariÅŸ order_number Ã¼ret
     const orderNumber = `EV-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`
 
-    // 5. DB'ye kaydet (transaction benzeri — Supabase RPC ile yapılabilir)
+    // 5. DB'ye kaydet (transaction benzeri â€” Supabase RPC ile yapÄ±labilir)
     const { data: order, error: orderErr } = await supabase
       .from('orders')
       .insert({
@@ -125,7 +125,7 @@ export async function POST(req: NextRequest) {
       .single()
 
     if (orderErr || !order) {
-      return NextResponse.json({ error: 'Sipariş oluşturulamadı.' }, { status: 500 })
+      return NextResponse.json({ error: 'SipariÅŸ oluÅŸturulamadÄ±.' }, { status: 500 })
     }
 
     // 6. Order items ekle
@@ -142,7 +142,7 @@ export async function POST(req: NextRequest) {
       })
     )
 
-    // 7. Stok düş
+    // 7. Stok dÃ¼ÅŸ
     for (const item of items) {
       const found = menuItems.find(m => m.id === item.menu_item_id)!
       if (found.remaining_stock !== null) {
@@ -153,7 +153,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 8. Aşçıya FCM push (fire-and-forget)
+    // 8. AÅŸÃ§Ä±ya FCM push (fire-and-forget)
     sendChefNotification(chef_id, order.id, orderNumber).catch(console.error)
 
     return NextResponse.json({
@@ -161,22 +161,22 @@ export async function POST(req: NextRequest) {
       order_id:    order.id,
       order_number: orderNumber,
       amount:      finalAmount,
-      // İyzico ödeme URL'i burada dönecek — şimdilik placeholder
+      // Ä°yzico Ã¶deme URL'i burada dÃ¶necek â€” ÅŸimdilik placeholder
       payment_url: `/odeme?order_id=${order.id}`,
     })
 
   } catch (err) {
     console.error('POST /api/orders error:', err)
-    return NextResponse.json({ error: 'Sunucu hatası.' }, { status: 500 })
+    return NextResponse.json({ error: 'Sunucu hatasÄ±.' }, { status: 500 })
   }
 }
 
-// ─── GET /api/orders ──────────────────────────────────────────────────────────
+// â”€â”€â”€ GET /api/orders â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function GET(req: NextRequest) {
-  const user = await getCurrentUser()
+  const user = await getCurrentUser() as any
   if (!user) {
-    return NextResponse.json({ error: 'Giriş yapmanız gerekiyor.' }, { status: 401 })
+    return NextResponse.json({ error: 'GiriÅŸ yapmanÄ±z gerekiyor.' }, { status: 401 })
   }
 
   const supabase = await getSupabaseServerClient()
@@ -191,7 +191,7 @@ export async function GET(req: NextRequest) {
     .order('created_at', { ascending: false })
     .range((page - 1) * limit, page * limit - 1)
 
-  // Rol bazlı filtre (RLS bunu zaten sağlıyor ama explict de ekliyoruz)
+  // Rol bazlÄ± filtre (RLS bunu zaten saÄŸlÄ±yor ama explict de ekliyoruz)
   if (user.role === 'buyer') {
     query = query.eq('buyer_id', user.id)
   }
@@ -202,13 +202,13 @@ export async function GET(req: NextRequest) {
   const { data, error, count } = await query
 
   if (error) {
-    return NextResponse.json({ error: 'Siparişler alınamadı.' }, { status: 500 })
+    return NextResponse.json({ error: 'SipariÅŸler alÄ±namadÄ±.' }, { status: 500 })
   }
 
   return NextResponse.json({ orders: data, total: count, page })
 }
 
-// ─── Yardımcı: FCM push ───────────────────────────────────────────────────────
+// â”€â”€â”€ YardÄ±mcÄ±: FCM push â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 async function sendChefNotification(
   chefId:      string,
@@ -238,8 +238,8 @@ async function sendChefNotification(
         message: {
           token: chefUser.fcm_token,
           notification: {
-            title: '🛒 Yeni Sipariş!',
-            body:  `${orderNumber} numaralı sipariş onay bekliyor.`,
+            title: 'ğŸ›’ Yeni SipariÅŸ!',
+            body:  `${orderNumber} numaralÄ± sipariÅŸ onay bekliyor.`,
           },
           data: {
             type:     'new_order',
@@ -250,3 +250,4 @@ async function sendChefNotification(
     }
   )
 }
+

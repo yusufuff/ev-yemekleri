@@ -1,23 +1,23 @@
-/**
+﻿/**
  * POST /api/reviews
- * Teslim edilmiş bir sipariş için yorum ekler.
- * Bir sipariş için birden fazla yorum engellenir.
+ * Teslim edilmiÅŸ bir sipariÅŸ iÃ§in yorum ekler.
+ * Bir sipariÅŸ iÃ§in birden fazla yorum engellenir.
  */
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseServerClient, getCurrentUser } from '@/lib/supabase/server'
 
 export async function POST(req: NextRequest) {
-  const user = await getCurrentUser()
-  if (!user) return NextResponse.json({ error: 'Giriş gerekli.' }, { status: 401 })
+  const user = await getCurrentUser() as any
+  if (!user) return NextResponse.json({ error: 'GiriÅŸ gerekli.' }, { status: 401 })
 
   const { order_id, rating, comment } = await req.json()
   if (!order_id || !rating || rating < 1 || rating > 5) {
-    return NextResponse.json({ error: 'Geçersiz veri.' }, { status: 400 })
+    return NextResponse.json({ error: 'GeÃ§ersiz veri.' }, { status: 400 })
   }
 
   const supabase = await getSupabaseServerClient()
 
-  // Siparişi doğrula — teslim edilmiş mi ve alıcısı bu kullanıcı mı?
+  // SipariÅŸi doÄŸrula â€” teslim edilmiÅŸ mi ve alÄ±cÄ±sÄ± bu kullanÄ±cÄ± mÄ±?
   const { data: order } = await supabase
     .from('orders')
     .select('id, chef_id, status, buyer_id')
@@ -28,12 +28,12 @@ export async function POST(req: NextRequest) {
 
   if (!order) {
     return NextResponse.json(
-      { error: 'Sipariş bulunamadı veya henüz teslim edilmedi.' },
+      { error: 'SipariÅŸ bulunamadÄ± veya henÃ¼z teslim edilmedi.' },
       { status: 400 }
     )
   }
 
-  // Daha önce yorum yapılmış mı?
+  // Daha Ã¶nce yorum yapÄ±lmÄ±ÅŸ mÄ±?
   const { data: existing } = await supabase
     .from('reviews')
     .select('id')
@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
     .maybeSingle()
 
   if (existing) {
-    return NextResponse.json({ error: 'Bu sipariş için zaten yorum yapılmış.' }, { status: 409 })
+    return NextResponse.json({ error: 'Bu sipariÅŸ iÃ§in zaten yorum yapÄ±lmÄ±ÅŸ.' }, { status: 409 })
   }
 
   // Yorum ekle
@@ -60,3 +60,4 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({ id: data.id })
 }
+

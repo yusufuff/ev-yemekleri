@@ -1,11 +1,11 @@
-import { NextResponse } from 'next/server'
+﻿import { NextResponse } from 'next/server'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
 import { getCurrentUser } from '@/lib/supabase/server'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET() {
-  const user = await getCurrentUser()
+  const user = await getCurrentUser() as any
   if (!user || user.role !== 'admin') {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
@@ -39,7 +39,7 @@ export async function GET() {
   const prevRevenue = (prevRevData ?? []).reduce((s: number, r: any) => s + (r.subtotal ?? 0), 0)
   const revenueGrowth = prevRevenue > 0 ? ((weekRevenue - prevRevenue) / prevRevenue * 100).toFixed(1) : null
 
-  // Son 7 gün günlük sipariş
+  // Son 7 gÃ¼n gÃ¼nlÃ¼k sipariÅŸ
   const { data: dailyOrders } = await supabase
     .from('orders')
     .select('created_at, subtotal')
@@ -47,7 +47,7 @@ export async function GET() {
     .eq('payment_status', 'paid')
     .order('created_at')
 
-  // Gün bazlı gruplama
+  // GÃ¼n bazlÄ± gruplama
   const dailyMap: Record<string, { count: number; revenue: number }> = {}
   for (let i = 6; i >= 0; i--) {
     const d = new Date(Date.now() - i * 86400000).toISOString().slice(0, 10)
@@ -78,3 +78,4 @@ export async function GET() {
     chart: chartData,
   })
 }
+

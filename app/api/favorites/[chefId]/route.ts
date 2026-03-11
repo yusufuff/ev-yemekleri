@@ -1,7 +1,7 @@
-/**
- * GET    /api/favorites/[chefId]  — Favori durumu sorgula
- * POST   /api/favorites/[chefId]  — Favori ekle
- * DELETE /api/favorites/[chefId]  — Favoriden çıkar
+﻿/**
+ * GET    /api/favorites/[chefId]  â€” Favori durumu sorgula
+ * POST   /api/favorites/[chefId]  â€” Favori ekle
+ * DELETE /api/favorites/[chefId]  â€” Favoriden Ã§Ä±kar
  */
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseServerClient, getCurrentUser } from '@/lib/supabase/server'
@@ -10,7 +10,7 @@ export async function GET(
   _req: NextRequest,
   { params }: { params: { chefId: string } }
 ) {
-  const user = await getCurrentUser()
+  const user = await getCurrentUser() as any
   if (!user) return NextResponse.json({ favorited: false })
 
   const supabase = await getSupabaseServerClient()
@@ -28,8 +28,8 @@ export async function POST(
   _req: NextRequest,
   { params }: { params: { chefId: string } }
 ) {
-  const user = await getCurrentUser()
-  if (!user) return NextResponse.json({ error: 'Giriş gerekli.' }, { status: 401 })
+  const user = await getCurrentUser() as any
+  if (!user) return NextResponse.json({ error: 'GiriÅŸ gerekli.' }, { status: 401 })
 
   const supabase = await getSupabaseServerClient()
   await supabase.from('favorites').upsert(
@@ -43,8 +43,8 @@ export async function DELETE(
   _req: NextRequest,
   { params }: { params: { chefId: string } }
 ) {
-  const user = await getCurrentUser()
-  if (!user) return NextResponse.json({ error: 'Giriş gerekli.' }, { status: 401 })
+  const user = await getCurrentUser() as any
+  if (!user) return NextResponse.json({ error: 'GiriÅŸ gerekli.' }, { status: 401 })
 
   const supabase = await getSupabaseServerClient()
   await supabase
@@ -55,3 +55,4 @@ export async function DELETE(
 
   return NextResponse.json({ favorited: false })
 }
+
