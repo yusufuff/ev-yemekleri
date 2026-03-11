@@ -117,11 +117,15 @@ function MenuItemCard({ item, chefId }: { item: MenuItem; chefId: string }) {
 
   const handleAdd = () => {
     addItem({
-      menu_item_id: item.id,
-      chef_id:      chefId,
-      name:         item.name,
-      price:        item.price,
-      photo:        cover,
+      menu_item_id:    item.id,
+      chef_id:         chefId,
+      chef_name:       chefName,
+      name:            item.name,
+      price:           item.price,
+      quantity:        1,
+      remaining_stock: item.remaining_stock ?? null,
+      category:        item.category,
+      photo:           cover,
     })
     setAdded(true)
     setTimeout(() => setAdded(false), 1500)
@@ -1036,4 +1040,5 @@ export default function AsciProfilPage({ params }: { params: { id: string } }) {
     </div>
   )
 }
+
 
