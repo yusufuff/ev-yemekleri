@@ -106,7 +106,7 @@ function PhotoGallery({ photos, chefName }: { photos: string[]; chefName: string
 
 // â”€â”€â”€ MenÃ¼ kartÄ± (profil gÃ¶rÃ¼nÃ¼mÃ¼) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-function MenuItemCard({ item, chefId }: { item: MenuItem; chefId: string }) {
+function MenuItemCard({ item, chefId, chefName }: { item: MenuItem; chefId: string; chefName: string }) {
   const { addItem, items: cartItems } = useCart()
   const [added, setAdded] = useState(false)
 
@@ -119,7 +119,7 @@ function MenuItemCard({ item, chefId }: { item: MenuItem; chefId: string }) {
     addItem({
       menu_item_id:    item.id,
       chef_id:         chefId,
-      chef_name:       user.full_name,
+      chef_name:       chefName,
       name:            item.name,
       price:           item.price,
       quantity:        1,
@@ -469,7 +469,7 @@ export default function AsciProfilPage({ params }: { params: { id: string } }) {
             ) : (
               <div className="ap-menu-grid">
                 {filteredMenu.map(item => (
-                  <MenuItemCard key={item.id} item={item} chefId={profile.id} />
+                  <MenuItemCard key={item.id} item={item} chefId={profile.id} chefName={user.full_name} />
                 ))}
               </div>
             )}
@@ -1040,6 +1040,8 @@ export default function AsciProfilPage({ params }: { params: { id: string } }) {
     </div>
   )
 }
+
+
 
 
 
