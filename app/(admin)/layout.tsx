@@ -1,15 +1,15 @@
-/**
+﻿/**
  * Admin Layout
- * Sadece role === 'admin' erişebilir (middleware çift kontrol).
+ * Sadece role === 'admin' eriÅŸebilir (middleware Ã§ift kontrol).
  */
 import { redirect } from 'next/navigation'
 import { getCurrentUser } from '@/lib/supabase/server'
 import AdminSidebar from '@/components/admin/AdminSidebar'
 
-export const metadata = { title: 'Admin Panel — Ev Yemekleri' }
+export const metadata = { title: 'Admin Panel â€” Ev Yemekleri' }
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const user = await getCurrentUser()
+  const user = await getCurrentUser() as any
   if (!user || user.role !== 'admin') redirect('/')
 
   return (
