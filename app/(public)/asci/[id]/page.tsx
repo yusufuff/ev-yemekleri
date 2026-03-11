@@ -119,7 +119,7 @@ function MenuItemCard({ item, chefId }: { item: MenuItem; chefId: string }) {
     addItem({
       menu_item_id:    item.id,
       chef_id:         chefId,
-      chef_name:       chefName,
+      chef_name:       user.full_name,
       name:            item.name,
       price:           item.price,
       quantity:        1,
@@ -1040,5 +1040,6 @@ export default function AsciProfilPage({ params }: { params: { id: string } }) {
     </div>
   )
 }
+
 
 
