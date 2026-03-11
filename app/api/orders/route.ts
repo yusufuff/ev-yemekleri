@@ -129,7 +129,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 6. Order items ekle
-    await supabase.from('order_items').insert(
+    await (supabase as any).from('order_items').insert(
       items.map(item => {
         const found = menuItems.find(m => m.id === item.menu_item_id)!
         return {
@@ -250,4 +250,5 @@ async function sendChefNotification(
     }
   )
 }
+
 

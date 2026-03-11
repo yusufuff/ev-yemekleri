@@ -1,6 +1,6 @@
-/**
+﻿/**
  * POST /api/auth/send-otp
- * Telefon numarasına Netgsm üzerinden OTP gönderir.
+ * Telefon numarasÄ±na Netgsm Ã¼zerinden OTP gÃ¶nderir.
  * Redis'e 3 dakika TTL ile kaydeder.
  */
 import { NextRequest, NextResponse } from 'next/server'
@@ -8,15 +8,15 @@ import { z } from 'zod'
 import { Redis } from '@upstash/redis'
 import { Ratelimit } from '@upstash/ratelimit'
 
-// ─── Validasyon şeması ────────────────────────────────────────────────────────
+// â”€â”€â”€ Validasyon ÅŸemasÄ± â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const schema = z.object({
   phone: z
     .string()
-    .regex(/^(\+90|0)?[5][0-9]{9}$/, 'Geçerli bir Türkiye telefon numarası girin'),
+    .regex(/^(\+90|0)?[5][0-9]{9}$/, 'GeÃ§erli bir TÃ¼rkiye telefon numarasÄ± girin'),
 })
 
-// ─── Rate limiter (IP başına saatte 3 OTP) ────────────────────────────────────
+// â”€â”€â”€ Rate limiter (IP baÅŸÄ±na saatte 3 OTP) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const redis = new Redis({
   url:   process.env.UPSTASH_REDIS_REST_URL!,
@@ -29,7 +29,7 @@ const ratelimit = new Ratelimit({
   analytics: true,
 })
 
-// ─── Handler ──────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Handler â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function POST(req: NextRequest) {
   try {
@@ -44,23 +44,23 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // 2. Telefon numarasını normalize et (+90 formatına)
+    // 2. Telefon numarasÄ±nÄ± normalize et (+90 formatÄ±na)
     let { phone } = parsed.data
     if (phone.startsWith('0')) phone = '+90' + phone.slice(1)
     if (!phone.startsWith('+')) phone = '+90' + phone
 
-    // 3. Rate limit kontrolü (IP bazlı)
+    // 3. Rate limit kontrolÃ¼ (IP bazlÄ±)
     const ip = req.headers.get('x-forwarded-for') ?? 'unknown'
     const { success: allowed } = await ratelimit.limit(`otp:ip:${ip}`)
 
     if (!allowed) {
       return NextResponse.json(
-        { error: 'Çok fazla deneme. Lütfen 1 saat sonra tekrar deneyin.' },
+        { error: 'Ã‡ok fazla deneme. LÃ¼tfen 1 saat sonra tekrar deneyin.' },
         { status: 429 }
       )
     }
 
-    // 4. OTP üret
+    // 4. OTP Ã¼ret
     const code = Math.floor(100000 + Math.random() * 900000).toString()
 
     // 5. Redis'e kaydet (3 dakika TTL)
@@ -71,7 +71,7 @@ export async function POST(req: NextRequest) {
       createdAt: Date.now(),
     }))
 
-    // 6. Netgsm SMS gönder
+    // 6. Netgsm SMS gÃ¶nder
     const smsResponse = await fetch('https://api.netgsm.com.tr/sms/send/otp', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -79,28 +79,29 @@ export async function POST(req: NextRequest) {
         usercode:   process.env.NETGSM_USERCODE,
         password:   process.env.NETGSM_PASSWORD,
         msgheader:  process.env.NETGSM_MSGHEADER ?? 'EVYEMEKLERI',
-        message:    `EV YEMEKLERİ doğrulama kodunuz: ${code}. Bu kod 3 dakika geçerlidir.`,
+        message:    `EV YEMEKLERÄ° doÄŸrulama kodunuz: ${code}. Bu kod 3 dakika geÃ§erlidir.`,
         gsm:        phone.replace('+', ''),
       }),
     })
 
     if (!smsResponse.ok) {
-      console.error('Netgsm SMS hatası:', await smsResponse.text())
+      console.error('Netgsm SMS hatasÄ±:', await smsResponse.text())
       return NextResponse.json(
-        { error: 'SMS gönderilemedi. Lütfen tekrar deneyin.' },
+        { error: 'SMS gÃ¶nderilemedi. LÃ¼tfen tekrar deneyin.' },
         { status: 502 }
       )
     }
 
-    // Production'da kodu loglamayın — geliştirme ortamı için:
+    // Production'da kodu loglamayÄ±n â€” geliÅŸtirme ortamÄ± iÃ§in:
     if (process.env.NODE_ENV === 'development') {
-      console.log(`🔑 OTP [${phone}]: ${code}`)
+      console.log(`ğŸ”‘ OTP [${phone}]: ${code}`)
     }
 
-    return NextResponse.json({ success: true, message: 'Doğrulama kodu gönderildi.' })
+    return NextResponse.json({ success: true, message: 'DoÄŸrulama kodu gÃ¶nderildi.' })
 
   } catch (err) {
     console.error('send-otp error:', err)
-    return NextResponse.json({ error: 'Sunucu hatası.' }, { status: 500 })
+    return NextResponse.json({ error: 'Sunucu hatasÄ±.' }, { status: 500 })
   }
 }
+

@@ -73,7 +73,7 @@ export async function PATCH(req: NextRequest) {
   if (!update) return NextResponse.json({ error: 'Unknown action' }, { status: 400 })
 
   // @ts-ignore
-  const { error } = await supabase.from('chef_profiles').update(update as any).eq('id', chef_id)
+  const { error } = await (supabase as any).from('chef_profiles').update(update as any).eq('id', chef_id)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   // AÅŸÃ§Ä±ya bildirim gÃ¶nder
@@ -93,7 +93,7 @@ export async function PATCH(req: NextRequest) {
 
     // Notifications tablosuna INSERT iÃ§in service_role gerekiyor (RLS)
     const adminSupabase = await getSupabaseAdminClient()
-    await (adminSupabase.from('notifications') as any).insert({
+    await (admin(supabase as any).from('notifications') as any).insert({
       user_id: chef.user_id,
       type:    'chef_' + action,
       title:   action === 'approve' ? 'BaÅŸvurunuz OnaylandÄ±!' : 'Hesap GÃ¼ncelleme',
@@ -103,7 +103,7 @@ export async function PATCH(req: NextRequest) {
   }
 
   // Audit log
-  await supabase.from('audit_logs').insert({
+  await (supabase as any).from('audit_logs').insert({
     actor_id:    admin.id,
     action:      `admin_chef_${action}`,
     target_id:   chef_id,
@@ -120,6 +120,7 @@ export async function PATCH(req: NextRequest) {
 
   return NextResponse.json({ ok: true, message: labels[action] })
 }
+
 
 
 

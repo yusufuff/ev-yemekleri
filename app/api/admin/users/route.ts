@@ -54,23 +54,24 @@ export async function PATCH(req: NextRequest) {
   const supabase = await getSupabaseServerClient()
 
   if (action === 'ban') {
-    const { error } = await supabase.from('users').update({ is_active: false }).eq('id', user_id)
+    const { error } = await (supabase as any).from('users').update({ is_active: false }).eq('id', user_id)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
     return NextResponse.json({ ok: true, message: 'KullanÄ±cÄ± banlandÄ±' })
   }
 
   if (action === 'unban') {
-    const { error } = await supabase.from('users').update({ is_active: true }).eq('id', user_id)
+    const { error } = await (supabase as any).from('users').update({ is_active: true }).eq('id', user_id)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
     return NextResponse.json({ ok: true, message: 'Ban kaldÄ±rÄ±ldÄ±' })
   }
 
   if (action === 'set_role' && role) {
-    const { error } = await supabase.from('users').update({ role }).eq('id', user_id)
+    const { error } = await (supabase as any).from('users').update({ role }).eq('id', user_id)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
     return NextResponse.json({ ok: true, message: `Rol gÃ¼ncellendi: ${role}` })
   }
 
   return NextResponse.json({ error: 'Unknown action' }, { status: 400 })
 }
+
 

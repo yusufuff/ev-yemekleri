@@ -71,7 +71,7 @@ export async function PATCH(req: NextRequest) {
       if (userId) {
         // Notifications INSERT iÃ§in service_role gerekiyor (RLS)
         const adminSupabase = await getSupabaseAdminClient()
-        await adminSupabase.from('notifications').insert({
+        await (adminSupabase as any).from('notifications').insert({
           user_id: userId,
           type:    'payout_processing',
           title:   'Ã–deme Ä°ÅŸleme AlÄ±ndÄ±',
@@ -81,7 +81,7 @@ export async function PATCH(req: NextRequest) {
       }
     }
 
-    await supabase.from('audit_logs').insert({
+    await (supabase as any).from('audit_logs').insert({
       actor_id: admin.id, action: 'admin_approve_payout',
       target_id: payout_id, target_type: 'payout',
     }).then(() => {})
@@ -109,7 +109,7 @@ export async function PATCH(req: NextRequest) {
       // Bu iÅŸlem production'da transaction ile yapÄ±lmalÄ±
     }
 
-    await supabase.from('audit_logs').insert({
+    await (supabase as any).from('audit_logs').insert({
       actor_id: admin.id, action: 'admin_reject_payout',
       target_id: payout_id, target_type: 'payout',
     }).then(() => {})
@@ -119,4 +119,5 @@ export async function PATCH(req: NextRequest) {
 
   return NextResponse.json({ error: 'Unknown action' }, { status: 400 })
 }
+
 

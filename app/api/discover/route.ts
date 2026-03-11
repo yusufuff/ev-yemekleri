@@ -1,9 +1,9 @@
-/**
+﻿/**
  * GET /api/discover?lat=37.00&lng=35.32&radius=5&sort=distance&category=main&delivery=all&open_only=false
  *
- * find_nearby_chefs() PostGIS fonksiyonunu çağırır.
- * Her aşçı için 3 menü önizlemesi ekler.
- * Harita pinleri için lat/lng de döndürür (yaklaşık — exact adres gizli).
+ * find_nearby_chefs() PostGIS fonksiyonunu Ã§aÄŸÄ±rÄ±r.
+ * Her aÅŸÃ§Ä± iÃ§in 3 menÃ¼ Ã¶nizlemesi ekler.
+ * Harita pinleri iÃ§in lat/lng de dÃ¶ndÃ¼rÃ¼r (yaklaÅŸÄ±k â€” exact adres gizli).
  */
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
@@ -21,7 +21,7 @@ const querySchema = z.object({
   open_only: z.coerce.boolean().default(false),
 })
 
-// Anon client — RLS public erişimine izin verilen veriler
+// Anon client â€” RLS public eriÅŸimine izin verilen veriler
 const supabase = createClient<Database>(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -41,7 +41,7 @@ export async function GET(req: NextRequest) {
   const { lat, lng, radius, sort, category, delivery, open_only } = parsed.data
 
   try {
-    // 1. PostGIS find_nearby_chefs() çağrısı
+    // 1. PostGIS find_nearby_chefs() Ã§aÄŸrÄ±sÄ±
     const { data: rawChefs, error: chefErr } = await supabase.rpc(
       'find_nearby_chefs',
       {
@@ -55,7 +55,7 @@ export async function GET(req: NextRequest) {
 
     if (chefErr) {
       console.error('find_nearby_chefs error:', chefErr)
-      return NextResponse.json({ error: 'Aşçılar yüklenemedi.' }, { status: 500 })
+      return NextResponse.json({ error: 'AÅŸÃ§Ä±lar yÃ¼klenemedi.' }, { status: 500 })
     }
 
     let chefs = rawChefs ?? []
@@ -73,7 +73,7 @@ export async function GET(req: NextRequest) {
       )
     }
 
-    // 3. Her aşçı için menü önizlemesi çek (parallel)
+    // 3. Her aÅŸÃ§Ä± iÃ§in menÃ¼ Ã¶nizlemesi Ã§ek (parallel)
     const chefIds = chefs.map((c: any) => c.chef_id)
 
     let previewMap: Record<string, any[]> = {}
@@ -87,7 +87,7 @@ export async function GET(req: NextRequest) {
         .gt('remaining_stock', 0)
         .order('price', { ascending: true })
 
-      // chef_id'ye göre grupla
+      // chef_id'ye gÃ¶re grupla
       for (const item of menuItems ?? []) {
         if (!previewMap[item.chef_profile_id]) {
           previewMap[item.chef_profile_id] = []
@@ -98,9 +98,9 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // 4. Harita pinleri için yaklaşık koordinatlar
-    //    Gerçek uygulamada: random offset ekle (50-150m) — gizlilik
-    //    Burada: Supabase'den ST_X / ST_Y ile yaklaşık merkez al
+    // 4. Harita pinleri iÃ§in yaklaÅŸÄ±k koordinatlar
+    //    GerÃ§ek uygulamada: random offset ekle (50-150m) â€” gizlilik
+    //    Burada: Supabase'den ST_X / ST_Y ile yaklaÅŸÄ±k merkez al
     let pinMap: Record<string, { lat: number; lng: number }> = {}
 
     if (chefIds.length > 0) {
@@ -113,7 +113,7 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // 5. Sonuçları birleştir
+    // 5. SonuÃ§larÄ± birleÅŸtir
     const result: NearbyChef[] = chefs.map((c: any) => ({
       chef_id:         c.chef_id,
       user_id:         c.user_id,
@@ -130,13 +130,13 @@ export async function GET(req: NextRequest) {
       min_price:       c.min_price ? Number(c.min_price) : null,
       menu_count:      Number(c.menu_count ?? 0),
       preview_items:   previewMap[c.chef_id] ?? [],
-      // Pin koordinatları (yaklaşık)
+      // Pin koordinatlarÄ± (yaklaÅŸÄ±k)
       pin_lat:         pinMap[c.chef_id]?.lat ?? lat + (Math.random() - 0.5) * 0.02,
       pin_lng:         pinMap[c.chef_id]?.lng ?? lng + (Math.random() - 0.5) * 0.02,
     }))
 
-    // 6. Konum string'i (reverse geocode — basit)
-    const locationStr = `${radius} km çevresi`
+    // 6. Konum string'i (reverse geocode â€” basit)
+    const locationStr = `${radius} km Ã§evresi`
 
     const response: DiscoverResult & { pins: any[] } = {
       chefs:       result,
@@ -159,6 +159,7 @@ export async function GET(req: NextRequest) {
 
   } catch (err) {
     console.error('discover error:', err)
-    return NextResponse.json({ error: 'Sunucu hatası.' }, { status: 500 })
+    return NextResponse.json({ error: 'Sunucu hatasÄ±.' }, { status: 500 })
   }
 }
+

@@ -64,8 +64,9 @@ export async function DELETE(req: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const supabase = await getSupabaseServerClient()
-  await supabase.from('users').update({ fcm_token: null }).eq('id', user.id)
+  await (supabase as any).from('users').update({ fcm_token: null }).eq('id', user.id)
 
   return NextResponse.json({ ok: true })
 }
+
 

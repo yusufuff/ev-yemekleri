@@ -1,7 +1,7 @@
-/**
+﻿/**
  * POST /api/auth/complete-profile
- * Yeni kullanıcı profil bilgilerini kaydeder.
- * Sadece giriş yapmış kullanıcılar çağırabilir.
+ * Yeni kullanÄ±cÄ± profil bilgilerini kaydeder.
+ * Sadece giriÅŸ yapmÄ±ÅŸ kullanÄ±cÄ±lar Ã§aÄŸÄ±rabilir.
  */
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
@@ -9,13 +9,13 @@ import { getSupabaseServerClient } from '@/lib/supabase/server'
 import { createClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
 
-// ── Validasyon ────────────────────────────────────────────────────────────────
+// â”€â”€ Validasyon â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const schema = z.object({
-  full_name: z.string().min(3, 'Ad en az 3 karakter olmalı').max(100),
+  full_name: z.string().min(3, 'Ad en az 3 karakter olmalÄ±').max(100),
   role:      z.enum(['buyer', 'chef']),
 })
 
-// ── Supabase Admin ────────────────────────────────────────────────────────────
+// â”€â”€ Supabase Admin â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const supabaseAdmin = createClient<Database>(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -24,13 +24,13 @@ const supabaseAdmin = createClient<Database>(
 
 export async function POST(req: NextRequest) {
   try {
-    // 1. Mevcut kullanıcıyı doğrula
+    // 1. Mevcut kullanÄ±cÄ±yÄ± doÄŸrula
     const supabase = await getSupabaseServerClient()
     const { data: { user }, error: authError } = await supabase.auth.getUser()
 
     if (authError || !user) {
       return NextResponse.json(
-        { error: 'Oturum açık değil. Lütfen giriş yapın.' },
+        { error: 'Oturum aÃ§Ä±k deÄŸil. LÃ¼tfen giriÅŸ yapÄ±n.' },
         { status: 401 }
       )
     }
@@ -48,21 +48,21 @@ export async function POST(req: NextRequest) {
 
     const { full_name, role } = parsed.data
 
-    // 3. public.users tablosunu güncelle
+    // 3. public.users tablosunu gÃ¼ncelle
     const { error: updateError } = await supabase
       .from('users')
       .update({ full_name, role })
       .eq('id', user.id)
 
     if (updateError) {
-      console.error('users update hatası:', updateError)
+      console.error('users update hatasÄ±:', updateError)
       return NextResponse.json(
-        { error: 'Profil güncellenemedi.' },
+        { error: 'Profil gÃ¼ncellenemedi.' },
         { status: 500 }
       )
     }
 
-    // 4. Auth metadata güncelle (middleware'de role kontrolü için)
+    // 4. Auth metadata gÃ¼ncelle (middleware'de role kontrolÃ¼ iÃ§in)
     await supabaseAdmin.auth.admin.updateUserById(user.id, {
       user_metadata: {
         ...user.user_metadata,
@@ -71,7 +71,7 @@ export async function POST(req: NextRequest) {
       },
     })
 
-    // 5. Aşçı ise chef_profiles oluştur (başlangıç kaydı)
+    // 5. AÅŸÃ§Ä± ise chef_profiles oluÅŸtur (baÅŸlangÄ±Ã§ kaydÄ±)
     if (role === 'chef') {
       const { error: chefError } = await supabase
         .from('chef_profiles')
@@ -85,9 +85,9 @@ export async function POST(req: NextRequest) {
         .single()
 
       if (chefError && chefError.code !== '23505') {
-        // 23505 = unique_violation (profil zaten var) → görmezden gel
-        console.error('chef_profiles oluşturma hatası:', chefError)
-        // Kritik değil — onboarding'de tekrar denenebilir
+        // 23505 = unique_violation (profil zaten var) â†’ gÃ¶rmezden gel
+        console.error('chef_profiles oluÅŸturma hatasÄ±:', chefError)
+        // Kritik deÄŸil â€” onboarding'de tekrar denenebilir
       }
     }
 
@@ -95,12 +95,13 @@ export async function POST(req: NextRequest) {
       success:   true,
       role,
       full_name,
-      // Aşçı ise onboarding'e, alıcı ise ana sayfaya
+      // AÅŸÃ§Ä± ise onboarding'e, alÄ±cÄ± ise ana sayfaya
       redirectTo: role === 'chef' ? '/giris/onboarding' : '/',
     })
 
   } catch (err) {
     console.error('complete-profile error:', err)
-    return NextResponse.json({ error: 'Sunucu hatası.' }, { status: 500 })
+    return NextResponse.json({ error: 'Sunucu hatasÄ±.' }, { status: 500 })
   }
 }
+

@@ -1,7 +1,7 @@
-/**
+﻿/**
  * GET /api/health
- * CI/CD ve uptime monitoring için sağlık kontrolü.
- * Supabase bağlantısını ve temel tabloları test eder.
+ * CI/CD ve uptime monitoring iÃ§in saÄŸlÄ±k kontrolÃ¼.
+ * Supabase baÄŸlantÄ±sÄ±nÄ± ve temel tablolarÄ± test eder.
  */
 import { NextResponse } from 'next/server'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
@@ -13,7 +13,7 @@ export async function GET() {
   const start = Date.now()
   const checks: Record<string, boolean | string> = {}
 
-  // ── Supabase bağlantı testi ────────────────────────────────────────────────
+  // â”€â”€ Supabase baÄŸlantÄ± testi â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   try {
     const supabase = await getSupabaseServerClient()
     const { error } = await supabase
@@ -27,12 +27,12 @@ export async function GET() {
     checks.supabase_error = e.message
   }
 
-  // ── Ortam değişkenleri ─────────────────────────────────────────────────────
+  // â”€â”€ Ortam deÄŸiÅŸkenleri â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   checks.env_supabase_url  = !!process.env.NEXT_PUBLIC_SUPABASE_URL
   checks.env_supabase_anon = !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   checks.env_iyzico        = !!process.env.IYZICO_API_KEY
 
-  // ── Genel durum ────────────────────────────────────────────────────────────
+  // â”€â”€ Genel durum â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const allGood   = Object.values(checks).every(v => v === true || typeof v === 'string' && !v.includes('error'))
   const isHealthy = checks.supabase === true
 
@@ -47,3 +47,4 @@ export async function GET() {
     { status: isHealthy ? 200 : 503 }
   )
 }
+

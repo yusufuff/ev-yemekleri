@@ -25,14 +25,14 @@ export async function GET() {
     { data: prevRevData },
     { count: activeOrders },
   ] = await Promise.all([
-    supabase.from('users').select('*', { count: 'exact', head: true }),
-    supabase.from('chef_profiles').select('*', { count: 'exact', head: true }),
-    supabase.from('orders').select('*', { count: 'exact', head: true }),
-    supabase.from('chef_profiles').select('*', { count: 'exact', head: true }).eq('verification_status', 'pending'),
-    supabase.from('orders').select('*', { count: 'exact', head: true }).gte('created_at', today),
-    supabase.from('orders').select('subtotal').eq('payment_status', 'paid').gte('created_at', weekAgo),
-    supabase.from('orders').select('subtotal').eq('payment_status', 'paid').gte('created_at', prevWeekAgo).lt('created_at', weekAgo),
-    supabase.from('orders').select('*', { count: 'exact', head: true }).in('status', ['confirmed', 'preparing', 'on_way']),
+    (supabase as any).from('users').select('*', { count: 'exact', head: true }),
+    (supabase as any).from('chef_profiles').select('*', { count: 'exact', head: true }),
+    (supabase as any).from('orders').select('*', { count: 'exact', head: true }),
+    (supabase as any).from('chef_profiles').select('*', { count: 'exact', head: true }).eq('verification_status', 'pending'),
+    (supabase as any).from('orders').select('*', { count: 'exact', head: true }).gte('created_at', today),
+    (supabase as any).from('orders').select('subtotal').eq('payment_status', 'paid').gte('created_at', weekAgo),
+    (supabase as any).from('orders').select('subtotal').eq('payment_status', 'paid').gte('created_at', prevWeekAgo).lt('created_at', weekAgo),
+    (supabase as any).from('orders').select('*', { count: 'exact', head: true }).in('status', ['confirmed', 'preparing', 'on_way']),
   ])
 
   const weekRevenue = (weekRevData ?? []).reduce((s: number, r: any) => s + (r.subtotal ?? 0), 0)
@@ -78,4 +78,5 @@ export async function GET() {
     chart: chartData,
   })
 }
+
 

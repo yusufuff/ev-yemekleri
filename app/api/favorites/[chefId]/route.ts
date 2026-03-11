@@ -32,7 +32,7 @@ export async function POST(
   if (!user) return NextResponse.json({ error: 'GiriÅŸ gerekli.' }, { status: 401 })
 
   const supabase = await getSupabaseServerClient()
-  await supabase.from('favorites').upsert(
+  await (supabase as any).from('favorites').upsert(
     { user_id: user.id, chef_id: params.chefId },
     { onConflict: 'user_id,chef_id' }
   )
@@ -55,4 +55,5 @@ export async function DELETE(
 
   return NextResponse.json({ favorited: false })
 }
+
 

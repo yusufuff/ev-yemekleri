@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Yorum ekle
-  const { data, error } = await supabase.from('reviews').insert({
+  const { data, error } = await (supabase as any).from('reviews').insert({
     order_id,
     buyer_id: user.id,
     chef_id:  order.chef_id,
@@ -60,4 +60,5 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({ id: data.id })
 }
+
 

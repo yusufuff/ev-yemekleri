@@ -71,7 +71,7 @@ export async function PATCH(req: NextRequest) {
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
     // Audit log
-    await supabase.from('audit_logs').insert({
+    await (supabase as any).from('audit_logs').insert({
       actor_id:   user.id,
       action:     'admin_cancel_order',
       target_id:  order_id,
@@ -91,7 +91,7 @@ export async function PATCH(req: NextRequest) {
       .eq('id', order_id)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-    await supabase.from('audit_logs').insert({
+    await (supabase as any).from('audit_logs').insert({
       actor_id:   user.id,
       action:     'admin_refund_order',
       target_id:  order_id,
@@ -104,4 +104,5 @@ export async function PATCH(req: NextRequest) {
 
   return NextResponse.json({ error: 'Unknown action' }, { status: 400 })
 }
+
 

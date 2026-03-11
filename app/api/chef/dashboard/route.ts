@@ -1,7 +1,7 @@
-/**
+﻿/**
  * GET /api/chef/dashboard
- * Aşçı dashboard'u için tek seferde tüm veriyi döndürür.
- * Server Component ve client-side refresh her ikisi de bu endpoint'i kullanır.
+ * AÅŸÃ§Ä± dashboard'u iÃ§in tek seferde tÃ¼m veriyi dÃ¶ndÃ¼rÃ¼r.
+ * Server Component ve client-side refresh her ikisi de bu endpoint'i kullanÄ±r.
  */
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
@@ -10,7 +10,7 @@ import type { DashboardData } from '@/types/dashboard'
 export async function GET(req: NextRequest) {
   const supabase = await getSupabaseServerClient()
 
-  // 1. Oturum kontrolü
+  // 1. Oturum kontrolÃ¼
   const { data: { user }, error: authErr } = await supabase.auth.getUser()
   if (authErr || !user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
 
   const chefId = chefProfile.id
 
-  // 3. Parallel veri çekme
+  // 3. Parallel veri Ã§ekme
   const [
     statsResult,
     pendingResult,
@@ -47,7 +47,7 @@ export async function GET(req: NextRequest) {
       .eq('chef_id', chefId)
       .single(),
 
-    // Bekleyen siparişler
+    // Bekleyen sipariÅŸler
     supabase
       .from('order_summary')
       .select('*')
@@ -56,7 +56,7 @@ export async function GET(req: NextRequest) {
       .order('created_at', { ascending: true })
       .limit(10),
 
-    // Aktif siparişler (hazırlanıyor, yolda vb.)
+    // Aktif sipariÅŸler (hazÄ±rlanÄ±yor, yolda vb.)
     supabase
       .from('order_summary')
       .select('*')
@@ -64,7 +64,7 @@ export async function GET(req: NextRequest) {
       .in('status', ['confirmed', 'preparing', 'ready', 'on_way'])
       .order('created_at', { ascending: true }),
 
-    // Son tamamlanan siparişler
+    // Son tamamlanan sipariÅŸler
     supabase
       .from('order_summary')
       .select('*')
@@ -73,7 +73,7 @@ export async function GET(req: NextRequest) {
       .order('created_at', { ascending: false })
       .limit(8),
 
-    // Son 7 günlük kazanç (grafik)
+    // Son 7 gÃ¼nlÃ¼k kazanÃ§ (grafik)
     supabase
       .from('chef_earnings_by_day')
       .select('day, order_count, earning')
@@ -89,7 +89,7 @@ export async function GET(req: NextRequest) {
       .order('is_active', { ascending: false })
       .order('name'),
 
-    // Kullanıcı adı
+    // KullanÄ±cÄ± adÄ±
     supabase
       .from('users')
       .select('full_name')
@@ -97,13 +97,13 @@ export async function GET(req: NextRequest) {
       .single(),
   ])
 
-  // 4. Hata kontrolü (kritik olanlar)
+  // 4. Hata kontrolÃ¼ (kritik olanlar)
   if (statsResult.error) {
     console.error('Dashboard stats error:', statsResult.error)
     // Stats view'dan veri gelmezse chef_profile'dan fallback
   }
 
-  // 5. Kazanç günlerini tam 7 güne tamamla (boş günler 0 gösterir)
+  // 5. KazanÃ§ gÃ¼nlerini tam 7 gÃ¼ne tamamla (boÅŸ gÃ¼nler 0 gÃ¶sterir)
   const last7Days = Array.from({ length: 7 }, (_, i) => {
     const d = new Date()
     d.setDate(d.getDate() - (6 - i))
@@ -146,13 +146,14 @@ export async function GET(req: NextRequest) {
     recentOrders:   recentResult.data   ?? [],
     earningsByDay,
     stockItems:     stockResult.data    ?? [],
-    chefName:       userResult.data?.full_name ?? 'Aşçı',
+    chefName:       userResult.data?.full_name ?? 'AÅŸÃ§Ä±',
   }
 
   return NextResponse.json(response, {
     headers: {
-      // 30 saniyelik cache (CDN'de değil, browser'da)
+      // 30 saniyelik cache (CDN'de deÄŸil, browser'da)
       'Cache-Control': 'private, max-age=30',
     },
   })
 }
+

@@ -1,12 +1,12 @@
-/**
+﻿/**
  * POST /api/payments/callback
- * İyzico ödeme sonrası bu URL'e POST eder (form redirect).
+ * Ä°yzico Ã¶deme sonrasÄ± bu URL'e POST eder (form redirect).
  * token parametresiyle gelir.
  *
- * Akış:
- * 1. İyzico'dan token ile sonucu doğrula
- * 2. Siparişi güncelle (payment_status: paid / failed)
- * 3. Başarı/hata sayfasına yönlendir
+ * AkÄ±ÅŸ:
+ * 1. Ä°yzico'dan token ile sonucu doÄŸrula
+ * 2. SipariÅŸi gÃ¼ncelle (payment_status: paid / failed)
+ * 3. BaÅŸarÄ±/hata sayfasÄ±na yÃ¶nlendir
  */
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
@@ -24,10 +24,10 @@ export async function POST(req: NextRequest) {
 
   const supabase = await getSupabaseServerClient()
 
-  // İyzico'da doğrula
+  // Ä°yzico'da doÄŸrula
   const result = await retrieveCheckoutForm(token)
 
-  // Siparişi token'dan bul
+  // SipariÅŸi token'dan bul
   const { data: order } = await supabase
     .from('orders')
     .select('id, order_number, buyer_id, chef_id, total_amount')
@@ -41,14 +41,14 @@ export async function POST(req: NextRequest) {
   }
 
   if (!result.success) {
-    // Ödeme başarısız → siparişi güncelle
+    // Ã–deme baÅŸarÄ±sÄ±z â†’ sipariÅŸi gÃ¼ncelle
     await supabase
       .from('orders')
       .update({
         payment_status: 'pending',
         status:         'cancelled',
         cancelled_at:   new Date().toISOString(),
-        cancellation_reason: `İyzico: ${result.error ?? 'Ödeme reddedildi'}`,
+        cancellation_reason: `Ä°yzico: ${result.error ?? 'Ã–deme reddedildi'}`,
       })
       .eq('id', order.id)
 
@@ -57,19 +57,19 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  // Başarılı ödeme
+  // BaÅŸarÄ±lÄ± Ã¶deme
   await supabase
     .from('orders')
     .update({
       payment_status:    'paid',
-      status:            'pending',          // Aşçı onayı bekliyor
+      status:            'pending',          // AÅŸÃ§Ä± onayÄ± bekliyor
       iyzico_payment_id: result.paymentId,
     })
     .eq('id', order.id)
 
-  // Alıcıya platform kredisi işle (referral bonus vb.) — ileride eklenebilir
+  // AlÄ±cÄ±ya platform kredisi iÅŸle (referral bonus vb.) â€” ileride eklenebilir
 
-  // Başarı sayfasına yönlendir
+  // BaÅŸarÄ± sayfasÄ±na yÃ¶nlendir
   return NextResponse.redirect(
     new URL(`/siparis-basari?order_id=${order.id}`, req.url)
   )
@@ -77,7 +77,7 @@ export async function POST(req: NextRequest) {
 
 /**
  * GET /api/payments/callback
- * Bazı konfigürasyonlarda İyzico GET ile de dönebilir.
+ * BazÄ± konfigÃ¼rasyonlarda Ä°yzico GET ile de dÃ¶nebilir.
  */
 export async function GET(req: NextRequest) {
   const token = req.nextUrl.searchParams.get('token')
@@ -85,7 +85,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(new URL('/odeme/hata', req.url))
   }
 
-  // POST handler'ı simüle et
+  // POST handler'Ä± simÃ¼le et
   const mockForm = new FormData()
   mockForm.set('token', token)
   const mockReq = new NextRequest(req.url, {
@@ -94,3 +94,4 @@ export async function GET(req: NextRequest) {
   })
   return POST(mockReq)
 }
+
