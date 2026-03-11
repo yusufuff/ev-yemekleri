@@ -1,6 +1,6 @@
-import type { Metadata } from 'next'
+﻿import type { Metadata } from 'next'
 
-export const metadata: Metadata = { title: 'Çevrimdışı — Ev Yemekleri' }
+export const metadata: Metadata = { title: 'Ã‡evrimdÄ±ÅŸÄ± â€” Ev Yemekleri' }
 
 export default function OfflinePage() {
   return (
@@ -46,16 +46,17 @@ export default function OfflinePage() {
         `}</style>
       </head>
       <body>
-        <div className="icon">🍽️</div>
-        <h1>Şu an Çevrimdışısın</h1>
-        <p>İnternet bağlantın yok gibi görünüyor. Bağlantın düzeldiğinde kaldığın yerden devam edebilirsin.</p>
-        <button className="btn" onClick="window.location.reload()">
-          🔄 Tekrar Dene
+        <div className="icon">ğŸ½ï¸</div>
+        <h1>Åu an Ã‡evrimdÄ±ÅŸÄ±sÄ±n</h1>
+        <p>Ä°nternet baÄŸlantÄ±n yok gibi gÃ¶rÃ¼nÃ¼yor. BaÄŸlantÄ±n dÃ¼zeldiÄŸinde kaldÄ±ÄŸÄ±n yerden devam edebilirsin.</p>
+        <button className="btn" onClick={() => window.location.reload()}>
+          ğŸ”„ Tekrar Dene
         </button>
         <p className="cached-note">
-          Daha önce görüntülediğin sayfalar çevrimdışında da açılabilir.
+          Daha Ã¶nce gÃ¶rÃ¼ntÃ¼lediÄŸin sayfalar Ã§evrimdÄ±ÅŸÄ±nda da aÃ§Ä±labilir.
         </p>
       </body>
     </html>
   )
 }
+
