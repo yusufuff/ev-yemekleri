@@ -1,11 +1,11 @@
 ﻿// @ts-nocheck
 /**
  * POST /api/menu/upload
- * Supabase Storage'a fotoÄŸraf yÃ¼kler, signed URL dÃ¶ndÃ¼rÃ¼r.
+ * Supabase Storage'a fotoğraf yükler, signed URL döndürür.
  *
  * multipart/form-data:
- *   file      File     â€” YÃ¼klenecek gÃ¶rsel (max 5 MB, JPEG/PNG/WEBP)
- *   item_id?  string   â€” Varsa hangi yemeÄŸe ait (opsiyonel, yeni ekleme iÃ§in boÅŸ)
+ *   file      File     "” Yüklenecek görsel (max 5 MB, JPEG/PNG/WEBP)
+ *   item_id?  string   "” Varsa hangi yemeğe ait (opsiyonel, yeni ekleme için boş)
  */
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseServerClient, getCurrentUser } from '@/lib/supabase/server'
@@ -17,7 +17,7 @@ const MAX_PHOTOS     = 5
 export async function POST(req: NextRequest) {
   const user = await getCurrentUser() as any
   if (!user || user.role !== 'chef') {
-    return NextResponse.json({ error: 'AÅŸÃ§Ä± giriÅŸi gerekli.' }, { status: 401 })
+    return NextResponse.json({ error: 'Aşçı girişi gerekli.' }, { status: 401 })
   }
 
   const supabase = await getSupabaseServerClient()
@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
     .single()
 
   if (!profile) {
-    return NextResponse.json({ error: 'AÅŸÃ§Ä± profili bulunamadÄ±.' }, { status: 404 })
+    return NextResponse.json({ error: 'Aşçı profili bulunamadı.' }, { status: 404 })
   }
 
   // Multipart form okuma
@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
   try {
     formData = await req.formData()
   } catch {
-    return NextResponse.json({ error: 'Form verisi okunamadÄ±.' }, { status: 400 })
+    return NextResponse.json({ error: 'Form verisi okunamadı.' }, { status: 400 })
   }
 
   const file   = formData.get('file') as File | null
@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Dosya zorunludur.' }, { status: 400 })
   }
 
-  // Tip kontrolÃ¼
+  // Tip kontrolü
   if (!ALLOWED_TYPES.includes(file.type)) {
     return NextResponse.json(
       { error: 'Desteklenen formatlar: JPEG, PNG, WEBP.' },
@@ -56,15 +56,15 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  // Boyut kontrolÃ¼
+  // Boyut kontrolü
   if (file.size > MAX_SIZE_BYTES) {
     return NextResponse.json(
-      { error: 'Dosya boyutu 5 MB\'Ä± geÃ§emez.' },
+      { error: 'Dosya boyutu 5 MB\'ı geçemez.' },
       { status: 400 }
     )
   }
 
-  // Mevcut fotoÄŸraf sayÄ±sÄ± kontrolÃ¼ (varolan yemek iÃ§in)
+  // Mevcut fotoğraf sayısı kontrolü (varolan yemek için)
   if (itemId) {
     const { data: item } = await supabase
       .from('menu_items')
@@ -75,33 +75,33 @@ export async function POST(req: NextRequest) {
 
     if (item && (item.photos?.length ?? 0) >= MAX_PHOTOS) {
       return NextResponse.json(
-        { error: `En fazla ${MAX_PHOTOS} fotoÄŸraf yÃ¼kleyebilirsiniz.` },
+        { error: `En fazla ${MAX_PHOTOS} fotoğraf yükleyebilirsiniz.` },
         { status: 400 }
       )
     }
   }
 
-  // Dosya adÄ±: chef-id/timestamp-random.ext
+  // Dosya adı: chef-id/timestamp-random.ext
   const ext       = file.type.split('/')[1] === 'jpeg' ? 'jpg' : file.type.split('/')[1]
   const timestamp = Date.now()
   const rand      = Math.random().toString(36).slice(2, 8)
   const path      = `${profile.id}/${timestamp}-${rand}.${ext}`
 
-  // DosyayÄ± buffer'a dÃ¶nÃ¼ÅŸtÃ¼r
+  // Dosyayı buffer'a dönüştür
   const buffer = await file.arrayBuffer()
 
-  // Supabase Storage'a yÃ¼kle
+  // Supabase Storage'a yükle
   const { error: uploadError } = await supabase.storage
     .from('menu-photos')
     .upload(path, buffer, {
       contentType: file.type,
-      cacheControl: '31536000',    // 1 yÄ±l Ã¶nbellekle
+      cacheControl: '31536000',    // 1 yıl önbellekle
       upsert: false,
     })
 
   if (uploadError) {
     console.error('[photo upload]', uploadError)
-    return NextResponse.json({ error: 'YÃ¼kleme baÅŸarÄ±sÄ±z.' }, { status: 500 })
+    return NextResponse.json({ error: 'Yükleme başarısız.' }, { status: 500 })
   }
 
   // Public URL al
@@ -111,7 +111,7 @@ export async function POST(req: NextRequest) {
 
   const publicUrl = urlData.publicUrl
 
-  // Varolan yemek iÃ§in photos dizisini gÃ¼ncelle
+  // Varolan yemek için photos dizisini güncelle
   if (itemId) {
     const { data: item } = await supabase
       .from('menu_items')
@@ -133,7 +133,7 @@ export async function POST(req: NextRequest) {
   })
 }
 
-// â”€â”€ DELETE /api/menu/upload â€” tek fotoÄŸraf silme â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â”€â”€ DELETE /api/menu/upload "” tek fotoğraf silme â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function DELETE(req: NextRequest) {
   const user = await getCurrentUser() as any
@@ -155,7 +155,7 @@ export async function DELETE(req: NextRequest) {
     await supabase.storage.from('menu-photos').remove([storagePath])
   }
 
-  // Yemek kaydÄ±ndan URL'i Ã§Ä±kar
+  // Yemek kaydından URL'i çıkar
   if (item_id) {
     const { data: item } = await supabase
       .from('menu_items')
@@ -170,7 +170,7 @@ export async function DELETE(req: NextRequest) {
         .eq('user_id', user.id)
         .single()
 
-      // Sahiplik kontrolÃ¼
+      // Sahiplik kontrolü
       if (profile && item.chef_id === profile.id) {
         const filtered = (item.photos ?? []).filter((p: string) => p !== url)
         await supabase

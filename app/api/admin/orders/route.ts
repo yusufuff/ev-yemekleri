@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
   const page   = parseInt(sp.get('page')  ?? '1')
   const limit  = parseInt(sp.get('limit') ?? '25')
   const status = sp.get('status')       // pending | confirmed | ... | delivered
-  const search = sp.get('q')?.trim()    // sipariÅŸ no veya kullanÄ±cÄ± adÄ±
+  const search = sp.get('q')?.trim()    // sipariş no veya kullanıcı adı
   const dateFrom = sp.get('date_from')
   const dateTo   = sp.get('date_to')
   const from   = (page - 1) * limit
@@ -49,7 +49,7 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({ orders: data, total: count, page, limit })
 }
 
-// â”€â”€ PATCH â€” admin sipariÅŸ iptal / iade â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â”€â”€ PATCH "” admin sipariş iptal / iade â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export async function PATCH(req: NextRequest) {
   const user = await getCurrentUser() as any
   if (!user || user.role !== 'admin') {
@@ -80,12 +80,12 @@ export async function PATCH(req: NextRequest) {
       metadata:   { reason },
     }).then(() => {})
 
-    return NextResponse.json({ ok: true, message: 'SipariÅŸ iptal edildi' })
+    return NextResponse.json({ ok: true, message: 'Sipariş iptal edildi' })
   }
 
   if (action === 'refund') {
-    // Ä°yzico iade isteÄŸi burada tetiklenir
-    // Åimdilik sadece payment_status gÃ¼ncelle
+    // İyzico iade isteği burada tetiklenir
+    // Åimdilik sadece payment_status güncelle
     const { error } = await supabase
       .from('orders')
       .update({ payment_status: 'refunded' })
@@ -100,7 +100,7 @@ export async function PATCH(req: NextRequest) {
       metadata:   { reason },
     }).then(() => {})
 
-    return NextResponse.json({ ok: true, message: 'Ä°ade iÅŸlemi baÅŸlatÄ±ldÄ±' })
+    return NextResponse.json({ ok: true, message: 'İade işlemi başlatıldı' })
   }
 
   return NextResponse.json({ error: 'Unknown action' }, { status: 400 })

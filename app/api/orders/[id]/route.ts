@@ -1,8 +1,8 @@
 ﻿// @ts-nocheck
 /**
  * GET /api/orders/[id]
- * Tek bir sipariÅŸin tÃ¼m detaylarÄ±nÄ± dÃ¶ndÃ¼rÃ¼r.
- * RLS: buyer kendi sipariÅŸini, chef kendi restoranÄ±nÄ±n sipariÅŸini gÃ¶rÃ¼r.
+ * Tek bir siparişin tüm detaylarını döndürür.
+ * RLS: buyer kendi siparişini, chef kendi restoranının siparişini görür.
  */
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseServerClient, getCurrentUser } from '@/lib/supabase/server'
@@ -13,7 +13,7 @@ export async function GET(
 ) {
   const user = await getCurrentUser() as any
   if (!user) {
-    return NextResponse.json({ error: 'GiriÅŸ gerekli.' }, { status: 401 })
+    return NextResponse.json({ error: 'Giriş gerekli.' }, { status: 401 })
   }
 
   const supabase = await getSupabaseServerClient()
@@ -64,10 +64,10 @@ export async function GET(
     .single()
 
   if (error || !order) {
-    return NextResponse.json({ error: 'SipariÅŸ bulunamadÄ±.' }, { status: 404 })
+    return NextResponse.json({ error: 'Sipariş bulunamadı.' }, { status: 404 })
   }
 
-  // Tahmini sÃ¼re (dakika) â€” delivery_type'a ve hazÄ±rlÄ±k sÃ¼resine gÃ¶re
+  // Tahmini süre (dakika) "” delivery_type'a ve hazırlık süresine göre
   const estimatedMin = order.delivery_type === 'delivery' ? 30 : 20
   const estimatedMax = order.delivery_type === 'delivery' ? 45 : 30
 

@@ -1,8 +1,8 @@
 ﻿// @ts-nocheck
 /**
- * GET    /api/menu/[id]  â€” Tekil yemek getir
- * PATCH  /api/menu/[id]  â€” Yemek gÃ¼ncelle (kÄ±smi)
- * DELETE /api/menu/[id]  â€” Yemek sil (fotoÄŸraflarla birlikte)
+ * GET    /api/menu/[id]  "” Tekil yemek getir
+ * PATCH  /api/menu/[id]  "” Yemek güncelle (kısmi)
+ * DELETE /api/menu/[id]  "” Yemek sil (fotoğraflarla birlikte)
  */
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
@@ -21,7 +21,7 @@ const UpdateSchema = z.object({
   photos:        z.array(z.string()).optional(),
 })
 
-// â”€â”€ YardÄ±mcÄ±: sahiplik kontrolÃ¼ â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â”€â”€ Yardımcı: sahiplik kontrolü â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 async function getOwnedItem(supabase: any, itemId: string, userId: string) {
   const { data: profile } = await supabase
@@ -57,7 +57,7 @@ export async function GET(
   const item = await getOwnedItem(supabase, params.id, user.id)
 
   if (!item) {
-    return NextResponse.json({ error: 'Yemek bulunamadÄ±.' }, { status: 404 })
+    return NextResponse.json({ error: 'Yemek bulunamadı.' }, { status: 404 })
   }
 
   return NextResponse.json({ item })
@@ -76,13 +76,13 @@ export async function PATCH(
 
   const body = await req.json().catch(() => null)
   if (!body) {
-    return NextResponse.json({ error: 'GeÃ§ersiz JSON.' }, { status: 400 })
+    return NextResponse.json({ error: 'Geçersiz JSON.' }, { status: 400 })
   }
 
   const parsed = UpdateSchema.safeParse(body)
   if (!parsed.success) {
     return NextResponse.json(
-      { error: 'DoÄŸrulama hatasÄ±.', details: parsed.error.flatten() },
+      { error: 'Doğrulama hatası.', details: parsed.error.flatten() },
       { status: 422 }
     )
   }
@@ -91,13 +91,13 @@ export async function PATCH(
   const existing = await getOwnedItem(supabase, params.id, user.id)
 
   if (!existing) {
-    return NextResponse.json({ error: 'Yemek bulunamadÄ±.' }, { status: 404 })
+    return NextResponse.json({ error: 'Yemek bulunamadı.' }, { status: 404 })
   }
 
-  // GÃ¼nlÃ¼k stok deÄŸiÅŸirse remaining_stock da gÃ¼ncelle
+  // Günlük stok değişirse remaining_stock da güncelle
   const updates: any = { ...parsed.data, updated_at: new Date().toISOString() }
   if (parsed.data.daily_stock !== undefined && parsed.data.remaining_stock === undefined) {
-    // Stok farkÄ± koru (kaÃ§ porsiyon satÄ±ldÄ±)
+    // Stok farkı koru (kaç porsiyon satıldı)
     const sold = (existing.daily_stock ?? 0) - (existing.remaining_stock ?? 0)
     updates.remaining_stock = Math.max(0, parsed.data.daily_stock - sold)
   }
@@ -111,7 +111,7 @@ export async function PATCH(
 
   if (error) {
     console.error('[menu PATCH]', error)
-    return NextResponse.json({ error: 'GÃ¼ncelleme baÅŸarÄ±sÄ±z.' }, { status: 500 })
+    return NextResponse.json({ error: 'Güncelleme başarısız.' }, { status: 500 })
   }
 
   return NextResponse.json({ item })
@@ -132,14 +132,14 @@ export async function DELETE(
   const existing = await getOwnedItem(supabase, params.id, user.id)
 
   if (!existing) {
-    return NextResponse.json({ error: 'Yemek bulunamadÄ±.' }, { status: 404 })
+    return NextResponse.json({ error: 'Yemek bulunamadı.' }, { status: 404 })
   }
 
-  // Supabase Storage'dan fotoÄŸraflarÄ± sil
+  // Supabase Storage'dan fotoğrafları sil
   if (existing.photos?.length > 0) {
     const paths = existing.photos.map((url: string) => {
-      // URL'den storage path'i Ã§Ä±kar
-      // Ã–rn: .../menu-photos/chef-id/filename.jpg â†’ chef-id/filename.jpg
+      // URL'den storage path'i çıkar
+      // Örn: .../menu-photos/chef-id/filename.jpg â†’ chef-id/filename.jpg
       const parts = url.split('/menu-photos/')
       return parts[1] ?? ''
     }).filter(Boolean)
@@ -156,7 +156,7 @@ export async function DELETE(
 
   if (error) {
     console.error('[menu DELETE]', error)
-    return NextResponse.json({ error: 'Silme baÅŸarÄ±sÄ±z.' }, { status: 500 })
+    return NextResponse.json({ error: 'Silme başarısız.' }, { status: 500 })
   }
 
   return NextResponse.json({ success: true })

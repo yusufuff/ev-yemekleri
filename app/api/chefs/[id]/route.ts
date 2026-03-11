@@ -1,14 +1,14 @@
 ﻿// @ts-nocheck
 /**
  * GET /api/chefs/[id]
- * Herkese aÃ§Ä±k aÅŸÃ§Ä± profil verisi:
- *  - KullanÄ±cÄ± bilgisi (ad, avatar)
- *  - AÅŸÃ§Ä± profili (bio, konum, Ã§alÄ±ÅŸma saatleri, rozet, puan)
- *  - Aktif menÃ¼ Ã¶ÄŸeleri
- *  - Son yorumlar (sayfalÄ±)
- *  - Toplam sipariÅŸ ve yorum sayÄ±sÄ±
+ * Herkese açık aşçı profil verisi:
+ *  - Kullanıcı bilgisi (ad, avatar)
+ *  - Aşçı profili (bio, konum, çalışma saatleri, rozet, puan)
+ *  - Aktif menü öğeleri
+ *  - Son yorumlar (sayfalı)
+ *  - Toplam sipariş ve yorum sayısı
  *
- * Kesin adres / IBAN / iyzico bilgileri hiÃ§bir zaman dÃ¶ndÃ¼rÃ¼lmez.
+ * Kesin adres / IBAN / iyzico bilgileri hiçbir zaman döndürülmez.
  */
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
@@ -23,7 +23,7 @@ export async function GET(
   const { searchParams } = new URL(req.url)
   const reviewPage = parseInt(searchParams.get('reviews') ?? '1')
 
-  // â”€â”€ AÅŸÃ§Ä± profili + kullanÄ±cÄ± bilgisi â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // â”€â”€ Aşçı profili + kullanıcı bilgisi â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const { data: profile, error: profileError } = await supabase
     .from('chef_profiles')
     .select(`
@@ -48,14 +48,14 @@ export async function GET(
       )
     `)
     .eq('id', params.id)
-    .eq('verification_status', 'approved')   // OnaylÄ± profiller
+    .eq('verification_status', 'approved')   // Onaylı profiller
     .single()
 
   if (profileError || !profile) {
-    return NextResponse.json({ error: 'AÅŸÃ§Ä± bulunamadÄ±.' }, { status: 404 })
+    return NextResponse.json({ error: 'Aşçı bulunamadı.' }, { status: 404 })
   }
 
-  // â”€â”€ Aktif menÃ¼ Ã¶ÄŸeleri â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // â”€â”€ Aktif menü öğeleri â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const { data: menuItems } = await supabase
     .from('menu_items')
     .select('id, name, description, price, daily_stock, remaining_stock, category, allergens, prep_time_min, is_active, photos')
@@ -64,7 +64,7 @@ export async function GET(
     .order('category')
     .order('name')
 
-  // â”€â”€ Yorumlar (sayfalÄ±) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // â”€â”€ Yorumlar (sayfalı) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const from = (reviewPage - 1) * REVIEWS_PER_PAGE
   const to   = from + REVIEWS_PER_PAGE - 1
 
@@ -87,7 +87,7 @@ export async function GET(
     .order('created_at', { ascending: false })
     .range(from, to)
 
-  // â”€â”€ Puan daÄŸÄ±lÄ±mÄ± (1â€“5 yÄ±ldÄ±z) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // â”€â”€ Puan dağılımı (1"“5 yıldız) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const { data: ratingDist } = await supabase
     .from('reviews')
     .select('rating')
@@ -96,7 +96,7 @@ export async function GET(
   const dist: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }
   ratingDist?.forEach(r => { dist[r.rating] = (dist[r.rating] ?? 0) + 1 })
 
-  // â”€â”€ Favori sayÄ±sÄ± â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // â”€â”€ Favori sayısı â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const { count: favoriteCount } = await supabase
     .from('favorites')
     .select('*', { count: 'exact', head: true })

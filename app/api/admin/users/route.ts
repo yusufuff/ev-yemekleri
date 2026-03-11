@@ -11,7 +11,7 @@ async function adminGuard() {
   return user
 }
 
-// â”€â”€ GET â€” kullanÄ±cÄ± listesi â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â”€â”€ GET "” kullanıcı listesi â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export async function GET(req: NextRequest) {
   if (!await adminGuard()) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
@@ -44,7 +44,7 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({ users: data, total: count, page, limit })
 }
 
-// â”€â”€ PATCH â€” ban / unban / role deÄŸiÅŸtir â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â”€â”€ PATCH "” ban / unban / role değiştir â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export async function PATCH(req: NextRequest) {
   if (!await adminGuard()) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
@@ -57,19 +57,19 @@ export async function PATCH(req: NextRequest) {
   if (action === 'ban') {
     const { error } = await (supabase as any).from('users').update({ is_active: false }).eq('id', user_id)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-    return NextResponse.json({ ok: true, message: 'KullanÄ±cÄ± banlandÄ±' })
+    return NextResponse.json({ ok: true, message: 'Kullanıcı banlandı' })
   }
 
   if (action === 'unban') {
     const { error } = await (supabase as any).from('users').update({ is_active: true }).eq('id', user_id)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-    return NextResponse.json({ ok: true, message: 'Ban kaldÄ±rÄ±ldÄ±' })
+    return NextResponse.json({ ok: true, message: 'Ban kaldırıldı' })
   }
 
   if (action === 'set_role' && role) {
     const { error } = await (supabase as any).from('users').update({ role }).eq('id', user_id)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-    return NextResponse.json({ ok: true, message: `Rol gÃ¼ncellendi: ${role}` })
+    return NextResponse.json({ ok: true, message: `Rol güncellendi: ${role}` })
   }
 
   return NextResponse.json({ error: 'Unknown action' }, { status: 400 })

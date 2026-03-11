@@ -1,8 +1,8 @@
 ﻿// @ts-nocheck
 /**
  * GET /api/health
- * CI/CD ve uptime monitoring iÃ§in saÄŸlÄ±k kontrolÃ¼.
- * Supabase baÄŸlantÄ±sÄ±nÄ± ve temel tablolarÄ± test eder.
+ * CI/CD ve uptime monitoring için sağlık kontrolü.
+ * Supabase bağlantısını ve temel tabloları test eder.
  */
 import { NextResponse } from 'next/server'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
@@ -14,7 +14,7 @@ export async function GET() {
   const start = Date.now()
   const checks: Record<string, boolean | string> = {}
 
-  // â”€â”€ Supabase baÄŸlantÄ± testi â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // â”€â”€ Supabase bağlantı testi â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   try {
     const supabase = await getSupabaseServerClient()
     const { error } = await supabase
@@ -28,7 +28,7 @@ export async function GET() {
     checks.supabase_error = e.message
   }
 
-  // â”€â”€ Ortam deÄŸiÅŸkenleri â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // â”€â”€ Ortam değişkenleri â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   checks.env_supabase_url  = !!process.env.NEXT_PUBLIC_SUPABASE_URL
   checks.env_supabase_anon = !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   checks.env_iyzico        = !!process.env.IYZICO_API_KEY

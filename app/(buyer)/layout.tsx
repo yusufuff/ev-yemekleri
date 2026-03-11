@@ -1,7 +1,7 @@
 // @ts-nocheck
 /**
- * (buyer) grup layout â€” sipariÅŸlerim, mesajlar, favorilerim, adreslerim
- * GiriÅŸ zorunlu.
+ * (buyer) grup layout "” siparişlerim, mesajlar, favorilerim, adreslerim
+ * Giriş zorunlu.
  */
 import { redirect } from 'next/navigation'
 import { getCurrentUser } from '@/lib/supabase/server'
@@ -20,11 +20,11 @@ export default async function BuyerLayout({ children }: { children: React.ReactN
       <nav className="bg-white border-b border-[#E8E0D4] sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
           <Link href="/" className="font-serif font-black text-lg text-[#4A2C0E]">
-            EV YEMEKLERÄ°
+            EV YEMEKLERİ
           </Link>
           <div className="flex items-center gap-3 text-sm">
-            <Link href="/kesif" className="text-[#8A7B6B] hover:text-[#4A2C0E] font-medium hidden sm:block">KeÅŸfet</Link>
-            <Link href="/siparislerim" className="text-[#8A7B6B] hover:text-[#4A2C0E] font-medium hidden sm:block">SipariÅŸlerim</Link>
+            <Link href="/kesif" className="text-[#8A7B6B] hover:text-[#4A2C0E] font-medium hidden sm:block">Keşfet</Link>
+            <Link href="/siparislerim" className="text-[#8A7B6B] hover:text-[#4A2C0E] font-medium hidden sm:block">Siparişlerim</Link>
             <div className="w-8 h-8 rounded-full bg-[#E8622A] flex items-center justify-center text-white text-sm font-bold">
               {user.full_name?.charAt(0).toUpperCase() ?? '?'}
             </div>

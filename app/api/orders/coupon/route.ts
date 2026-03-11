@@ -1,7 +1,7 @@
 ﻿// @ts-nocheck
 /**
  * POST /api/orders/coupon
- * Kupon kodunu doÄŸrular, indirim miktarÄ±nÄ± hesaplar.
+ * Kupon kodunu doğrular, indirim miktarını hesaplar.
  * Body: { code: string, subtotal: number }
  */
 import { NextRequest, NextResponse } from 'next/server'
@@ -16,13 +16,13 @@ const schema = z.object({
 export async function POST(req: NextRequest) {
   const user = await getCurrentUser() as any
   if (!user) {
-    return NextResponse.json({ error: 'GiriÅŸ yapmanÄ±z gerekiyor.' }, { status: 401 })
+    return NextResponse.json({ error: 'Giriş yapmanız gerekiyor.' }, { status: 401 })
   }
 
   const body   = await req.json()
   const parsed = schema.safeParse(body)
   if (!parsed.success) {
-    return NextResponse.json({ error: 'GeÃ§ersiz istek.' }, { status: 400 })
+    return NextResponse.json({ error: 'Geçersiz istek.' }, { status: 400 })
   }
 
   const { code, subtotal } = parsed.data
@@ -39,35 +39,35 @@ export async function POST(req: NextRequest) {
   if (error || !coupon) {
     return NextResponse.json({
       valid: false,
-      error: 'Kupon bulunamadÄ± veya geÃ§erli deÄŸil.',
+      error: 'Kupon bulunamadı veya geçerli değil.',
     })
   }
 
-  // SÃ¼re kontrolÃ¼
+  // Süre kontrolü
   if (coupon.expires_at && new Date(coupon.expires_at) < new Date()) {
     return NextResponse.json({
       valid: false,
-      error: 'Bu kuponun sÃ¼resi dolmuÅŸ.',
+      error: 'Bu kuponun süresi dolmuş.',
     })
   }
 
-  // KullanÄ±m limiti
+  // Kullanım limiti
   if (coupon.max_uses !== null && coupon.used_count >= coupon.max_uses) {
     return NextResponse.json({
       valid: false,
-      error: 'Bu kupon tÃ¼kenmiÅŸ.',
+      error: 'Bu kupon tükenmiş.',
     })
   }
 
-  // Minimum sipariÅŸ tutarÄ±
+  // Minimum sipariş tutarı
   if (coupon.min_order_amount && subtotal < coupon.min_order_amount) {
     return NextResponse.json({
       valid: false,
-      error: `Bu kupon iÃ§in minimum sipariÅŸ tutarÄ± â‚º${coupon.min_order_amount}.`,
+      error: `Bu kupon için minimum sipariş tutarı â‚º${coupon.min_order_amount}.`,
     })
   }
 
-  // Ä°lk sipariÅŸ kontrolÃ¼
+  // İlk sipariş kontrolü
   if (coupon.first_order_only) {
     const { count } = await supabase
       .from('orders')
@@ -78,12 +78,12 @@ export async function POST(req: NextRequest) {
     if ((count ?? 0) > 0) {
       return NextResponse.json({
         valid: false,
-        error: 'Bu kupon yalnÄ±zca ilk sipariÅŸte geÃ§erlidir.',
+        error: 'Bu kupon yalnızca ilk siparişte geçerlidir.',
       })
     }
   }
 
-  // KullanÄ±cÄ± baÅŸÄ±na limit
+  // Kullanıcı başına limit
   if (coupon.per_user_limit) {
     const { count } = await supabase
       .from('coupon_usages')
@@ -94,12 +94,12 @@ export async function POST(req: NextRequest) {
     if ((count ?? 0) >= coupon.per_user_limit) {
       return NextResponse.json({
         valid: false,
-        error: 'Bu kuponu zaten kullandÄ±nÄ±z.',
+        error: 'Bu kuponu zaten kullandınız.',
       })
     }
   }
 
-  // Ä°ndirim hesapla
+  // İndirim hesapla
   let discount = 0
   if (coupon.discount_type === 'percentage') {
     discount = subtotal * (coupon.discount_value / 100)

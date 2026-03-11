@@ -1,10 +1,10 @@
 ﻿// @ts-nocheck
 /**
  * POST /api/payments
- * Verilen order_id iÃ§in Ä°yzico Checkout Form baÅŸlatÄ±r.
- * SipariÅŸ daha Ã¶nce /api/orders ile oluÅŸturulmuÅŸ olmalÄ±.
+ * Verilen order_id için İyzico Checkout Form başlatır.
+ * Sipariş daha önce /api/orders ile oluşturulmuş olmalı.
  *
- * GET /api/payments/callback (ayrÄ± dosyada)
+ * GET /api/payments/callback (ayrı dosyada)
  */
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
@@ -18,19 +18,19 @@ const schema = z.object({
 export async function POST(req: NextRequest) {
   const user = await getCurrentUser() as any
   if (!user) {
-    return NextResponse.json({ error: 'GiriÅŸ yapmanÄ±z gerekiyor.' }, { status: 401 })
+    return NextResponse.json({ error: 'Giriş yapmanız gerekiyor.' }, { status: 401 })
   }
 
   const body   = await req.json()
   const parsed = schema.safeParse(body)
   if (!parsed.success) {
-    return NextResponse.json({ error: 'GeÃ§ersiz sipariÅŸ ID.' }, { status: 400 })
+    return NextResponse.json({ error: 'Geçersiz sipariş ID.' }, { status: 400 })
   }
 
   const { order_id } = parsed.data
   const supabase = await getSupabaseServerClient()
 
-  // SipariÅŸi Ã§ek (RLS buyer_id = user.id kontrolÃ¼ yapar)
+  // Siparişi çek (RLS buyer_id = user.id kontrolü yapar)
   const { data: order, error: orderErr } = await supabase
     .from('orders')
     .select(`
@@ -47,10 +47,10 @@ export async function POST(req: NextRequest) {
     .single()
 
   if (orderErr || !order) {
-    return NextResponse.json({ error: 'SipariÅŸ bulunamadÄ±.' }, { status: 404 })
+    return NextResponse.json({ error: 'Sipariş bulunamadı.' }, { status: 404 })
   }
 
-  // KullanÄ±cÄ± bilgilerini Ã§ek
+  // Kullanıcı bilgilerini çek
   const { data: profile } = await supabase
     .from('users')
     .select('full_name, phone')
@@ -60,15 +60,15 @@ export async function POST(req: NextRequest) {
   // Teslimat adresi
   const addr = order.delivery_address as any
   const city    = addr?.city    ?? 'Adana'
-  const address = addr?.full_address ?? 'TÃ¼rkiye'
+  const address = addr?.full_address ?? 'Türkiye'
 
-  // Ä°yzico'yu baÅŸlat
+  // İyzico'yu başlat
   const result = await initCheckoutForm({
     orderId:     order.id,
     orderNumber: order.order_number,
     amount:      Number(order.total_amount),
     buyerId:     user.id,
-    buyerName:   profile?.full_name ?? 'KullanÄ±cÄ±',
+    buyerName:   profile?.full_name ?? 'Kullanıcı',
     buyerPhone:  profile?.phone ?? '+905550000000',
     buyerEmail:  `${user.id.slice(0, 8)}@evyemekleri.com`,
     city,
@@ -77,18 +77,18 @@ export async function POST(req: NextRequest) {
       id:       item.menu_item_id ?? item.id ?? 'item',
       name:     item.item_name,
       price:    Number(item.item_price),
-      category: 'Ev YemeÄŸi',
+      category: 'Ev Yemeği',
       quantity: item.quantity,
     })),
   })
 
   if (!result.success) {
     return NextResponse.json({
-      error: result.error ?? 'Ã–deme baÅŸlatÄ±lamadÄ±. LÃ¼tfen tekrar deneyin.'
+      error: result.error ?? 'Ödeme başlatılamadı. Lütfen tekrar deneyin.'
     }, { status: 502 })
   }
 
-  // Token'Ä± sipariÅŸe kaydet (callback'te doÄŸrulama iÃ§in)
+  // Token'ı siparişe kaydet (callback'te doğrulama için)
   await supabase
     .from('orders')
     .update({ iyzico_token: result.token })

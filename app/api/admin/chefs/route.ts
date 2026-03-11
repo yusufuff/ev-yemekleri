@@ -10,7 +10,7 @@ async function adminGuard() {
   return user
 }
 
-// â”€â”€ GET â€” aÅŸÃ§Ä± listesi (filtreli) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â”€â”€ GET "” aşçı listesi (filtreli) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export async function GET(req: NextRequest) {
   const admin = await adminGuard()
   if (!admin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
@@ -37,8 +37,8 @@ export async function GET(req: NextRequest) {
     .range(from, from + limit - 1)
 
   if (search) {
-    // users tablosundan arama yapamayÄ±z doÄŸrudan join ile; RPC kullanÄ±n Ã¼retimde
-    // Åimdilik kÄ±sÄ±tlÄ± Ã§alÄ±ÅŸÄ±r
+    // users tablosundan arama yapamayız doğrudan join ile; RPC kullanın üretimde
+    // Åimdilik kısıtlı çalışır
   }
 
   const { data, count, error } = await query
@@ -47,7 +47,7 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({ chefs: data, total: count, page, limit })
 }
 
-// â”€â”€ PATCH â€” onayla / reddet / askÄ±ya al â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â”€â”€ PATCH "” onayla / reddet / askıya al â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export async function PATCH(req: NextRequest) {
   const admin = await adminGuard()
   if (!admin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
@@ -77,7 +77,7 @@ export async function PATCH(req: NextRequest) {
   const { error } = await (supabase as any).from('chef_profiles').update(update as any).eq('id', chef_id)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  // AÅŸÃ§Ä±ya bildirim gÃ¶nder
+  // Aşçıya bildirim gönder
   const { data: chef } = await supabase
     .from('chef_profiles')
     .select('user_id')
@@ -86,18 +86,18 @@ export async function PATCH(req: NextRequest) {
 
   if (chef) {
     const messages: Record<string, string> = {
-      approve:   'ğŸ‰ BaÅŸvurunuz onaylandÄ±! ArtÄ±k sipariÅŸ almaya baÅŸlayabilirsiniz.',
-      reject:    `BaÅŸvurunuz incelendi ve onaylanmadÄ±. ${reason ? `Sebep: ${reason}` : ''}`,
-      suspend:   'HesabÄ±nÄ±z geÃ§ici olarak askÄ±ya alÄ±ndÄ±. Destek iÃ§in iletiÅŸime geÃ§in.',
-      unsuspend: 'HesabÄ±nÄ±z yeniden aktifleÅŸtirildi.',
+      approve:   'ğŸ‰ Başvurunuz onaylandı! Artık sipariş almaya başlayabilirsiniz.',
+      reject:    `Başvurunuz incelendi ve onaylanmadı. ${reason ? `Sebep: ${reason}` : ''}`,
+      suspend:   'Hesabınız geçici olarak askıya alındı. Destek için iletişime geçin.',
+      unsuspend: 'Hesabınız yeniden aktifleştirildi.',
     }
 
-    // Notifications tablosuna INSERT iÃ§in service_role gerekiyor (RLS)
+    // Notifications tablosuna INSERT için service_role gerekiyor (RLS)
     const adminSupabase = await getSupabaseAdminClient()
     await (adminSupabase.from('notifications') as any).insert({
       user_id: (chef as any).user_id,
       type:    'chef_' + action,
-      title:   action === 'approve' ? 'BaÅŸvurunuz OnaylandÄ±!' : 'Hesap GÃ¼ncelleme',
+      title:   action === 'approve' ? 'Başvurunuz Onaylandı!' : 'Hesap Güncelleme',
       body:    messages[action],
       data:    { chef_id, reason },
     }).then(() => {})
@@ -113,10 +113,10 @@ export async function PATCH(req: NextRequest) {
   }).then(() => {})
 
   const labels: Record<string, string> = {
-    approve:   'AÅŸÃ§Ä± onaylandÄ±',
-    reject:    'BaÅŸvuru reddedildi',
-    suspend:   'Hesap askÄ±ya alÄ±ndÄ±',
-    unsuspend: 'Hesap aktifleÅŸtirildi',
+    approve:   'Aşçı onaylandı',
+    reject:    'Başvuru reddedildi',
+    suspend:   'Hesap askıya alındı',
+    unsuspend: 'Hesap aktifleştirildi',
   }
 
   return NextResponse.json({ ok: true, message: labels[action] })

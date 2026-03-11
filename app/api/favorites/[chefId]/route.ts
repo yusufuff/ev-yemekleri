@@ -1,8 +1,8 @@
 ﻿// @ts-nocheck
 /**
- * GET    /api/favorites/[chefId]  â€” Favori durumu sorgula
- * POST   /api/favorites/[chefId]  â€” Favori ekle
- * DELETE /api/favorites/[chefId]  â€” Favoriden Ã§Ä±kar
+ * GET    /api/favorites/[chefId]  "” Favori durumu sorgula
+ * POST   /api/favorites/[chefId]  "” Favori ekle
+ * DELETE /api/favorites/[chefId]  "” Favoriden çıkar
  */
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseServerClient, getCurrentUser } from '@/lib/supabase/server'
@@ -30,7 +30,7 @@ export async function POST(
   { params }: { params: { chefId: string } }
 ) {
   const user = await getCurrentUser() as any
-  if (!user) return NextResponse.json({ error: 'GiriÅŸ gerekli.' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Giriş gerekli.' }, { status: 401 })
 
   const supabase = await getSupabaseServerClient()
   await (supabase as any).from('favorites').upsert(
@@ -45,7 +45,7 @@ export async function DELETE(
   { params }: { params: { chefId: string } }
 ) {
   const user = await getCurrentUser() as any
-  if (!user) return NextResponse.json({ error: 'GiriÅŸ gerekli.' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Giriş gerekli.' }, { status: 401 })
 
   const supabase = await getSupabaseServerClient()
   await supabase

@@ -18,9 +18,9 @@ interface Payout {
 
 const STATUS_META: Record<string, { label: string; color: string }> = {
   pending:    { label: 'Bekliyor',    color: 'bg-amber-500/10 text-amber-400' },
-  processing: { label: 'Ä°ÅŸleniyor',  color: 'bg-blue-500/10 text-blue-400' },
-  paid:       { label: 'Ã–dendi',     color: 'bg-emerald-500/10 text-emerald-400' },
-  failed:     { label: 'BaÅŸarÄ±sÄ±z',  color: 'bg-red-500/10 text-red-400' },
+  processing: { label: 'İşleniyor',  color: 'bg-blue-500/10 text-blue-400' },
+  paid:       { label: 'Ödendi',     color: 'bg-emerald-500/10 text-emerald-400' },
+  failed:     { label: 'Başarısız',  color: 'bg-red-500/10 text-red-400' },
 }
 
 export default function AdminOdemeler() {
@@ -51,7 +51,7 @@ export default function AdminOdemeler() {
     const d = await res.json()
     if (res.ok) {
       setPayouts(prev => prev.filter(p => p.id !== id))
-      showToast(d.message ?? 'Ä°ÅŸlem tamamlandÄ±')
+      showToast(d.message ?? 'İşlem tamamlandı')
     } else {
       showToast('Hata: ' + (d.error ?? 'Bilinmeyen'))
     }
@@ -66,9 +66,9 @@ export default function AdminOdemeler() {
     <div className="p-8 max-w-5xl">
       {/* Header */}
       <div className="mb-7">
-        <div className="text-[11px] tracking-[3px] uppercase text-[#E8622A] mb-2 font-semibold">Ã–demeler</div>
+        <div className="text-[11px] tracking-[3px] uppercase text-[#E8622A] mb-2 font-semibold">Ödemeler</div>
         <div className="flex items-end justify-between">
-          <h1 className="font-serif text-2xl font-bold text-white/90">Ã–deme Talepleri</h1>
+          <h1 className="font-serif text-2xl font-bold text-white/90">Ödeme Talepleri</h1>
           {filter === 'pending' && pendingAmount > 0 && (
             <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl px-4 py-2 text-right">
               <div className="text-[10px] uppercase tracking-widest text-amber-400/60">Bekleyen Toplam</div>
@@ -80,7 +80,7 @@ export default function AdminOdemeler() {
 
       {/* Tab bar */}
       <div className="flex gap-1.5 mb-6 bg-[#1A1612] border border-white/[0.07] rounded-xl p-1.5 w-fit">
-        {[['pending','Bekleyen'],['processing','Ä°ÅŸleniyor'],['paid','Ã–dendi'],['failed','BaÅŸarÄ±sÄ±z']].map(([k,l]) => (
+        {[['pending','Bekleyen'],['processing','İşleniyor'],['paid','Ödendi'],['failed','Başarısız']].map(([k,l]) => (
           <button key={k} onClick={() => setFilter(k)}
             className={`px-4 py-2 rounded-lg text-[12px] font-bold transition-all ${
               filter === k ? 'bg-white/10 text-white/80' : 'text-white/30 hover:text-white/60'
@@ -91,16 +91,16 @@ export default function AdminOdemeler() {
       {/* Liste */}
       <div className="bg-[#1A1612] border border-white/[0.07] rounded-xl overflow-hidden">
         {loading ? (
-          <div className="py-16 text-center text-white/25 text-sm">YÃ¼kleniyorâ€¦</div>
+          <div className="py-16 text-center text-white/25 text-sm">Yükleniyor"¦</div>
         ) : payouts.length === 0 ? (
           <div className="py-16 text-center text-white/25 text-sm">
-            {filter === 'pending' ? 'Bekleyen Ã¶deme talebi yok' : 'KayÄ±t bulunamadÄ±'}
+            {filter === 'pending' ? 'Bekleyen ödeme talebi yok' : 'Kayıt bulunamadı'}
           </div>
         ) : (
           <table className="w-full">
             <thead>
               <tr className="border-b border-white/[0.07]">
-                {['AÅŸÃ§Ä±', 'Tutar', 'IBAN', 'Talep Tarihi', 'Durum', 'Ä°ÅŸlem'].map(h => (
+                {['Aşçı', 'Tutar', 'IBAN', 'Talep Tarihi', 'Durum', 'İşlem'].map(h => (
                   <th key={h} className="text-[10px] font-bold uppercase tracking-[1.5px] text-white/25 px-4 py-3 text-left">{h}</th>
                 ))}
               </tr>
@@ -118,7 +118,7 @@ export default function AdminOdemeler() {
                       â‚º{p.amount.toLocaleString('tr-TR')}
                     </td>
                     <td className="py-3.5 px-4 font-mono text-[11px] text-white/35">
-                      {p.iban_last4 ? `****${p.iban_last4}` : 'â€”'}
+                      {p.iban_last4 ? `****${p.iban_last4}` : '"”'}
                     </td>
                     <td className="py-3.5 px-4 text-white/30 text-[12px]">
                       {new Date(p.created_at).toLocaleDateString('tr-TR')}

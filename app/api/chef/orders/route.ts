@@ -1,7 +1,7 @@
 ﻿// @ts-nocheck
 /**
  * PATCH /api/chef/orders
- * SipariÅŸ durumunu gÃ¼ncelle (onayla, hazÄ±rla, yola Ã§Ä±k, teslim et, iptal et)
+ * Sipariş durumunu güncelle (onayla, hazırla, yola çık, teslim et, iptal et)
  *
  * Body: { orderId: string, action: OrderAction }
  */
@@ -11,7 +11,7 @@ import { getSupabaseServerClient, getSupabaseAdminClient } from '@/lib/supabase/
 import { sendPushNotification } from '@/lib/firebase/send-notification'
 import type { OrderStatus } from '@/types/database'
 
-// Ä°zin verilen durum geÃ§iÅŸleri
+// İzin verilen durum geçişleri
 const TRANSITIONS: Record<string, OrderStatus> = {
   confirm:  'confirmed',
   prepare:  'preparing',
@@ -42,7 +42,7 @@ export async function PATCH(req: NextRequest) {
   const { orderId, action, cancellationNote } = parsed.data
   const newStatus = TRANSITIONS[action]
 
-  // Chef ID doÄŸrula
+  // Chef ID doğrula
   const { data: chefProfile } = await supabase
     .from('chef_profiles')
     .select('id')
@@ -51,7 +51,7 @@ export async function PATCH(req: NextRequest) {
 
   if (!chefProfile) return NextResponse.json({ error: 'Chef not found' }, { status: 404 })
 
-  // SipariÅŸin bu aÅŸÃ§Ä±ya ait olduÄŸunu doÄŸrula
+  // Siparişin bu aşçıya ait olduğunu doğrula
   const { data: order } = await supabase
     .from('orders')
     .select('id, status, chef_id, buyer_id, order_number')
@@ -61,7 +61,7 @@ export async function PATCH(req: NextRequest) {
 
   if (!order) return NextResponse.json({ error: 'Order not found' }, { status: 404 })
 
-  // Timestamp alanÄ±nÄ± belirle
+  // Timestamp alanını belirle
   const timestampField: Record<string, string> = {
     confirmed:  'confirmed_at',
     preparing:  'preparing_at',
@@ -87,10 +87,10 @@ export async function PATCH(req: NextRequest) {
 
   if (updateErr) {
     console.error('Order update error:', updateErr)
-    return NextResponse.json({ error: 'GÃ¼ncelleme baÅŸarÄ±sÄ±z' }, { status: 500 })
+    return NextResponse.json({ error: 'Güncelleme başarısız' }, { status: 500 })
   }
 
-  // Stok dÃ¼ÅŸÃ¼r (sipariÅŸ onaylandÄ±ÄŸÄ±nda)
+  // Stok düşür (sipariş onaylandığında)
   if (action === 'confirm') {
     const { data: items } = await supabase
       .from('order_items')
@@ -108,14 +108,14 @@ export async function PATCH(req: NextRequest) {
     }
   }
 
-  // AlÄ±cÄ±ya push bildirimi gÃ¶nder (notifications tablosuna da yazar)
+  // Alıcıya push bildirimi gönder (notifications tablosuna da yazar)
   const statusMessages: Record<string, { title: string; body: string }> = {
-    confirmed:  { title: 'SipariÅŸin OnaylandÄ±! âœ…',     body: 'AÅŸÃ§Ä± sipariÅŸini onayladÄ±, hazÄ±rlamaya baÅŸlÄ±yor.' },
-    preparing:  { title: 'SipariÅŸin HazÄ±rlanÄ±yor ğŸ³',   body: 'AÅŸÃ§Ä± sipariÅŸini hazÄ±rlÄ±yor. Biraz bekle!' },
-    ready:      { title: 'SipariÅŸin HazÄ±r! ğŸ“¦',         body: 'Gel-al sipariÅŸin hazÄ±r, teslim almaya gelebilirsin.' },
-    on_way:     { title: 'SipariÅŸin Yolda ğŸ›µ',          body: 'Kurye kapÄ±na doÄŸru yola Ã§Ä±ktÄ±.' },
-    delivered:  { title: 'SipariÅŸin Teslim Edildi ğŸ‰',  body: 'Afiyet olsun! Deneyimini deÄŸerlendirmeyi unutma.' },
-    cancelled:  { title: 'SipariÅŸ Ä°ptal Edildi âŒ',     body: `SipariÅŸin iptal edildi.${cancellationNote ? ` Sebep: ${cancellationNote}` : ''}` },
+    confirmed:  { title: 'Siparişin Onaylandı! âœ…',     body: 'Aşçı siparişini onayladı, hazırlamaya başlıyor.' },
+    preparing:  { title: 'Siparişin Hazırlanıyor ğŸ³',   body: 'Aşçı siparişini hazırlıyor. Biraz bekle!' },
+    ready:      { title: 'Siparişin Hazır! ğŸ“¦',         body: 'Gel-al siparişin hazır, teslim almaya gelebilirsin.' },
+    on_way:     { title: 'Siparişin Yolda ğŸ›µ',          body: 'Kurye kapına doğru yola çıktı.' },
+    delivered:  { title: 'Siparişin Teslim Edildi ğŸ‰',  body: 'Afiyet olsun! Deneyimini değerlendirmeyi unutma.' },
+    cancelled:  { title: 'Sipariş İptal Edildi âŒ',     body: `Siparişin iptal edildi.${cancellationNote ? ` Sebep: ${cancellationNote}` : ''}` },
   }
 
   const msg = statusMessages[newStatus]
@@ -126,7 +126,7 @@ export async function PATCH(req: NextRequest) {
       body:   msg.body,
       type:   `order_${newStatus}`,
       data:   { order_id: orderId, order_number: order.order_number ?? '' },
-    }).catch(() => {})  // Bildirim hatasÄ± sipariÅŸi bloklamasÄ±n
+    }).catch(() => {})  // Bildirim hatası siparişi bloklamasın
   }
 
   return NextResponse.json({ success: true, newStatus })
@@ -134,7 +134,7 @@ export async function PATCH(req: NextRequest) {
 
 /**
  * PATCH /api/chef/orders?toggle=open
- * AÅŸÃ§Ä± aÃ§Ä±k/kapalÄ± durumunu deÄŸiÅŸtir
+ * Aşçı açık/kapalı durumunu değiştir
  */
 export async function PUT(req: NextRequest) {
   const supabase = await getSupabaseServerClient()
@@ -149,7 +149,7 @@ export async function PUT(req: NextRequest) {
     .update({ is_open: Boolean(is_open) })
     .eq('user_id', user.id)
 
-  if (error) return NextResponse.json({ error: 'GÃ¼ncelleme baÅŸarÄ±sÄ±z' }, { status: 500 })
+  if (error) return NextResponse.json({ error: 'Güncelleme başarısız' }, { status: 500 })
 
   return NextResponse.json({ success: true, is_open })
 }

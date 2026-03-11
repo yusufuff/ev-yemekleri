@@ -1,7 +1,7 @@
 ﻿// @ts-nocheck
 /**
- * GET  /api/menu          â€” AÅŸÃ§Ä±nÄ±n menÃ¼ Ã¶ÄŸelerini listeler
- * POST /api/menu          â€” Yeni menÃ¼ Ã¶ÄŸesi oluÅŸturur
+ * GET  /api/menu          "” Aşçının menü öğelerini listeler
+ * POST /api/menu          "” Yeni menü öğesi oluşturur
  */
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
@@ -26,7 +26,7 @@ const MenuItemSchema = z.object({
 export async function GET(req: NextRequest) {
   const user = await getCurrentUser() as any
   if (!user || user.role !== 'chef') {
-    return NextResponse.json({ error: 'AÅŸÃ§Ä± giriÅŸi gerekli.' }, { status: 401 })
+    return NextResponse.json({ error: 'Aşçı girişi gerekli.' }, { status: 401 })
   }
 
   const supabase = await getSupabaseServerClient()
@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
     .single()
 
   if (!profile) {
-    return NextResponse.json({ error: 'AÅŸÃ§Ä± profili bulunamadÄ±.' }, { status: 404 })
+    return NextResponse.json({ error: 'Aşçı profili bulunamadı.' }, { status: 404 })
   }
 
   const { searchParams } = new URL(req.url)
@@ -59,7 +59,7 @@ export async function GET(req: NextRequest) {
   const { data: items, error } = await query
 
   if (error) {
-    return NextResponse.json({ error: 'MenÃ¼ yÃ¼klenemedi.' }, { status: 500 })
+    return NextResponse.json({ error: 'Menü yüklenemedi.' }, { status: 500 })
   }
 
   return NextResponse.json({ items: items ?? [], total: items?.length ?? 0 })
@@ -70,18 +70,18 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const user = await getCurrentUser() as any
   if (!user || user.role !== 'chef') {
-    return NextResponse.json({ error: 'AÅŸÃ§Ä± giriÅŸi gerekli.' }, { status: 401 })
+    return NextResponse.json({ error: 'Aşçı girişi gerekli.' }, { status: 401 })
   }
 
   const body = await req.json().catch(() => null)
   if (!body) {
-    return NextResponse.json({ error: 'GeÃ§ersiz JSON.' }, { status: 400 })
+    return NextResponse.json({ error: 'Geçersiz JSON.' }, { status: 400 })
   }
 
   const parsed = MenuItemSchema.safeParse(body)
   if (!parsed.success) {
     return NextResponse.json(
-      { error: 'DoÄŸrulama hatasÄ±.', details: parsed.error.flatten() },
+      { error: 'Doğrulama hatası.', details: parsed.error.flatten() },
       { status: 422 }
     )
   }
@@ -95,7 +95,7 @@ export async function POST(req: NextRequest) {
     .single()
 
   if (!profile) {
-    return NextResponse.json({ error: 'AÅŸÃ§Ä± profili bulunamadÄ±.' }, { status: 404 })
+    return NextResponse.json({ error: 'Aşçı profili bulunamadı.' }, { status: 404 })
   }
 
   const { data: item, error } = await supabase
@@ -107,7 +107,7 @@ export async function POST(req: NextRequest) {
       category:        parsed.data.category,
       price:           parsed.data.price,
       daily_stock:     parsed.data.daily_stock,
-      remaining_stock: parsed.data.daily_stock,  // baÅŸlangÄ±Ã§ta eÅŸit
+      remaining_stock: parsed.data.daily_stock,  // başlangıçta eşit
       prep_time_min:   parsed.data.prep_time_min,
       allergens:       parsed.data.allergens,
       is_active:       parsed.data.is_active,

@@ -1,23 +1,23 @@
 ﻿// @ts-nocheck
 /**
  * GET /api/conversations
- * GiriÅŸ yapmÄ±ÅŸ kullanÄ±cÄ±nÄ±n konuÅŸma listesini dÃ¶ndÃ¼rÃ¼r.
- * Her konuÅŸma bir order_id'ye baÄŸlÄ±dÄ±r; alÄ±cÄ± â†” aÅŸÃ§Ä± arasÄ±nda.
- * Son mesaj + okunmamÄ±ÅŸ sayÄ±sÄ± hesaplanÄ±r.
+ * Giriş yapmış kullanıcının konuşma listesini döndürür.
+ * Her konuşma bir order_id'ye bağlıdır; alıcı â†” aşçı arasında.
+ * Son mesaj + okunmamış sayısı hesaplanır.
  */
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseServerClient, getCurrentUser } from '@/lib/supabase/server'
 
 export async function GET(_req: NextRequest) {
   const user = await getCurrentUser() as any
-  if (!user) return NextResponse.json({ error: 'GiriÅŸ gerekli.' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Giriş gerekli.' }, { status: 401 })
 
   const supabase = await getSupabaseServerClient()
 
   /**
-   * MesajlaÅŸÄ±lan sipariÅŸ listesi:
-   * KullanÄ±cÄ± ya buyer_id ya chef â†’ chef_profiles.user_id olarak yer alÄ±yor.
-   * Her order iÃ§in son mesaj ve okunmamÄ±ÅŸ sayÄ±.
+   * Mesajlaşılan sipariş listesi:
+   * Kullanıcı ya buyer_id ya chef â†’ chef_profiles.user_id olarak yer alıyor.
+   * Her order için son mesaj ve okunmamış sayı.
    */
   const { data: orders } = await supabase
     .from('orders')
@@ -42,7 +42,7 @@ export async function GET(_req: NextRequest) {
 
   if (!orders) return NextResponse.json([])
 
-  // Her sipariÅŸ iÃ§in mesaj Ã¶zeti
+  // Her sipariş için mesaj özeti
   const conversations = await Promise.all(
     orders.map(async (order: any) => {
       // Son mesaj
@@ -54,7 +54,7 @@ export async function GET(_req: NextRequest) {
         .limit(1)
         .maybeSingle()
 
-      // OkunmamÄ±ÅŸ sayÄ± (karÅŸÄ± taraftan gelen)
+      // Okunmamış sayı (karşı taraftan gelen)
       const { count: unread } = await supabase
         .from('messages')
         .select('*', { count: 'exact', head: true })
@@ -62,11 +62,11 @@ export async function GET(_req: NextRequest) {
         .eq('is_read', false)
         .neq('sender_id', user.id)
 
-      // DiÄŸer tarafÄ± belirle
+      // Diğer tarafı belirle
       const isChef   = order.chef_profiles?.users?.id === user.id
       const otherUser = isChef
-        ? order.users                           // AlÄ±cÄ±
-        : order.chef_profiles?.users            // AÅŸÃ§Ä±
+        ? order.users                           // Alıcı
+        : order.chef_profiles?.users            // Aşçı
 
       return {
         order_id:     order.id,
@@ -81,7 +81,7 @@ export async function GET(_req: NextRequest) {
     })
   )
 
-  // Mesaj olmayan konuÅŸmalarÄ± filtrele (isteÄŸe baÄŸlÄ±)
+  // Mesaj olmayan konuşmaları filtrele (isteğe bağlı)
   // const withMessages = conversations.filter(c => c.last_message)
 
   return NextResponse.json(conversations)
