@@ -94,7 +94,7 @@ export async function PATCH(req: NextRequest) {
     // Notifications tablosuna INSERT iÃ§in service_role gerekiyor (RLS)
     const adminSupabase = await getSupabaseAdminClient()
     await (adminSupabase.from('notifications') as any).insert({
-      user_id: chef.user_id,
+      user_id: (chef as any).user_id,
       type:    'chef_' + action,
       title:   action === 'approve' ? 'BaÅŸvurunuz OnaylandÄ±!' : 'Hesap GÃ¼ncelleme',
       body:    messages[action],
@@ -120,6 +120,7 @@ export async function PATCH(req: NextRequest) {
 
   return NextResponse.json({ ok: true, message: labels[action] })
 }
+
 
 
 
