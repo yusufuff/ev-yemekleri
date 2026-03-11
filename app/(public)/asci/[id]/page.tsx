@@ -270,7 +270,7 @@ export default function AsciProfilPage({ params }: { params: { id: string } }) {
   const allPhotos = menu_items.flatMap(m => m.photos ?? []).slice(0, 8)
 
   // Kategoriler
-  const cats = [...new Set(menu_items.map(m => m.category))]
+  const cats = Array.from(new Set(menu_items.map(m => m.category)))
   const filteredMenu = activeCategory === 'all'
     ? menu_items
     : menu_items.filter(m => m.category === activeCategory)
@@ -1040,6 +1040,7 @@ export default function AsciProfilPage({ params }: { params: { id: string } }) {
     </div>
   )
 }
+
 
 
 
