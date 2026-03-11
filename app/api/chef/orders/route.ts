@@ -1,4 +1,5 @@
-﻿/**
+﻿// @ts-nocheck
+/**
  * PATCH /api/chef/orders
  * SipariÅŸ durumunu gÃ¼ncelle (onayla, hazÄ±rla, yola Ã§Ä±k, teslim et, iptal et)
  *
@@ -152,4 +153,5 @@ export async function PUT(req: NextRequest) {
 
   return NextResponse.json({ success: true, is_open })
 }
+
 

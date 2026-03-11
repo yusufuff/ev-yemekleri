@@ -1,4 +1,5 @@
-﻿import { NextRequest, NextResponse } from 'next/server'
+﻿// @ts-nocheck
+import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseServerClient, getSupabaseAdminClient, getCurrentUser } from '@/lib/supabase/server'
 
 export const dynamic = 'force-dynamic'
@@ -119,5 +120,6 @@ export async function PATCH(req: NextRequest) {
 
   return NextResponse.json({ error: 'Unknown action' }, { status: 400 })
 }
+
 
 

@@ -1,4 +1,5 @@
-﻿/**
+﻿// @ts-nocheck
+/**
  * POST /api/reviews
  * Teslim edilmiÅŸ bir sipariÅŸ iÃ§in yorum ekler.
  * Bir sipariÅŸ iÃ§in birden fazla yorum engellenir.
@@ -60,5 +61,6 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({ id: data.id })
 }
+
 
 

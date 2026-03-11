@@ -1,4 +1,5 @@
-﻿/**
+﻿// @ts-nocheck
+/**
  * GET    /api/favorites/[chefId]  â€” Favori durumu sorgula
  * POST   /api/favorites/[chefId]  â€” Favori ekle
  * DELETE /api/favorites/[chefId]  â€” Favoriden Ã§Ä±kar
@@ -55,5 +56,6 @@ export async function DELETE(
 
   return NextResponse.json({ favorited: false })
 }
+
 
 

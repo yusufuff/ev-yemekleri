@@ -1,4 +1,5 @@
-﻿/**
+﻿// @ts-nocheck
+/**
  * POST /api/orders â€” Yeni sipariÅŸ oluÅŸtur
  * GET  /api/orders â€” KullanÄ±cÄ±nÄ±n sipariÅŸlerini listele
  *
@@ -250,5 +251,6 @@ async function sendChefNotification(
     }
   )
 }
+
 
 

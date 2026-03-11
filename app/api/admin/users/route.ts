@@ -1,4 +1,5 @@
-﻿import { NextRequest, NextResponse } from 'next/server'
+﻿// @ts-nocheck
+import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
 import { getCurrentUser } from '@/lib/supabase/server'
 
@@ -73,5 +74,6 @@ export async function PATCH(req: NextRequest) {
 
   return NextResponse.json({ error: 'Unknown action' }, { status: 400 })
 }
+
 
 

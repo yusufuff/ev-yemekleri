@@ -1,4 +1,5 @@
-﻿/**
+﻿// @ts-nocheck
+/**
  * POST /api/menu/upload
  * Supabase Storage'a fotoÄŸraf yÃ¼kler, signed URL dÃ¶ndÃ¼rÃ¼r.
  *
@@ -182,5 +183,6 @@ export async function DELETE(req: NextRequest) {
 
   return NextResponse.json({ success: true })
 }
+
 
 

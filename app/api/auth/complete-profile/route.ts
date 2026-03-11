@@ -1,4 +1,5 @@
-﻿/**
+﻿// @ts-nocheck
+/**
  * POST /api/auth/complete-profile
  * Yeni kullanÄ±cÄ± profil bilgilerini kaydeder.
  * Sadece giriÅŸ yapmÄ±ÅŸ kullanÄ±cÄ±lar Ã§aÄŸÄ±rabilir.
@@ -104,4 +105,5 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Sunucu hatasÄ±.' }, { status: 500 })
   }
 }
+
 

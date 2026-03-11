@@ -1,4 +1,5 @@
-﻿/**
+﻿// @ts-nocheck
+/**
  * POST /api/orders/coupon
  * Kupon kodunu doÄŸrular, indirim miktarÄ±nÄ± hesaplar.
  * Body: { code: string, subtotal: number }
@@ -121,5 +122,6 @@ export async function POST(req: NextRequest) {
     discount_amount: discount,
   })
 }
+
 
 

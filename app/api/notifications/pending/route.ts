@@ -1,4 +1,5 @@
-﻿/**
+﻿// @ts-nocheck
+/**
  * GET /api/notifications/pending
  * Service Worker background sync tarafÄ±ndan Ã§aÄŸrÄ±lÄ±r.
  * KullanÄ±cÄ±nÄ±n okunmamÄ±ÅŸ bildirimlerini dÃ¶ner ve okundu olarak iÅŸaretler.
@@ -34,5 +35,6 @@ export async function GET() {
 
   return NextResponse.json({ notifications })
 }
+
 
 

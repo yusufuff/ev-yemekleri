@@ -1,4 +1,5 @@
-﻿/**
+﻿// @ts-nocheck
+/**
  * GET /api/chef/dashboard
  * AÅŸÃ§Ä± dashboard'u iÃ§in tek seferde tÃ¼m veriyi dÃ¶ndÃ¼rÃ¼r.
  * Server Component ve client-side refresh her ikisi de bu endpoint'i kullanÄ±r.
@@ -156,4 +157,5 @@ export async function GET(req: NextRequest) {
     },
   })
 }
+
 

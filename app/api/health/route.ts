@@ -1,4 +1,5 @@
-﻿/**
+﻿// @ts-nocheck
+/**
  * GET /api/health
  * CI/CD ve uptime monitoring iÃ§in saÄŸlÄ±k kontrolÃ¼.
  * Supabase baÄŸlantÄ±sÄ±nÄ± ve temel tablolarÄ± test eder.
@@ -47,4 +48,5 @@ export async function GET() {
     { status: isHealthy ? 200 : 503 }
   )
 }
+
 

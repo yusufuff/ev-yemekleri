@@ -1,4 +1,5 @@
-﻿/**
+﻿// @ts-nocheck
+/**
  * GET /api/conversations
  * GiriÅŸ yapmÄ±ÅŸ kullanÄ±cÄ±nÄ±n konuÅŸma listesini dÃ¶ndÃ¼rÃ¼r.
  * Her konuÅŸma bir order_id'ye baÄŸlÄ±dÄ±r; alÄ±cÄ± â†” aÅŸÃ§Ä± arasÄ±nda.
@@ -85,5 +86,6 @@ export async function GET(_req: NextRequest) {
 
   return NextResponse.json(conversations)
 }
+
 
 

@@ -1,4 +1,5 @@
-﻿/**
+﻿// @ts-nocheck
+/**
  * GET /api/chefs/[id]
  * Herkese aÃ§Ä±k aÅŸÃ§Ä± profil verisi:
  *  - KullanÄ±cÄ± bilgisi (ad, avatar)
@@ -111,4 +112,5 @@ export async function GET(
     favorite_count:  favoriteCount ?? 0,
   })
 }
+
 

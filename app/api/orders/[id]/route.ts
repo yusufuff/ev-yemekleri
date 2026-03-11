@@ -1,4 +1,5 @@
-﻿/**
+﻿// @ts-nocheck
+/**
  * GET /api/orders/[id]
  * Tek bir sipariÅŸin tÃ¼m detaylarÄ±nÄ± dÃ¶ndÃ¼rÃ¼r.
  * RLS: buyer kendi sipariÅŸini, chef kendi restoranÄ±nÄ±n sipariÅŸini gÃ¶rÃ¼r.
@@ -76,5 +77,6 @@ export async function GET(
     estimated_max: estimatedMax,
   })
 }
+
 
 

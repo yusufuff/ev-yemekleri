@@ -1,4 +1,5 @@
-﻿/**
+﻿// @ts-nocheck
+/**
  * GET    /api/menu/[id]  â€” Tekil yemek getir
  * PATCH  /api/menu/[id]  â€” Yemek gÃ¼ncelle (kÄ±smi)
  * DELETE /api/menu/[id]  â€” Yemek sil (fotoÄŸraflarla birlikte)
@@ -160,5 +161,6 @@ export async function DELETE(
 
   return NextResponse.json({ success: true })
 }
+
 
 

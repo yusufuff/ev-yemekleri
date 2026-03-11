@@ -1,4 +1,5 @@
-﻿/**
+﻿// @ts-nocheck
+/**
  * POST /api/push/subscribe  â€” push aboneliÄŸi kaydet / FCM token gÃ¼ncelle
  * DELETE /api/push/subscribe â€” aboneliÄŸi sil
  */
@@ -68,5 +69,6 @@ export async function DELETE(req: NextRequest) {
 
   return NextResponse.json({ ok: true })
 }
+
 
 

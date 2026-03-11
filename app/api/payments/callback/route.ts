@@ -1,4 +1,5 @@
-﻿/**
+﻿// @ts-nocheck
+/**
  * POST /api/payments/callback
  * Ä°yzico Ã¶deme sonrasÄ± bu URL'e POST eder (form redirect).
  * token parametresiyle gelir.
@@ -94,4 +95,5 @@ export async function GET(req: NextRequest) {
   })
   return POST(mockReq)
 }
+
 

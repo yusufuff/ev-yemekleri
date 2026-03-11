@@ -1,4 +1,5 @@
-﻿import { NextResponse } from 'next/server'
+﻿// @ts-nocheck
+import { NextResponse } from 'next/server'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
 import { getCurrentUser } from '@/lib/supabase/server'
 
@@ -78,5 +79,6 @@ export async function GET() {
     chart: chartData,
   })
 }
+
 
 

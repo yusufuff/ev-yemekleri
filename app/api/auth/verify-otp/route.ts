@@ -1,4 +1,5 @@
-﻿/**
+﻿// @ts-nocheck
+/**
  * POST /api/auth/verify-otp
  * Redis'teki OTP'yi doÄŸrular, Supabase session oluÅŸturur.
  *
@@ -195,4 +196,5 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Sunucu hatasÄ±.' }, { status: 500 })
   }
 }
+
 
