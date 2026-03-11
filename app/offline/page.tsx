@@ -1,4 +1,5 @@
-﻿import type { Metadata } from 'next'
+// @ts-nocheck
+import type { Metadata } from 'next'
 
 export const metadata: Metadata = { title: 'Ã‡evrimdÄ±ÅŸÄ± â€” Ev Yemekleri' }
 

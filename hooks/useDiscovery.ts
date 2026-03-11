@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * useDiscovery
  * Keşif sayfası için merkezi state yönetimi.

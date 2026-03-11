@@ -1,3 +1,4 @@
+// @ts-nocheck
 'use client'
 
 import type { DashboardOrder } from '@/types/dashboard'

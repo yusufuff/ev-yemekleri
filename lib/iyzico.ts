@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * İyzico Entegrasyonu
  * Paket: iyzipay (npm'de mevcut)

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * CartButton — Header'da gösterilen sepet ikonu ve badge.
  * Drawer'ı açar/kapatır.

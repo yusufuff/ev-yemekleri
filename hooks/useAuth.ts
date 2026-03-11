@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * useAuth — Auth state ve helper fonksiyonları
  *

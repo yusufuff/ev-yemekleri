@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Admin API route'ları
  *

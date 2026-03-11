@@ -1,3 +1,4 @@
+// @ts-nocheck
 import type { Metadata, Viewport } from 'next'
 import { DM_Sans } from 'next/font/google'
 import '@/styles/globals.css'

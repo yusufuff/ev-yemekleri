@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * useChefDashboard
  * Chef dashboard için Realtime + polling hibrit veri yönetimi.

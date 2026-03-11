@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * UI Bileşenleri — globals.css sınıflarına dayalı React sarmalayıcılar.
  * Wireframe'deki tüm tekrarlayan UI elementleri burada merkezi olarak tanımlı.

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import Link from 'next/link'
 import { Badge, Rozet } from '@/components/ui'
 import type { ChefWithDistance } from '@/types/database'

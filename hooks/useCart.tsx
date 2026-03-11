@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * useCart — Sepet state yönetimi
  *

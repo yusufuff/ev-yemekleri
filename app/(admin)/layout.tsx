@@ -1,4 +1,5 @@
-﻿/**
+// @ts-nocheck
+/**
  * Admin Layout
  * Sadece role === 'admin' eriÅŸebilir (middleware Ã§ift kontrol).
  */

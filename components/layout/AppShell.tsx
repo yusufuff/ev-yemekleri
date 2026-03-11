@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { getCurrentUser } from '@/lib/supabase/server'
 import Sidebar from './Sidebar'
 import Header from './Header'

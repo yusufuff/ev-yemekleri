@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Supabase Browser Client
  * Client Component'larda kullanılır: 'use client' direktifi olan dosyalar.

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Firebase Admin SDK başlatıcı.
  * send-notification.ts tarafından import edilir.

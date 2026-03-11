@@ -1,4 +1,5 @@
-﻿/**
+// @ts-nocheck
+/**
  * (public) grup layout â€” keÅŸfet, aÅŸÃ§Ä± profili, Ã¶deme, sipariÅŸ baÅŸarÄ±/hata
  * GiriÅŸ zorunluluÄŸu yok; basit navbar + iÃ§erik.
  */

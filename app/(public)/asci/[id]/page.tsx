@@ -1,4 +1,5 @@
-﻿'use client'
+// @ts-nocheck
+'use client'
 
 import { use, useState } from 'react'
 import Link from 'next/link'

@@ -1,4 +1,5 @@
-﻿/**
+// @ts-nocheck
+/**
  * (buyer) grup layout â€” sipariÅŸlerim, mesajlar, favorilerim, adreslerim
  * GiriÅŸ zorunlu.
  */

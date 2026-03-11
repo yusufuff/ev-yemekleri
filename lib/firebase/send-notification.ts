@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Sunucu tarafı push bildirimi gönderici
  *

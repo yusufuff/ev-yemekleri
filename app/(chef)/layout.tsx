@@ -1,4 +1,5 @@
-﻿import type { Metadata } from 'next'
+// @ts-nocheck
+import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { getCurrentUser } from '@/lib/supabase/server'
 

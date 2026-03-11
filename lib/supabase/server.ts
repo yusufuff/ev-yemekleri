@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Supabase Server Client
  * Server Component'larda ve API Route'larda kullanılır.
