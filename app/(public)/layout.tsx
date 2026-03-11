@@ -1,6 +1,7 @@
 // @ts-nocheck
 import Link from 'next/link'
 import { BottomNav } from '@/components/layout/BottomNav'
+import { CartButton } from '@/components/cart/CartButton'
 import { getCurrentUser } from '@/lib/supabase/server'
 
 export default async function PublicLayout({ children }: { children: React.ReactNode }) {
@@ -23,8 +24,12 @@ export default async function PublicLayout({ children }: { children: React.React
             <Link href="/hakkimizda" className="hover:text-[#4A2C0E] transition">Hakkımızda</Link>
           </div>
 
-          {/* SAĞ: BUTONLAR */}
+          {/* SAĞ: SEPET + BUTONLAR */}
           <div className="flex items-center gap-2">
+
+            {/* Sepet her zaman görünür */}
+            <CartButton />
+
             {user ? (
               <div className="flex items-center gap-3 text-sm">
                 <Link href="/kesif" className="text-[#8A7B6B] hover:text-[#4A2C0E] font-medium hidden sm:block">
