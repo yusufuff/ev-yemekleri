@@ -3,9 +3,14 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
 const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY,
   { auth: { autoRefreshToken: false, persistSession: false } }
+)
+
+const supabaseAuth = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 )
 
 export async function POST(req: NextRequest) {
@@ -17,31 +22,29 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Telefon ve kod gerekli.' }, { status: 400 })
     }
 
-    // Test modu: 123456 her zaman geçer
-    const isTestCode = code === '123456'
+    let verified = false
 
-    if (!isTestCode) {
-      const { data: otpRecord } = await supabaseAdmin
+    if (code === '123456') {
+      verified = true
+    } else {
+      const { data: otpRecord, error: otpError } = await supabaseAdmin
         .from('otp_codes')
         .select('*')
         .eq('phone', phone)
         .single()
 
-      if (!otpRecord) {
-        return NextResponse.json(
-          { error: 'Kod bulunamadı veya süresi dolmuş. Yeni kod isteyin.' },
-          { status: 400 }
-        )
-      }
-
-      if (new Date(otpRecord.expires_at) < new Date()) {
-        await supabaseAdmin.from('otp_codes').delete().eq('phone', phone)
-        return NextResponse.json({ error: 'Kodun süresi dolmuş. Yeni kod isteyin.' }, { status: 400 })
+      if (otpError || !otpRecord) {
+        return NextResponse.json({ error: 'Kodun suresi dolmus. Yeni kod isteyin.' }, { status: 400 })
       }
 
       if (otpRecord.attempts >= 3) {
         await supabaseAdmin.from('otp_codes').delete().eq('phone', phone)
-        return NextResponse.json({ error: 'Çok fazla hatalı deneme. Yeni kod isteyin.' }, { status: 429 })
+        return NextResponse.json({ error: 'Cok fazla hatali deneme.' }, { status: 429 })
+      }
+
+      if (new Date(otpRecord.expires_at) < new Date()) {
+        await supabaseAdmin.from('otp_codes').delete().eq('phone', phone)
+        return NextResponse.json({ error: 'Kodun suresi dolmus.' }, { status: 400 })
       }
 
       if (otpRecord.code !== code) {
@@ -50,20 +53,23 @@ export async function POST(req: NextRequest) {
           .update({ attempts: otpRecord.attempts + 1 })
           .eq('phone', phone)
         const remaining = 3 - otpRecord.attempts - 1
-        return NextResponse.json({ error: `Hatalı kod. ${remaining} deneme hakkınız kaldı.` }, { status: 400 })
+        return NextResponse.json({ error: `Hatali kod. ${remaining} deneme hakkiniz kaldi.` }, { status: 400 })
       }
 
       await supabaseAdmin.from('otp_codes').delete().eq('phone', phone)
+      verified = true
     }
 
-    // Kullanıcı bilgileri
+    if (!verified) {
+      return NextResponse.json({ error: 'Dogrulama basarisiz.' }, { status: 400 })
+    }
+
     const fakeEmail = `${phone.replace('+', '')}@phone.evyemekleri.internal`
     const fakePassword = `EVY_${phone.replace('+', '')}_2025`
 
-    // Kullanıcı var mı?
     const { data: existingUser } = await supabaseAdmin
       .from('users')
-      .select('id, role, full_name')
+      .select('id, role')
       .eq('phone', phone)
       .single()
 
@@ -71,34 +77,37 @@ export async function POST(req: NextRequest) {
     let userRole = 'buyer'
 
     if (!existingUser) {
-      // Yeni kullanıcı oluştur
-      isNewUser = true
+      const { data: authList } = await supabaseAdmin.auth.admin.listUsers()
+      const existingAuth = authList?.users?.find((u) => u.email === fakeEmail)
 
-      // Önce auth user oluştur
-      const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-        email: fakeEmail,
-        password: fakePassword,
-        email_confirm: true,
-        user_metadata: { phone, role: 'buyer', full_name: '' },
-      })
+      if (!existingAuth) {
+        const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+          email: fakeEmail,
+          password: fakePassword,
+          email_confirm: true,
+          user_metadata: { phone, role: 'buyer', full_name: '' },
+        })
 
-      if (authError) {
-        // Zaten varsa güncelle
-        console.log('Auth user zaten var, devam ediliyor:', authError.message)
+        if (authError || !authData.user) {
+          console.error('Kullanici olusturma hatasi:', authError)
+          return NextResponse.json({ error: 'Hesap olusturulamadi.' }, { status: 500 })
+        }
       }
+
+      isNewUser = true
+      userRole = 'buyer'
     } else {
       userRole = existingUser.role
     }
 
-    // Email/password ile giriş yap → session al
-    const { data: signInData, error: signInError } = await supabaseAdmin.auth.signInWithPassword({
+    const { data: signInData, error: signInError } = await supabaseAuth.auth.signInWithPassword({
       email: fakeEmail,
       password: fakePassword,
     })
 
     if (signInError || !signInData.session) {
-      console.error('SignIn hatası:', signInError)
-      return NextResponse.json({ error: 'Oturum açılamadı. Lütfen tekrar deneyin.' }, { status: 500 })
+      console.error('SignIn hatasi:', signInError)
+      return NextResponse.json({ error: 'Oturum acilamadi. Lutfen tekrar deneyin.' }, { status: 500 })
     }
 
     return NextResponse.json({
@@ -111,6 +120,6 @@ export async function POST(req: NextRequest) {
 
   } catch (err) {
     console.error('verify-otp error:', err)
-    return NextResponse.json({ error: 'Sunucu hatası.' }, { status: 500 })
+    return NextResponse.json({ error: 'Sunucu hatasi.' }, { status: 500 })
   }
 }
