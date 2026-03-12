@@ -202,12 +202,12 @@ function OtpPageInner() {
         }
       }
 
-      // Yeni kullanici profil kurulumuna
+      // Tam sayfa yonlendirme - cookie'nin middleware'e gitmesi icin
       if (json.isNewUser) {
-        router.push('/giris/profil')
+        window.location.href = '/giris/profil'
       } else {
         const redirectTo = json.role === 'chef' ? '/dashboard' : '/'
-        router.push(redirectTo)
+        window.location.href = redirectTo
       }
     } catch {
       setError('Baglanti hatasi. Lutfen tekrar deneyin.')
