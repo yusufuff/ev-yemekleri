@@ -1,120 +1,76 @@
 ﻿// @ts-nocheck
-/**
- * POST /api/auth/complete-profile
- * Yeni kullanıcı profil bilgilerini kaydeder.
- * Sadece giriş yapmış kullanıcılar çağırabilir.
- */
 import { NextRequest, NextResponse } from 'next/server'
-import { z } from 'zod'
-import { getSupabaseServerClient } from '@/lib/supabase/server'
 import { createClient } from '@supabase/supabase-js'
-import type { Database } from '@/types/database'
 
-// ── Validasyon ────────────────────────────────────────────────────────────────
-const schema = z.object({
-  full_name: z.string().min(3, 'Ad en az 3 karakter olmalı').max(100),
-  role:      z.enum(['buyer', 'chef']),
-})
-
-// ── Supabase Admin ────────────────────────────────────────────────────────────
-const supabaseAdmin = createClient<Database>(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY,
   { auth: { autoRefreshToken: false, persistSession: false } }
 )
 
 export async function POST(req: NextRequest) {
   try {
-    // 1. Mevcut kullanıcıyı doğrula
-    // Önce Authorization header'dan token dene, sonra cookie'den
-    let user = null
-
-    const authHeader = req.headers.get('Authorization')
-    if (authHeader?.startsWith('Bearer ')) {
-      const token = authHeader.slice(7)
-      const { data } = await supabaseAdmin.auth.getUser(token)
-      user = data?.user || null
-    }
-
-    if (!user) {
-      const supabase = await getSupabaseServerClient()
-      const { data: { user: cookieUser } } = await supabase.auth.getUser()
-      user = cookieUser
-    }
-
-    if (!user) {
-      return NextResponse.json(
-        { error: 'Oturum açık değil. Lütfen giriş yapın.' },
-        { status: 401 }
-      )
-    }
-
-    // 2. Body validasyon
     const body = await req.json()
-    const parsed = schema.safeParse(body)
+    const { full_name, role, user_id } = body
 
-    if (!parsed.success) {
-      return NextResponse.json(
-        { error: parsed.error.issues[0].message },
-        { status: 400 }
-      )
+    if (!full_name || full_name.trim().length < 3) {
+      return NextResponse.json({ error: 'Ad en az 3 karakter olmali.' }, { status: 400 })
     }
 
-    const { full_name, role } = parsed.data
-
-    // 3. public.users tablosunu güncelle
-    const { error: updateError } = await supabaseAdmin
-      .from('users')
-      .update({ full_name, role })
-      .eq('id', user.id)
-
-    if (updateError) {
-      console.error('users update hatası:', updateError)
-      return NextResponse.json(
-        { error: 'Profil güncellenemedi.' },
-        { status: 500 }
-      )
+    if (!role || !['buyer', 'chef'].includes(role)) {
+      return NextResponse.json({ error: 'Gecersiz rol.' }, { status: 400 })
     }
 
-    // 4. Auth metadata güncelle (middleware'de role kontrolü için)
-    await supabaseAdmin.auth.admin.updateUserById(user.id, {
-      user_metadata: {
-        ...user.user_metadata,
-        full_name,
-        role,
-      },
-    })
+    // user_id yoksa Authorization header'dan al
+    let userId = user_id
 
-    // 5. Aşçı ise chef_profiles oluştur (başlangıç kaydı)
-    if (role === 'chef') {
-      const { error: chefError } = await supabaseAdmin
-        .from('chef_profiles')
-        .insert({
-          user_id:             user.id,
-          verification_status: 'pending',
-          delivery_types:      ['pickup'],
-          is_open:             false,
-        })
-        .select('id')
-        .single()
-
-      if (chefError && chefError.code !== '23505') {
-        // 23505 = unique_violation (profil zaten var) → görmezden gel
-        console.error('chef_profiles oluşturma hatası:', chefError)
-        // Kritik değil — onboarding'de tekrar denenebilir
+    if (!userId) {
+      const authHeader = req.headers.get('Authorization')
+      if (authHeader?.startsWith('Bearer ')) {
+        const token = authHeader.slice(7)
+        const { data } = await supabaseAdmin.auth.getUser(token)
+        userId = data?.user?.id
       }
     }
 
-    return NextResponse.json({
-      success:   true,
-      role,
-      full_name,
-      // Aşçı ise onboarding'e, alıcı ise ana sayfaya
-      redirectTo: role === 'chef' ? '/giris/onboarding' : '/',
+    if (!userId) {
+      return NextResponse.json({ error: 'Kullanici kimlik dogrulamasi basarisiz.' }, { status: 401 })
+    }
+
+    // users tablosunu guncelle veya olustur
+    const { error: upsertError } = await supabaseAdmin
+      .from('users')
+      .upsert({
+        id: userId,
+        full_name: full_name.trim(),
+        role,
+        is_active: true,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'id' })
+
+    if (upsertError) {
+      console.error('upsert error:', upsertError)
+      return NextResponse.json({ error: 'Profil kaydedilemedi.' }, { status: 500 })
+    }
+
+    // Auth metadata guncelle
+    await supabaseAdmin.auth.admin.updateUserById(userId, {
+      user_metadata: { full_name: full_name.trim(), role },
     })
+
+    // Chef ise chef_profiles olustur
+    if (role === 'chef') {
+      await supabaseAdmin.from('chef_profiles').upsert({
+        user_id: userId,
+        verification_status: 'pending',
+        is_active: false,
+      }, { onConflict: 'user_id' })
+    }
+
+    return NextResponse.json({ success: true, role })
 
   } catch (err) {
     console.error('complete-profile error:', err)
-    return NextResponse.json({ error: 'Sunucu hatası.' }, { status: 500 })
+    return NextResponse.json({ error: 'Sunucu hatasi.' }, { status: 500 })
   }
 }

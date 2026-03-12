@@ -176,13 +176,14 @@ export default function ProfilPage() {
 
     try {
       const at = localStorage.getItem('ev_access_token') || ''
+      const uid = localStorage.getItem('ev_user_id') || ''
       const res = await fetch('/api/auth/complete-profile', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           ...(at ? { 'Authorization': `Bearer ${at}` } : {}),
         },
-        body: JSON.stringify({ full_name: fullName.trim(), role }),
+        body: JSON.stringify({ full_name: fullName.trim(), role, user_id: uid }),
       })
 
       const json = await res.json()
