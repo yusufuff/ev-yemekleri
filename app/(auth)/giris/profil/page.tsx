@@ -143,18 +143,10 @@ export default function ProfilPage() {
   const [nameError, setNameError]   = useState('')
   const [accessToken, setAccessToken] = useState('')
 
-  // localStorage'dan token al, Supabase browser session kur
+  // localStorage'dan token al
   useEffect(() => {
     const at = localStorage.getItem('ev_access_token') || ''
-    const rt = localStorage.getItem('ev_refresh_token') || ''
     setAccessToken(at)
-
-    if (at && rt) {
-      import('@/lib/supabase/client').then(({ getSupabaseBrowserClient }) => {
-        const supabase = getSupabaseBrowserClient()
-        supabase.auth.setSession({ access_token: at, refresh_token: rt })
-      })
-    }
   }, [])
 
   const nameValid = fullName.trim().length >= 3
