@@ -1,13 +1,10 @@
 /**
  * Next.js Middleware — Auth Guard + Role-Based Access Control
- * Her request'te çalışır. Supabase session'ı yeniler ve role kontrolü yapar.
+ * Her request'te calisir. Supabase session'i yeniler ve role kontrolu yapar.
  */
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-// ─── Route Grupları ────────────────────────────────────────────────────────────
-
-/** Sadece giriş yapmış kullanıcılar */
 const AUTHENTICATED_ROUTES = [
   '/siparislerim',
   '/favorilerim',
@@ -16,7 +13,6 @@ const AUTHENTICATED_ROUTES = [
   '/odeme',
 ]
 
-/** Sadece aşçılar */
 const CHEF_ROUTES = [
   '/dashboard',
   '/menu',
@@ -25,20 +21,12 @@ const CHEF_ROUTES = [
   '/asci-ayarlar',
 ]
 
-/** Sadece adminler */
 const ADMIN_ROUTES = ['/admin']
-
-/** Giriş yapmışlar erişemez (giriş/kayıt sayfaları) */
 const AUTH_PAGES = ['/giris', '/kayit']
 
-// ─── Middleware ────────────────────────────────────────────────────────────────
-
 export async function middleware(request: NextRequest) {
-  let response = NextResponse.next({
-    request: { headers: request.headers },
-  })
+  let response = NextResponse.next({ request: { headers: request.headers } })
 
-  // Supabase session yenile
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -46,13 +34,9 @@ export async function middleware(request: NextRequest) {
       cookies: {
         getAll:  () => request.cookies.getAll(),
         setAll: (cookiesToSet) => {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
-          )
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
           response = NextResponse.next({ request })
-          cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options)
-          )
+          cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options))
         },
       },
     }
@@ -61,19 +45,17 @@ export async function middleware(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   const pathname = request.nextUrl.pathname
 
-  // ── Giriş sayfaları: giriş yapılmışsa dashboard'a yönlendir ──────────────
-  if (AUTH_PAGES.some(p => pathname.startsWith(p)) && user) {
+  const isAuthFlowPage = pathname === '/giris/profil' || pathname.startsWith('/giris/otp')
+  if (!isAuthFlowPage && AUTH_PAGES.some(p => pathname.startsWith(p)) && user) {
     return NextResponse.redirect(new URL('/', request.url))
   }
 
-  // ── Authenticated route'lar: giriş yapılmamışsa login'e ──────────────────
   if (AUTHENTICATED_ROUTES.some(p => pathname.startsWith(p)) && !user) {
     const loginUrl = new URL('/giris', request.url)
     loginUrl.searchParams.set('redirect', pathname)
     return NextResponse.redirect(loginUrl)
   }
 
-  // ── Chef / Admin route'ları: role için DB sorgusu ────────────────────────
   const needsRoleCheck =
     CHEF_ROUTES.some(p => pathname.startsWith(p)) ||
     ADMIN_ROUTES.some(p => pathname.startsWith(p))
@@ -85,7 +67,6 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(loginUrl)
     }
 
-    // JWT'de role claim olmayabilir — users tablosundan oku
     const { data: profile } = await supabase
       .from('users')
       .select('role')
@@ -108,13 +89,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths EXCEPT:
-     * - _next/static (static files)
-     * - _next/image (image optimization)
-     * - favicon.ico, robots.txt
-     * - public klasörü
-     */
     '/((?!_next/static|_next/image|favicon.ico|robots.txt|icons|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }
