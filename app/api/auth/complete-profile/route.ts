@@ -1,5 +1,4 @@
-﻿// @ts-nocheck
-/**
+﻿/**
  * POST /api/auth/complete-profile
  * Yeni kullanıcı profil bilgilerini kaydeder.
  * Sadece giriş yapmış kullanıcılar çağırabilir.
@@ -10,13 +9,13 @@ import { getSupabaseServerClient } from '@/lib/supabase/server'
 import { createClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
 
-// â”€â”€ Validasyon â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Validasyon ────────────────────────────────────────────────────────────────
 const schema = z.object({
   full_name: z.string().min(3, 'Ad en az 3 karakter olmalı').max(100),
   role:      z.enum(['buyer', 'chef']),
 })
 
-// â”€â”€ Supabase Admin â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Supabase Admin ────────────────────────────────────────────────────────────
 const supabaseAdmin = createClient<Database>(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -26,10 +25,23 @@ const supabaseAdmin = createClient<Database>(
 export async function POST(req: NextRequest) {
   try {
     // 1. Mevcut kullanıcıyı doğrula
-    const supabase = await getSupabaseServerClient()
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    // Önce Authorization header'dan token dene, sonra cookie'den
+    let user = null
 
-    if (authError || !user) {
+    const authHeader = req.headers.get('Authorization')
+    if (authHeader?.startsWith('Bearer ')) {
+      const token = authHeader.slice(7)
+      const { data } = await supabaseAdmin.auth.getUser(token)
+      user = data?.user || null
+    }
+
+    if (!user) {
+      const supabase = await getSupabaseServerClient()
+      const { data: { user: cookieUser } } = await supabase.auth.getUser()
+      user = cookieUser
+    }
+
+    if (!user) {
       return NextResponse.json(
         { error: 'Oturum açık değil. Lütfen giriş yapın.' },
         { status: 401 }
@@ -86,9 +98,9 @@ export async function POST(req: NextRequest) {
         .single()
 
       if (chefError && chefError.code !== '23505') {
-        // 23505 = unique_violation (profil zaten var) â†’ görmezden gel
+        // 23505 = unique_violation (profil zaten var) → görmezden gel
         console.error('chef_profiles oluşturma hatası:', chefError)
-        // Kritik değil "” onboarding'de tekrar denenebilir
+        // Kritik değil — onboarding'de tekrar denenebilir
       }
     }
 
@@ -105,5 +117,3 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Sunucu hatası.' }, { status: 500 })
   }
 }
-
-

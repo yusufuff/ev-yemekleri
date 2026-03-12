@@ -1,7 +1,6 @@
-// @ts-nocheck
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 
 type Role = 'buyer' | 'chef'
@@ -142,6 +141,21 @@ export default function ProfilPage() {
   const [loading, setLoading]       = useState(false)
   const [error, setError]           = useState('')
   const [nameError, setNameError]   = useState('')
+  const [accessToken, setAccessToken] = useState('')
+
+  // localStorage'dan token al, Supabase browser session kur
+  useEffect(() => {
+    const at = localStorage.getItem('ev_access_token') || ''
+    const rt = localStorage.getItem('ev_refresh_token') || ''
+    setAccessToken(at)
+
+    if (at && rt) {
+      import('@/lib/supabase/client').then(({ getSupabaseBrowserClient }) => {
+        const supabase = getSupabaseBrowserClient()
+        supabase.auth.setSession({ access_token: at, refresh_token: rt })
+      })
+    }
+  }, [])
 
   const nameValid = fullName.trim().length >= 3
 
@@ -161,9 +175,13 @@ export default function ProfilPage() {
     setLoading(true)
 
     try {
+      const at = localStorage.getItem('ev_access_token') || ''
       const res = await fetch('/api/auth/complete-profile', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(at ? { 'Authorization': `Bearer ${at}` } : {}),
+        },
         body: JSON.stringify({ full_name: fullName.trim(), role }),
       })
 
