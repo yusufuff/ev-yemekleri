@@ -21,7 +21,6 @@ export async function POST(req: NextRequest) {
     const isTestCode = code === '123456'
 
     if (!isTestCode) {
-      // Supabase'den OTP kaydını al
       const { data: otpRecord } = await supabaseAdmin
         .from('otp_codes')
         .select('*')
@@ -35,108 +34,79 @@ export async function POST(req: NextRequest) {
         )
       }
 
-      // Süre kontrolü
       if (new Date(otpRecord.expires_at) < new Date()) {
         await supabaseAdmin.from('otp_codes').delete().eq('phone', phone)
-        return NextResponse.json(
-          { error: 'Kodun süresi dolmuş. Yeni kod isteyin.' },
-          { status: 400 }
-        )
+        return NextResponse.json({ error: 'Kodun süresi dolmuş. Yeni kod isteyin.' }, { status: 400 })
       }
 
-      // Deneme kontrolü
       if (otpRecord.attempts >= 3) {
         await supabaseAdmin.from('otp_codes').delete().eq('phone', phone)
-        return NextResponse.json(
-          { error: 'Çok fazla hatalı deneme. Yeni kod isteyin.' },
-          { status: 429 }
-        )
+        return NextResponse.json({ error: 'Çok fazla hatalı deneme. Yeni kod isteyin.' }, { status: 429 })
       }
 
-      // Kod eşleşiyor mu?
       if (otpRecord.code !== code) {
         await supabaseAdmin
           .from('otp_codes')
           .update({ attempts: otpRecord.attempts + 1 })
           .eq('phone', phone)
-
         const remaining = 3 - otpRecord.attempts - 1
-        return NextResponse.json(
-          { error: `Hatalı kod. ${remaining} deneme hakkınız kaldı.` },
-          { status: 400 }
-        )
+        return NextResponse.json({ error: `Hatalı kod. ${remaining} deneme hakkınız kaldı.` }, { status: 400 })
       }
 
-      // Başarılı - OTP sil
       await supabaseAdmin.from('otp_codes').delete().eq('phone', phone)
     }
 
-    // Kullanıcı var mı kontrol et
+    // Kullanıcı bilgileri
+    const fakeEmail = `${phone.replace('+', '')}@phone.evyemekleri.internal`
+    const fakePassword = `EVY_${phone.replace('+', '')}_2025`
+
+    // Kullanıcı var mı?
     const { data: existingUser } = await supabaseAdmin
       .from('users')
       .select('id, role, full_name')
       .eq('phone', phone)
       .single()
 
-    let userId: string
-    let isNewUser: boolean
-    let userRole: string
+    let isNewUser = false
+    let userRole = 'buyer'
 
-    if (existingUser) {
-      userId = existingUser.id
-      isNewUser = false
-      userRole = existingUser.role
-    } else {
+    if (!existingUser) {
       // Yeni kullanıcı oluştur
-      const fakeEmail = `${phone.replace('+', '')}@phone.evyemekleri.internal`
+      isNewUser = true
 
+      // Önce auth user oluştur
       const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
         email: fakeEmail,
-        phone: phone,
+        password: fakePassword,
         email_confirm: true,
-        phone_confirm: true,
         user_metadata: { phone, role: 'buyer', full_name: '' },
       })
 
-      if (authError || !authData.user) {
-        // Kullanıcı zaten varsa bul
-        const { data: { users } } = await supabaseAdmin.auth.admin.listUsers()
-        const found = users.find(u => u.email === fakeEmail)
-        if (found) {
-          userId = found.id
-          isNewUser = false
-          userRole = 'buyer'
-        } else {
-          return NextResponse.json({ error: 'Hesap oluşturulamadı.' }, { status: 500 })
-        }
-      } else {
-        userId = authData.user.id
-        isNewUser = true
-        userRole = 'buyer'
+      if (authError) {
+        // Zaten varsa güncelle
+        console.log('Auth user zaten var, devam ediliyor:', authError.message)
       }
+    } else {
+      userRole = existingUser.role
     }
 
-    // Magic link ile session token üret
-    const fakeEmail = `${phone.replace('+', '')}@phone.evyemekleri.internal`
-    const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
-      type: 'magiclink',
+    // Email/password ile giriş yap → session al
+    const { data: signInData, error: signInError } = await supabaseAdmin.auth.signInWithPassword({
       email: fakeEmail,
+      password: fakePassword,
     })
 
-    if (linkError || !linkData) {
-      return NextResponse.json({ error: 'Oturum açılamadı.' }, { status: 500 })
+    if (signInError || !signInData.session) {
+      console.error('SignIn hatası:', signInError)
+      return NextResponse.json({ error: 'Oturum açılamadı. Lütfen tekrar deneyin.' }, { status: 500 })
     }
-
-    const url = new URL(linkData.properties.action_link)
-    const token = url.searchParams.get('token')
 
     return NextResponse.json({
       success: true,
       isNewUser,
       role: userRole,
-      userId,
-      token,
-      tokenType: 'magiclink',
+      access_token: signInData.session.access_token,
+      refresh_token: signInData.session.refresh_token,
     })
 
   } catch (err) {
