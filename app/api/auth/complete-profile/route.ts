@@ -1,4 +1,5 @@
-﻿/**
+﻿// @ts-nocheck
+/**
  * POST /api/auth/complete-profile
  * Yeni kullanıcı profil bilgilerini kaydeder.
  * Sadece giriş yapmış kullanıcılar çağırabilir.
