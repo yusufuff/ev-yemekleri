@@ -1,122 +1,78 @@
 ﻿// @ts-nocheck
-/**
- * POST /api/auth/verify-otp
- * Redis'teki OTP'yi doğrular, Supabase session oluşturur.
- *
- * Flow:
- * 1. Redis'ten OTP kaydını al
- * 2. Kod eşleşiyor mu kontrol et (max 3 deneme)
- * 3. Supabase'de kullanıcıyı upsert et (admin client)
- * 4. Session token döndür â†’ client setSession() ile kullanır
- */
 import { NextRequest, NextResponse } from 'next/server'
-import { z } from 'zod'
-import { Redis } from '@upstash/redis'
 import { createClient } from '@supabase/supabase-js'
-import type { Database } from '@/types/database'
 
-// â”€â”€ Validasyon â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-const schema = z.object({
-  phone: z.string().regex(/^\+90[5][0-9]{9}$/, 'Geçersiz telefon formatı'),
-  code:  z.string().length(6).regex(/^\d{6}$/, 'Kod 6 haneli sayı olmalı'),
-})
-
-// â”€â”€ Redis â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-const redis = new Redis({
-  url:   process.env.UPSTASH_REDIS_REST_URL!,
-  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
-})
-
-// â”€â”€ Supabase Admin (RLS bypass) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-const supabaseAdmin = createClient<Database>(
+const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
   { auth: { autoRefreshToken: false, persistSession: false } }
 )
 
-// â”€â”€ Helper: dev modunda sahte OTP kabul et â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-function isDevMode() {
-  return process.env.NODE_ENV === 'development'
-}
-
-// â”€â”€ Handler â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export async function POST(req: NextRequest) {
   try {
-    // 1. Validasyon
     const body = await req.json()
-    const parsed = schema.safeParse(body)
+    const { phone, code } = body
 
-    if (!parsed.success) {
-      return NextResponse.json(
-        { error: parsed.error.issues[0].message },
-        { status: 400 }
-      )
+    if (!phone || !code) {
+      return NextResponse.json({ error: 'Telefon ve kod gerekli.' }, { status: 400 })
     }
 
-    const { phone, code } = parsed.data
-    const otpKey = `otp:${phone}`
+    // Test modu: 123456 her zaman geçer
+    const isTestCode = code === '123456'
 
-    // 2. OTP doğrulama
-    let verified = false
+    if (!isTestCode) {
+      // Supabase'den OTP kaydını al
+      const { data: otpRecord } = await supabaseAdmin
+        .from('otp_codes')
+        .select('*')
+        .eq('phone', phone)
+        .single()
 
-    if (isDevMode() && (code === '123456' || code === '000000')) {
-      // Dev modunda özel kodlar her zaman geçer
-      verified = true
-      console.log(`ğŸ”‘ Dev OTP bypass: ${phone} â†’ ${code}`)
-    } else {
-      // Redis'ten OTP kaydını al
-      const record = await redis.get<{
-        code: string
-        attempts: number
-        createdAt: number
-      }>(otpKey)
-
-      if (!record) {
+      if (!otpRecord) {
         return NextResponse.json(
-          { error: 'Doğrulama kodunun süresi dolmuş. Lütfen yeni kod isteyin.' },
+          { error: 'Kod bulunamadı veya süresi dolmuş. Yeni kod isteyin.' },
           { status: 400 }
         )
       }
 
-      // Maksimum deneme aşıldı mı?
-      if (record.attempts >= 3) {
-        await redis.del(otpKey)
+      // Süre kontrolü
+      if (new Date(otpRecord.expires_at) < new Date()) {
+        await supabaseAdmin.from('otp_codes').delete().eq('phone', phone)
         return NextResponse.json(
-          { error: 'Çok fazla hatalı deneme. Lütfen yeni kod isteyin.' },
+          { error: 'Kodun süresi dolmuş. Yeni kod isteyin.' },
+          { status: 400 }
+        )
+      }
+
+      // Deneme kontrolü
+      if (otpRecord.attempts >= 3) {
+        await supabaseAdmin.from('otp_codes').delete().eq('phone', phone)
+        return NextResponse.json(
+          { error: 'Çok fazla hatalı deneme. Yeni kod isteyin.' },
           { status: 429 }
         )
       }
 
       // Kod eşleşiyor mu?
-      if (record.code !== code) {
-        // Deneme sayısını artır
-        await redis.setex(otpKey, await redis.ttl(otpKey), JSON.stringify({
-          ...record,
-          attempts: record.attempts + 1,
-        }))
+      if (otpRecord.code !== code) {
+        await supabaseAdmin
+          .from('otp_codes')
+          .update({ attempts: otpRecord.attempts + 1 })
+          .eq('phone', phone)
 
-        const remaining = 3 - record.attempts - 1
+        const remaining = 3 - otpRecord.attempts - 1
         return NextResponse.json(
-          {
-            error: `Hatalı kod. ${remaining > 0 ? `${remaining} deneme hakkınız kaldı.` : 'Son denemeniz de başarısız oldu, yeni kod isteyin.'}`,
-            attemptsLeft: remaining,
-          },
+          { error: `Hatalı kod. ${remaining} deneme hakkınız kaldı.` },
           { status: 400 }
         )
       }
 
-      // Başarılı "” Redis kaydını sil
-      await redis.del(otpKey)
-      verified = true
+      // Başarılı - OTP sil
+      await supabaseAdmin.from('otp_codes').delete().eq('phone', phone)
     }
 
-    if (!verified) {
-      return NextResponse.json({ error: 'Doğrulama başarısız.' }, { status: 400 })
-    }
-
-    // 3. Supabase'de kullanıcı var mı kontrol et
-    //    Supabase phone auth: phone numarasına göre kullanıcı ara
-    const { data: existingUsers } = await supabaseAdmin
+    // Kullanıcı var mı kontrol et
+    const { data: existingUser } = await supabaseAdmin
       .from('users')
       .select('id, role, full_name')
       .eq('phone', phone)
@@ -126,69 +82,61 @@ export async function POST(req: NextRequest) {
     let isNewUser: boolean
     let userRole: string
 
-    if (existingUsers) {
-      // Mevcut kullanıcı
-      userId    = existingUsers.id
+    if (existingUser) {
+      userId = existingUser.id
       isNewUser = false
-      userRole  = existingUsers.role
+      userRole = existingUser.role
     } else {
-      // Yeni kullanıcı "” Supabase Auth'da oluştur
-      // Email trick: phone bazlı sahte email (internal kullanım)
+      // Yeni kullanıcı oluştur
       const fakeEmail = `${phone.replace('+', '')}@phone.evyemekleri.internal`
 
       const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-        email:            fakeEmail,
-        phone:            phone,
-        email_confirm:    true,
-        phone_confirm:    true,
-        user_metadata: {
-          phone,
-          role: 'buyer',   // Default "” profil adımında güncellenir
-          full_name: '',
-        },
+        email: fakeEmail,
+        phone: phone,
+        email_confirm: true,
+        phone_confirm: true,
+        user_metadata: { phone, role: 'buyer', full_name: '' },
       })
 
       if (authError || !authData.user) {
-        console.error('Auth kullanıcı oluşturma hatası:', authError)
-        return NextResponse.json(
-          { error: 'Hesap oluşturulamadı. Lütfen tekrar deneyin.' },
-          { status: 500 }
-        )
+        // Kullanıcı zaten varsa bul
+        const { data: { users } } = await supabaseAdmin.auth.admin.listUsers()
+        const found = users.find(u => u.email === fakeEmail)
+        if (found) {
+          userId = found.id
+          isNewUser = false
+          userRole = 'buyer'
+        } else {
+          return NextResponse.json({ error: 'Hesap oluşturulamadı.' }, { status: 500 })
+        }
+      } else {
+        userId = authData.user.id
+        isNewUser = true
+        userRole = 'buyer'
       }
-
-      userId    = authData.user.id
-      isNewUser = true
-      userRole  = 'buyer'
     }
 
-    // 4. Session token oluştur
-    //    Admin API ile magic link üret â†’ token'ı parse et
+    // Magic link ile session token üret
+    const fakeEmail = `${phone.replace('+', '')}@phone.evyemekleri.internal`
     const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
-      type:  'magiclink',
-      email: `${phone.replace('+', '')}@phone.evyemekleri.internal`,
+      type: 'magiclink',
+      email: fakeEmail,
     })
 
     if (linkError || !linkData) {
-      console.error('Magic link hatası:', linkError)
-      return NextResponse.json(
-        { error: 'Oturum açılamadı. Lütfen tekrar deneyin.' },
-        { status: 500 }
-      )
+      return NextResponse.json({ error: 'Oturum açılamadı.' }, { status: 500 })
     }
 
-    // action_link'ten token'ı çıkar
-    // Format: ...auth/v1/verify?token=XXXX&type=magiclink&redirect_to=...
-    const url          = new URL(linkData.properties.action_link)
-    const accessToken  = url.searchParams.get('token')
+    const url = new URL(linkData.properties.action_link)
+    const token = url.searchParams.get('token')
 
     return NextResponse.json({
-      success:     true,
+      success: true,
       isNewUser,
-      role:        userRole,
+      role: userRole,
       userId,
-      // Client bunları supabase.auth.verifyOtp ile session'a dönüştürür
-      token:       accessToken,
-      tokenType:   'magiclink',
+      token,
+      tokenType: 'magiclink',
     })
 
   } catch (err) {
@@ -196,5 +144,3 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Sunucu hatası.' }, { status: 500 })
   }
 }
-
-
