@@ -1,26 +1,8 @@
-/**
- * Next.js Middleware — Auth Guard + Role-Based Access Control
- * Her request'te calisir. Supabase session'i yeniler ve role kontrolu yapar.
- */
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-const AUTHENTICATED_ROUTES = [
-  '/siparislerim',
-  '/favorilerim',
-  '/adreslerim',
-  '/profil',
-  '/odeme',
-]
-
-const CHEF_ROUTES = [
-  '/dashboard',
-  '/menu',
-  '/siparisler',
-  '/kazanc',
-  '/asci-ayarlar',
-]
-
+const AUTHENTICATED_ROUTES = ['/siparislerim','/favorilerim','/adreslerim','/profil','/odeme']
+const CHEF_ROUTES = ['/dashboard','/menu','/siparisler','/kazanc','/asci-ayarlar']
 const ADMIN_ROUTES = ['/admin']
 const AUTH_PAGES = ['/giris', '/kayit']
 
@@ -32,7 +14,7 @@ export async function middleware(request: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        getAll:  () => request.cookies.getAll(),
+        getAll: () => request.cookies.getAll(),
         setAll: (cookiesToSet) => {
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
           response = NextResponse.next({ request })
@@ -66,19 +48,11 @@ export async function middleware(request: NextRequest) {
       loginUrl.searchParams.set('redirect', pathname)
       return NextResponse.redirect(loginUrl)
     }
-
-    const { data: profile } = await supabase
-      .from('users')
-      .select('role')
-      .eq('id', user.id)
-      .single()
-
+    const { data: profile } = await supabase.from('users').select('role').eq('id', user.id).single()
     const role = profile?.role
-
     if (ADMIN_ROUTES.some(p => pathname.startsWith(p)) && role !== 'admin') {
       return new NextResponse('Forbidden', { status: 403 })
     }
-
     if (CHEF_ROUTES.some(p => pathname.startsWith(p)) && role !== 'chef' && role !== 'admin') {
       return NextResponse.redirect(new URL('/?error=unauthorized', request.url))
     }
@@ -89,6 +63,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|robots.txt|icons|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|robots.txt|icons|api|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }
