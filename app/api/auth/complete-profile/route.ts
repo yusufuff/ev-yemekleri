@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
     const { full_name, role } = parsed.data
 
     // 3. public.users tablosunu güncelle
-    const { error: updateError } = await supabase
+    const { error: updateError } = await supabaseAdmin
       .from('users')
       .update({ full_name, role })
       .eq('id', user.id)
@@ -86,7 +86,7 @@ export async function POST(req: NextRequest) {
 
     // 5. Aşçı ise chef_profiles oluştur (başlangıç kaydı)
     if (role === 'chef') {
-      const { error: chefError } = await supabase
+      const { error: chefError } = await supabaseAdmin
         .from('chef_profiles')
         .insert({
           user_id:             user.id,
