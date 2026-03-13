@@ -1,16 +1,25 @@
 'use client'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
+import { usePathname } from 'next/navigation'
+
+const HIDDEN_PATHS = ['/giris', '/kayit', '/admin', '/dashboard']
 
 export function PublicNavbar() {
+  const pathname = usePathname()
   const [user, setUser] = useState<{ full_name?: string } | null>(null)
 
+  const hidden = HIDDEN_PATHS.some(p => pathname?.startsWith(p))
+
   useEffect(() => {
+    if (hidden) return
     fetch('/api/auth/session')
       .then(r => r.ok ? r.json() : null)
       .then(data => { if (data?.user) setUser(data.user) })
       .catch(() => {})
-  }, [])
+  }, [hidden])
+
+  if (hidden) return null
 
   return (
     <nav className="bg-white border-b border-[#E8E0D4] sticky top-0 z-50">
