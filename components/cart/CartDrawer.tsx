@@ -10,12 +10,12 @@ interface CartDrawerProps {
 }
 
 const CATEGORY_EMOJI: Record<string, string> = {
-  main: 'ğŸ²', soup: 'ğŸ¥£', dessert: 'ğŸ®', pastry: 'ğŸ¥', salad: 'ğŸ¥—',
+  main: '🍲', soup: '🥣', dessert: '🍮', pastry: '🥐', salad: '🥗',
 }
 
 export function CartDrawer({ open, onClose }: CartDrawerProps) {
   const router = useRouter()
-  const { items, updateQty, removeItem, priceSummary, itemCount } = useCart()
+  const { items, setQty, removeItem, priceSummary, itemCount } = useCart()
 
   const handleCheckout = () => {
     onClose()
@@ -34,10 +34,10 @@ export function CartDrawer({ open, onClose }: CartDrawerProps) {
     >
       {isEmpty ? (
         <div className="cd-empty">
-          <div className="cd-empty-icon">ğŸ›’</div>
-          <div className="cd-empty-title">Sepetiniz boÅŸ</div>
-          <div className="cd-empty-sub">AÅŸÃ§Ä±larÄ±n menÃ¼lerini keÅŸfederek sipariÅŸ verin</div>
-          <button className="cd-btn-primary" onClick={onClose}>ğŸ” KeÅŸfet</button>
+          <div className="cd-empty-icon">🛒</div>
+          <div className="cd-empty-title">Sepetiniz boş</div>
+          <div className="cd-empty-sub">Aşçıların menülerini keşfederek sipariş verin</div>
+          <button className="cd-btn-primary" onClick={onClose}>🔍 Keşfet</button>
         </div>
       ) : (
         <>
@@ -45,29 +45,29 @@ export function CartDrawer({ open, onClose }: CartDrawerProps) {
             {items.map(item => (
               <div key={item.menu_item_id} className="cd-item">
                 <div className="cd-item-img">
-                  {CATEGORY_EMOJI[item.category] ?? 'ğŸ½ï¸'}
+                  {CATEGORY_EMOJI[item.category] ?? '🍽️'}
                 </div>
                 <div className="cd-item-info">
                   <div className="cd-item-name">{item.name}</div>
-                  {item.chef_name && <div className="cd-item-chef">ğŸ‘©â€ğŸ³ {item.chef_name}</div>}
-                  {item.note && <div className="cd-item-note">ğŸ’¬ {item.note}</div>}
-                  <div className="cd-item-price">â‚º{(item.price * item.quantity).toFixed(0)}</div>
+                  {item.chef_name && <div className="cd-item-chef">👩‍🍳 {item.chef_name}</div>}
+                  {item.note && <div className="cd-item-note">💬 {item.note}</div>}
+                  <div className="cd-item-price">₺{(item.price * item.quantity).toFixed(0)}</div>
                 </div>
                 <div className="cd-qty">
                   <button
                     className="cd-qty-btn"
                     onClick={() => item.quantity <= 1
                       ? removeItem(item.menu_item_id)
-                      : updateQty(item.menu_item_id, item.quantity - 1)}
+                      : setQty(item.menu_item_id, item.quantity - 1)}
                     aria-label="Azalt"
                   >
-                    {item.quantity <= 1 ? 'ğŸ—‘ï¸' : 'âˆ’'}
+                    {item.quantity <= 1 ? '🗑️' : '−'}
                   </button>
                   <span className="cd-qty-num">{item.quantity}</span>
                   <button
                     className="cd-qty-btn cd-qty-btn--plus"
-                    onClick={() => updateQty(item.menu_item_id, item.quantity + 1)}
-                    aria-label="ArtÄ±r"
+                    onClick={() => setQty(item.menu_item_id, item.quantity + 1)}
+                    aria-label="Artır"
                     disabled={item.remaining_stock !== null && item.quantity >= item.remaining_stock}
                   >
                     +
@@ -78,23 +78,23 @@ export function CartDrawer({ open, onClose }: CartDrawerProps) {
           </div>
 
           <div className="cd-summary">
-            <div className="cd-sum-row"><span>Ara Toplam</span><span>â‚º{priceSummary.subtotal.toFixed(0)}</span></div>
+            <div className="cd-sum-row"><span>Ara Toplam</span><span>₺{priceSummary.subtotal.toFixed(0)}</span></div>
             {priceSummary.deliveryFee > 0 && (
-              <div className="cd-sum-row"><span>Teslimat</span><span>â‚º{priceSummary.deliveryFee.toFixed(0)}</span></div>
+              <div className="cd-sum-row"><span>Teslimat</span><span>₺{priceSummary.deliveryFee.toFixed(0)}</span></div>
             )}
             {priceSummary.discount > 0 && (
-              <div className="cd-sum-row cd-sum-row--discount"><span>Ä°ndirim</span><span>âˆ’â‚º{priceSummary.discount.toFixed(0)}</span></div>
+              <div className="cd-sum-row cd-sum-row--discount"><span>İndirim</span><span>−₺{priceSummary.discount.toFixed(0)}</span></div>
             )}
             <div className="cd-sum-total">
-              <span>Toplam</span><span>â‚º{priceSummary.total.toFixed(0)}</span>
+              <span>Toplam</span><span>₺{priceSummary.total.toFixed(0)}</span>
             </div>
           </div>
 
           <div className="cd-footer">
             <button className="cd-btn-primary" onClick={handleCheckout}>
-              ğŸ›’ SipariÅŸi Tamamla â€” â‚º{priceSummary.total.toFixed(0)}
+              🛒 Siparişi Tamamla — ₺{priceSummary.total.toFixed(0)}
             </button>
-            <button className="cd-btn-ghost" onClick={onClose}>AlÄ±ÅŸveriÅŸe Devam Et</button>
+            <button className="cd-btn-ghost" onClick={onClose}>Alışverişe Devam Et</button>
           </div>
         </>
       )}
