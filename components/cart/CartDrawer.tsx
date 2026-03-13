@@ -15,7 +15,7 @@ const CATEGORY_EMOJI: Record<string, string> = {
 
 export function CartDrawer({ open, onClose }: CartDrawerProps) {
   const router = useRouter()
-  const { items, setQty, removeItem, priceSummary, itemCount } = useCart()
+  const { items, setQty, removeItem, summary, itemCount } = useCart()
 
   const handleCheckout = () => {
     onClose()
@@ -78,21 +78,21 @@ export function CartDrawer({ open, onClose }: CartDrawerProps) {
           </div>
 
           <div className="cd-summary">
-            <div className="cd-sum-row"><span>Ara Toplam</span><span>₺{priceSummary.subtotal.toFixed(0)}</span></div>
-            {priceSummary.deliveryFee > 0 && (
-              <div className="cd-sum-row"><span>Teslimat</span><span>₺{priceSummary.deliveryFee.toFixed(0)}</span></div>
+            <div className="cd-sum-row"><span>Ara Toplam</span><span>₺{summary.subtotal.toFixed(0)}</span></div>
+            {summary.delivery_fee > 0 && (
+              <div className="cd-sum-row"><span>Teslimat</span><span>₺{summary.delivery_fee.toFixed(0)}</span></div>
             )}
-            {priceSummary.discount > 0 && (
-              <div className="cd-sum-row cd-sum-row--discount"><span>İndirim</span><span>−₺{priceSummary.discount.toFixed(0)}</span></div>
+            {summary.discount > 0 && (
+              <div className="cd-sum-row cd-sum-row--discount"><span>İndirim</span><span>−₺{summary.discount.toFixed(0)}</span></div>
             )}
             <div className="cd-sum-total">
-              <span>Toplam</span><span>₺{priceSummary.total.toFixed(0)}</span>
+              <span>Toplam</span><span>₺{summary.total.toFixed(0)}</span>
             </div>
           </div>
 
           <div className="cd-footer">
             <button className="cd-btn-primary" onClick={handleCheckout}>
-              🛒 Siparişi Tamamla — ₺{priceSummary.total.toFixed(0)}
+              🛒 Siparişi Tamamla — ₺{summary.total.toFixed(0)}
             </button>
             <button className="cd-btn-ghost" onClick={onClose}>Alışverişe Devam Et</button>
           </div>
