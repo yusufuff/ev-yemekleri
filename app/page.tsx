@@ -1,13 +1,7 @@
-/**
- * Ana Sayfa
- */
+'use client'
+// @ts-nocheck
+import React, { useState } from 'react'
 import Link from 'next/link'
-import type { Metadata } from 'next'
-import { HeroSection } from '@/components/home/HeroSection'
-
-export const metadata: Metadata = {
-  title: 'EV YEMEKLERİ — Mahallendeki Ev Aşçılarından Sipariş Ver',
-}
 
 const POPULAR_ITEMS = [
   { emoji: '🍲', name: 'Kuru Fasulye & Pilav', price: 55, chef: 'Fatma H.', rating: '4.9', km: '1.2' },
@@ -23,31 +17,31 @@ const HOW_STEPS = [
 ]
 
 const TESTIMONIALS = [
-  { text: '"Fatma Hanım\'ın mercimek çorbası tam annem gibi. Her gün sipariş versem çekinmiyorum!"', author: 'Mehmet Y., Adana', stars: 5 },
-  { text: '"İş yerinde yemek sorununu çözdü. Sıcak, ev yapımı, uygun fiyatlı. Herkese öneririm."',  author: 'Selin K., İzmir',  stars: 5 },
-  { text: '"Aşçı olarak katıldım, ilk haftada 15 sipariş aldım. Platform çok kullanışlı."',          author: 'Gülay A., Aşçı',   stars: 5 },
+  { text: '"Fatma Hanım\'ın mercimek çorbası tam annem gibi. Her gün sipariş versem çekinmiyorum!"', author: 'Mehmet Y., Adana' },
+  { text: '"İş yerinde yemek sorununu çözdü. Sıcak, ev yapımı, uygun fiyatlı. Herkese öneririm."',  author: 'Selin K., İzmir' },
+  { text: '"Aşçı olarak katıldım, ilk haftada 15 sipariş aldım. Platform çok kullanışlı."',          author: 'Gülay A., Aşçı' },
 ]
 
+const DISTANCES = [1, 5, 8, 10]
+
 export default function HomePage() {
+  const [km, setKm] = useState(5)
+
   return (
-    <div className="min-h-screen bg-[#FAF6EF]">
+    <div style={{ minHeight: '100vh', background: '#FAF6EF', fontFamily: "'DM Sans', sans-serif" }}>
 
       {/* Navbar */}
-      <nav className="bg-white border-b border-[#E8E0D4] sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          <Link href="/" className="font-serif font-black text-xl text-[#4A2C0E] tracking-tight">
+      <nav style={{ background: 'white', borderBottom: '1px solid #E8E0D4', position: 'sticky', top: 0, zIndex: 50 }}>
+        <div style={{ maxWidth: '1152px', margin: '0 auto', padding: '0 24px', height: '64px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Link href="/" style={{ fontFamily: "'Playfair Display', serif", fontWeight: 900, fontSize: '20px', color: '#4A2C0E', textDecoration: 'none' }}>
             EV YEMEKLERİ
           </Link>
-          <div className="flex items-center gap-3">
-            <Link href="/kesif" className="text-sm font-medium text-[#8A7B6B] hover:text-[#4A2C0E] hidden sm:block">
-              Keşfet
-            </Link>
-            <Link href="/giris"
-              className="px-4 py-2 text-sm font-semibold text-[#4A2C0E] border border-[#E8E0D4] rounded-lg hover:border-[#E8622A] hover:text-[#E8622A] transition-colors">
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+            <Link href="/kesif" style={{ fontSize: '14px', fontWeight: 500, color: '#8A7B6B', textDecoration: 'none' }}>Keşfet</Link>
+            <Link href="/giris" style={{ padding: '8px 16px', fontSize: '13px', fontWeight: 600, color: '#4A2C0E', border: '1px solid #E8E0D4', borderRadius: '8px', textDecoration: 'none' }}>
               Giriş Yap
             </Link>
-            <Link href="/kayit"
-              className="px-4 py-2 text-sm font-semibold text-white bg-[#E8622A] rounded-lg hover:bg-[#d4541e] transition-colors">
+            <Link href="/kayit" style={{ padding: '8px 16px', fontSize: '13px', fontWeight: 600, color: 'white', background: '#E8622A', borderRadius: '8px', textDecoration: 'none' }}>
               ✨ Kayıt Ol
             </Link>
           </div>
@@ -55,50 +49,120 @@ export default function HomePage() {
       </nav>
 
       {/* Hero */}
-      <HeroSection />
+      <section style={{
+        background: 'linear-gradient(135deg, #2C1500 0%, #4A2C0E 50%, #7A4A20 100%)',
+        position: 'relative', overflow: 'hidden', padding: '72px 24px 88px',
+      }}>
+        {/* Nokta doku */}
+        <div style={{
+          position: 'absolute', inset: 0, opacity: 0.12,
+          backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)',
+          backgroundSize: '28px 28px', pointerEvents: 'none',
+        }} />
+        {/* Sag emoji */}
+        <div style={{ position: 'absolute', right: '6%', top: '50%', transform: 'translateY(-50%)', fontSize: '160px', opacity: 0.07, userSelect: 'none', pointerEvents: 'none' }}>
+          👩‍🍳
+        </div>
 
-      {/* Nasıl Çalışır */}
-      <section className="max-w-6xl mx-auto px-4 sm:px-6 py-16">
-        <h2 className="font-serif text-2xl font-bold text-[#4A2C0E] mb-10 text-center">
+        <div style={{ maxWidth: '640px', margin: '0 auto', position: 'relative' }}>
+          <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: 'clamp(30px, 5vw, 50px)', fontWeight: 900, color: 'white', lineHeight: 1.15, margin: '0 0 16px' }}>
+            Mahallendeki En İyi<br />Ev Yemeklerini Keşfet
+          </h1>
+          <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '15px', lineHeight: 1.7, margin: '0 0 32px', maxWidth: '400px' }}>
+            2–10 km çevrenizdeki ev aşçılarından taze, sıcak, elle yapılmış yemek sipariş edin.
+          </p>
+
+          {/* Mesafe karti */}
+          <div style={{
+            background: 'rgba(255,255,255,0.09)', backdropFilter: 'blur(10px)',
+            border: '1px solid rgba(255,255,255,0.13)', borderRadius: '16px',
+            padding: '20px 24px', maxWidth: '480px',
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+              <span style={{ color: 'rgba(255,255,255,0.8)', fontSize: '13px', fontWeight: 600 }}>📍 Adana, Seyhan</span>
+              <span style={{ color: '#E8622A', fontSize: '13px', fontWeight: 700 }}>24 aşçı yakında</span>
+            </div>
+
+            <div style={{ marginBottom: '14px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginBottom: '6px' }}>
+                <span>1 km</span>
+                <span style={{ color: '#E8622A', fontWeight: 700, fontSize: '13px' }}>{km} km</span>
+                <span>10 km</span>
+              </div>
+              <input type="range" min={1} max={10} value={km} onChange={e => setKm(Number(e.target.value))}
+                style={{ width: '100%', accentColor: '#E8622A', cursor: 'pointer' }} />
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              {DISTANCES.map(d => (
+                <button key={d} onClick={() => setKm(d)} style={{
+                  padding: '7px 14px', borderRadius: '20px', fontSize: '12px', fontWeight: 600,
+                  cursor: 'pointer', border: 'none', fontFamily: 'inherit',
+                  background: km === d ? 'white' : 'rgba(255,255,255,0.12)',
+                  color: km === d ? '#E8622A' : 'rgba(255,255,255,0.7)',
+                }}>{d} km</button>
+              ))}
+              <Link href={`/kesif?km=${km}`} style={{
+                marginLeft: 'auto', padding: '9px 20px', borderRadius: '20px',
+                background: '#E8622A', color: 'white', fontSize: '13px', fontWeight: 700,
+                textDecoration: 'none', whiteSpace: 'nowrap',
+              }}>Aşçıları Gör →</Link>
+            </div>
+          </div>
+
+          {/* Guven rozet */}
+          <div style={{ display: 'flex', gap: '10px', marginTop: '24px', flexWrap: 'wrap' }}>
+            {['✅ Güvenli Ödeme', '📍 Konum Bazlı', '⭐ Gerçek Yorumlar'].map(label => (
+              <div key={label} style={{
+                display: 'flex', alignItems: 'center', gap: '6px',
+                background: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.15)',
+                borderRadius: '20px', padding: '6px 14px', fontSize: '12px',
+                color: 'rgba(255,255,255,0.8)', fontWeight: 500,
+              }}>{label}</div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Nasil Calisir */}
+      <section style={{ maxWidth: '1152px', margin: '0 auto', padding: '64px 24px' }}>
+        <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: '24px', fontWeight: 700, color: '#4A2C0E', textAlign: 'center', marginBottom: '40px' }}>
           Nasıl Çalışır?
         </h2>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '24px' }}>
           {HOW_STEPS.map((step, i) => (
-            <div key={i} className="text-center">
-              <div className="w-14 h-14 rounded-full bg-[#F5EDD8] border-2 border-[#E8E0D4] flex items-center justify-center text-2xl mx-auto mb-3">
+            <div key={i} style={{ textAlign: 'center' }}>
+              <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: '#F5EDD8', border: '2px solid #E8E0D4', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', margin: '0 auto 12px' }}>
                 {step.icon}
               </div>
-              <div className="font-bold text-[#4A2C0E] text-sm mb-1">{step.title}</div>
-              <div className="text-[#8A7B6B] text-xs leading-relaxed">{step.desc}</div>
+              <div style={{ fontWeight: 700, color: '#4A2C0E', fontSize: '14px', marginBottom: '6px' }}>{step.title}</div>
+              <div style={{ color: '#8A7B6B', fontSize: '12px', lineHeight: 1.6 }}>{step.desc}</div>
             </div>
           ))}
         </div>
       </section>
 
       {/* Populer Menuler */}
-      <section className="max-w-6xl mx-auto px-4 sm:px-6 pb-16">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="font-serif text-2xl font-bold text-[#4A2C0E]">
+      <section style={{ maxWidth: '1152px', margin: '0 auto', padding: '0 24px 64px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
+          <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: '24px', fontWeight: 700, color: '#4A2C0E', margin: 0 }}>
             Bugünün Popüler Menüleri
           </h2>
-          <Link href="/kesif" className="text-[#E8622A] text-sm font-semibold hover:underline">
-            Tümünü Gör →
-          </Link>
+          <Link href="/kesif" style={{ color: '#E8622A', fontSize: '14px', fontWeight: 600, textDecoration: 'none' }}>Tümünü Gör →</Link>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
           {POPULAR_ITEMS.map((item, i) => (
-            <Link href="/kesif" key={i}
-              className="bg-white rounded-2xl overflow-hidden shadow-sm border border-[#E8E0D4]/60 hover:-translate-y-1 hover:shadow-lg transition-all duration-200">
-              <div className="h-36 bg-gradient-to-br from-[#FFECD2] to-[#FCB69F] flex items-center justify-center text-6xl">
+            <Link href="/kesif" key={i} style={{ background: 'white', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 2px 12px rgba(74,44,14,0.08)', border: '1px solid rgba(232,224,212,0.6)', textDecoration: 'none', display: 'block', transition: 'transform 0.2s' }}>
+              <div style={{ height: '140px', background: 'linear-gradient(135deg, #FFECD2, #FCB69F)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '56px' }}>
                 {item.emoji}
               </div>
-              <div className="p-4">
-                <div className="font-semibold text-[#4A2C0E] text-sm mb-2">{item.name}</div>
-                <div className="flex items-center justify-between">
-                  <span className="font-serif text-xl font-bold text-[#E8622A]">₺{item.price}</span>
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-[#ECFDF5] text-[#3D6B47] font-semibold">⭐ {item.rating}</span>
+              <div style={{ padding: '16px' }}>
+                <div style={{ fontWeight: 600, color: '#4A2C0E', fontSize: '14px', marginBottom: '8px' }}>{item.name}</div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ fontFamily: "'Playfair Display', serif", fontSize: '20px', fontWeight: 700, color: '#E8622A' }}>₺{item.price}</span>
+                  <span style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '20px', background: '#ECFDF5', color: '#3D6B47', fontWeight: 600 }}>⭐ {item.rating}</span>
                 </div>
-                <div className="text-[#8A7B6B] text-xs mt-2">👩‍🍳 {item.chef} · {item.km} km</div>
+                <div style={{ color: '#8A7B6B', fontSize: '12px', marginTop: '8px' }}>👩‍🍳 {item.chef} · {item.km} km</div>
               </div>
             </Link>
           ))}
@@ -106,28 +170,22 @@ export default function HomePage() {
       </section>
 
       {/* Asci Ol CTA */}
-      <section className="max-w-6xl mx-auto px-4 sm:px-6 pb-16">
-        <div className="rounded-2xl p-8 sm:p-12 flex flex-col sm:flex-row items-center justify-between gap-6 overflow-hidden relative"
-          style={{ background: 'linear-gradient(135deg, #3D6B47, #2e5236)' }}>
-          <div className="absolute right-8 text-[100px] opacity-10 select-none hidden sm:block">👩‍🍳</div>
+      <section style={{ maxWidth: '1152px', margin: '0 auto', padding: '0 24px 64px' }}>
+        <div style={{ background: 'linear-gradient(135deg, #3D6B47, #2e5236)', borderRadius: '20px', padding: '48px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '32px', position: 'relative', overflow: 'hidden' }}>
+          <div style={{ position: 'absolute', right: '32px', fontSize: '120px', opacity: 0.08, userSelect: 'none' }}>👩‍🍳</div>
           <div>
-            <div className="text-[#6BA37A] text-xs font-bold tracking-[2px] uppercase mb-2">EV AŞÇILARI İÇİN</div>
-            <h2 className="font-serif text-2xl sm:text-3xl font-black text-white mb-2">Mutfağın Sana Gelir Getirsin</h2>
-            <p className="text-white/70 text-sm mb-6">Kendi saatlerinde çalış, kendi fiyatını belirle. Komisyon yalnızca başarılı siparişlerden.</p>
-            <Link href="/kayit" className="inline-flex items-center gap-2 px-6 py-3 bg-white text-[#3D6B47] font-bold rounded-xl hover:bg-white/90 transition-colors text-sm">
+            <div style={{ color: '#6BA37A', fontSize: '11px', fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '8px' }}>EV AŞÇILARI İÇİN</div>
+            <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: '28px', fontWeight: 900, color: 'white', margin: '0 0 8px' }}>Mutfağın Sana Gelir Getirsin</h2>
+            <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '14px', marginBottom: '24px' }}>Kendi saatlerinde çalış, kendi fiyatını belirle.</p>
+            <Link href="/kayit" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '12px 24px', background: 'white', color: '#3D6B47', fontWeight: 700, borderRadius: '12px', textDecoration: 'none', fontSize: '14px' }}>
               🍳 Hemen Aşçı Ol →
             </Link>
           </div>
-          <div className="grid grid-cols-2 gap-4 flex-shrink-0">
-            {[
-              { n: '%90', label: 'Kazancın Sende' },
-              { n: '0₺',  label: 'Üyelik Ücreti' },
-              { n: '24s', label: 'Ödeme Süresi' },
-              { n: '⭐',  label: 'Rozet Sistemi' },
-            ].map(s => (
-              <div key={s.n} className="bg-white/10 rounded-xl px-4 py-3 text-center">
-                <div className="text-white font-serif text-xl font-black">{s.n}</div>
-                <div className="text-white/60 text-xs mt-0.5">{s.label}</div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', flexShrink: 0 }}>
+            {[['%90', 'Kazancın Sende'], ['0₺', 'Üyelik Ücreti'], ['24s', 'Ödeme Süresi'], ['⭐', 'Rozet Sistemi']].map(([n, l]) => (
+              <div key={n} style={{ background: 'rgba(255,255,255,0.1)', borderRadius: '12px', padding: '12px 16px', textAlign: 'center' }}>
+                <div style={{ fontFamily: "'Playfair Display', serif", fontSize: '20px', fontWeight: 900, color: 'white' }}>{n}</div>
+                <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', marginTop: '2px' }}>{l}</div>
               </div>
             ))}
           </div>
@@ -135,30 +193,31 @@ export default function HomePage() {
       </section>
 
       {/* Yorumlar */}
-      <section className="max-w-6xl mx-auto px-4 sm:px-6 pb-20">
-        <h2 className="font-serif text-2xl font-bold text-[#4A2C0E] mb-6">Kullanıcı Yorumları</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+      <section style={{ maxWidth: '1152px', margin: '0 auto', padding: '0 24px 80px' }}>
+        <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: '24px', fontWeight: 700, color: '#4A2C0E', marginBottom: '24px' }}>
+          Kullanıcı Yorumları
+        </h2>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
           {TESTIMONIALS.map((t, i) => (
-            <div key={i} className="bg-[#F5EDD8] rounded-2xl p-5 border-l-4 border-[#E8622A]">
-              <p className="text-[#4A2C0E] text-sm italic leading-relaxed mb-3">{t.text}</p>
-              <div className="text-[#E8622A] text-sm font-bold mb-0.5">{'★'.repeat(t.stars)}</div>
-              <div className="text-[#7A4A20] text-xs font-semibold">— {t.author}</div>
+            <div key={i} style={{ background: '#F5EDD8', borderRadius: '16px', padding: '20px', borderLeft: '4px solid #E8622A' }}>
+              <p style={{ color: '#4A2C0E', fontSize: '13px', fontStyle: 'italic', lineHeight: 1.7, marginBottom: '12px' }}>{t.text}</p>
+              <div style={{ color: '#E8622A', fontSize: '13px', fontWeight: 700, marginBottom: '2px' }}>★★★★★</div>
+              <div style={{ color: '#7A4A20', fontSize: '12px', fontWeight: 600 }}>— {t.author}</div>
             </div>
           ))}
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="bg-[#4A2C0E] text-white/60 py-10">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
-          <div className="font-serif font-black text-white text-lg">EV YEMEKLERİ</div>
-          <div className="flex gap-6">
-            <Link href="/kesif"      className="hover:text-white transition-colors">Keşfet</Link>
-            <Link href="/kayit"      className="hover:text-white transition-colors">Aşçı Ol</Link>
-            <Link href="/hakkimizda" className="hover:text-white transition-colors">Hakkımızda</Link>
-            <Link href="/gizlilik"   className="hover:text-white transition-colors">Gizlilik</Link>
+      <footer style={{ background: '#4A2C0E', padding: '40px 24px' }}>
+        <div style={{ maxWidth: '1152px', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
+          <div style={{ fontFamily: "'Playfair Display', serif", fontWeight: 900, fontSize: '18px', color: 'white' }}>EV YEMEKLERİ</div>
+          <div style={{ display: 'flex', gap: '24px' }}>
+            {[['Keşfet', '/kesif'], ['Aşçı Ol', '/kayit'], ['Hakkımızda', '/hakkimizda'], ['Gizlilik', '/gizlilik']].map(([label, href]) => (
+              <Link key={href} href={href} style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px', textDecoration: 'none' }}>{label}</Link>
+            ))}
           </div>
-          <div>© {new Date().getFullYear()} Ev Yemekleri</div>
+          <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px' }}>© 2025 Ev Yemekleri</div>
         </div>
       </footer>
 
