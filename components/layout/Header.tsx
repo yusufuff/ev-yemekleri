@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -9,7 +9,7 @@ interface HeaderProps {
   title:     string
   subtitle?: string
   user?:     User | null
-  actions?:  React.ReactNode  // Sayfaya özel butonlar
+  actions?:  React.ReactNode  // Sayfaya Ã¶zel butonlar
 }
 
 export default function Header({ title, subtitle, user, actions }: HeaderProps) {
@@ -25,7 +25,7 @@ export default function Header({ title, subtitle, user, actions }: HeaderProps) 
   return (
     <header className="bg-white border-b border-gray-light px-8 py-4
                        flex items-center justify-between sticky top-0 z-50">
-      {/* Sol: başlık */}
+      {/* Sol: baÅŸlÄ±k */}
       <div>
         <h1 className="font-serif text-[22px] font-bold text-brown leading-tight">
           {title}
@@ -35,7 +35,7 @@ export default function Header({ title, subtitle, user, actions }: HeaderProps) 
         )}
       </div>
 
-      {/* Sağ: aksiyonlar + kullanıcı */}
+      {/* SaÄŸ: aksiyonlar + kullanÄ±cÄ± */}
       <div className="flex items-center gap-3">
         {actions}
 
@@ -47,7 +47,7 @@ export default function Header({ title, subtitle, user, actions }: HeaderProps) 
               className="relative w-9 h-9 flex items-center justify-center
                          rounded-lg border border-gray-light hover:border-orange transition text-base"
             >
-              🔔
+              ğŸ””
               <span className="absolute -top-1 -right-1 w-2 h-2 bg-orange rounded-full" />
             </Link>
 
@@ -73,29 +73,29 @@ export default function Header({ title, subtitle, user, actions }: HeaderProps) 
                   className="flex items-center gap-2 px-4 py-3 text-sm text-brown
                              hover:bg-cream transition rounded-t-lg"
                 >
-                  👤 Profilim
+                  ğŸ‘¤ Profilim
                 </Link>
                 <Link
                   href="/odeme-yontemleri"
                   className="flex items-center gap-2 px-4 py-3 text-sm text-brown
                              hover:bg-cream transition"
                 >
-                  💳 Ödeme Yöntemleri
+                  ğŸ’³ Ã–deme YÃ¶ntemleri
                 </Link>
                 <button
                   onClick={handleLogout}
                   className="flex items-center gap-2 px-4 py-3 text-sm text-red-600
                              hover:bg-red-50 transition rounded-b-lg w-full text-left"
                 >
-                  🚪 Çıkış Yap
+                  ğŸšª Ã‡Ä±kÄ±ÅŸ Yap
                 </button>
               </div>
             </div>
           </div>
         ) : (
           <div className="flex items-center gap-2">
-            <Link href="/giris"   className="btn btn-ghost btn-sm">Giriş Yap</Link>
-            <Link href="/kayit" className="btn btn-primary btn-sm">✨ Kayıt Ol</Link>
+            <Link href="/giris"   className="btn btn-ghost btn-sm">GiriÅŸ Yap</Link>
+            <Link href="/kayit" className="btn btn-primary btn-sm">âœ¨ KayÄ±t Ol</Link>
           </div>
         )}
       </div>
