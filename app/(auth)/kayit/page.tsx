@@ -8,6 +8,7 @@ export default function KayitPage() {
   const router = useRouter()
   const [fullName, setFullName] = useState('')
   const [phone, setPhone] = useState('')
+  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [role, setRole] = useState('buyer')
   const [loading, setLoading] = useState(false)
@@ -21,6 +22,10 @@ export default function KayitPage() {
     }
     if (!phone.match(/^05[0-9]{9}$/)) {
       setError('Geçerli bir telefon numarası girin (05XX XXX XX XX).')
+      return
+    }
+    if (email && !/^[^@]+@[^@]+\.[^@]+$/.test(email)) {
+      setError('Geçerli bir e-posta adresi girin.')
       return
     }
     if (password.length < 6) {
@@ -38,6 +43,7 @@ export default function KayitPage() {
         body: JSON.stringify({
           full_name: fullName.trim(),
           phone: '+90' + phone.replace(/^0/, ''),
+          email: email.trim() || null,
           password,
           role,
         }),
@@ -50,7 +56,6 @@ export default function KayitPage() {
         return
       }
 
-      // Session kur
       if (json.access_token && json.refresh_token) {
         const { createBrowserClient } = await import('@supabase/ssr')
         const supabase = createBrowserClient(
@@ -71,21 +76,26 @@ export default function KayitPage() {
     }
   }
 
+  const inputStyle = {
+    width: '100%', padding: '11px 14px',
+    border: '1.5px solid var(--gray-light)', borderRadius: '8px',
+    fontSize: '14px', fontFamily: 'inherit', outline: 'none',
+    boxSizing: 'border-box',
+  }
+
+  const labelStyle = {
+    fontSize: '12px', fontWeight: 600, color: 'var(--brown-mid)',
+    display: 'block', marginBottom: '6px',
+  }
+
   return (
     <div style={{
-      minHeight: '100vh',
-      background: 'var(--cream)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '24px',
+      minHeight: '100vh', background: 'var(--cream)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px',
     }}>
       <div style={{
-        background: 'white',
-        borderRadius: '20px',
-        padding: '40px',
-        width: '100%',
-        maxWidth: '420px',
+        background: 'white', borderRadius: '20px', padding: '40px',
+        width: '100%', maxWidth: '420px',
         boxShadow: '0 4px 24px rgba(74,44,14,0.10)',
         border: '1px solid rgba(232,224,212,0.8)',
       }}>
@@ -102,72 +112,64 @@ export default function KayitPage() {
             color: 'var(--brown)', margin: '0 0 8px',
           }}>Kayıt Ol<span style={{ color: 'var(--orange)' }}>.</span></h1>
           <p style={{ fontSize: '14px', color: 'var(--gray)', margin: 0 }}>
-            Zaten hesabın var mı? <Link href="/giris" style={{ color: 'var(--orange)', fontWeight: 600 }}>Giriş Yap</Link>
+            Zaten hesabın var mı?{' '}
+            <Link href="/giris" style={{ color: 'var(--orange)', fontWeight: 600 }}>Giriş Yap</Link>
           </p>
         </div>
 
         <form onSubmit={handleSubmit}>
+          {/* Ad Soyad */}
           <div style={{ marginBottom: '14px' }}>
-            <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--brown-mid)', display: 'block', marginBottom: '6px' }}>Ad Soyad</label>
-            <input
-              type="text"
-              value={fullName}
-              onChange={e => setFullName(e.target.value)}
-              placeholder="Adınız Soyadınız"
-              style={{ width: '100%', padding: '11px 14px', border: '1.5px solid var(--gray-light)', borderRadius: '8px', fontSize: '14px', fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' }}
-              required
-            />
+            <label style={labelStyle}>Ad Soyad *</label>
+            <input type="text" value={fullName} onChange={e => setFullName(e.target.value)}
+              placeholder="Adınız Soyadınız" style={inputStyle} required />
           </div>
 
+          {/* Telefon */}
           <div style={{ marginBottom: '14px' }}>
-            <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--brown-mid)', display: 'block', marginBottom: '6px' }}>Telefon</label>
-            <input
-              type="tel"
-              value={phone}
+            <label style={labelStyle}>Telefon *</label>
+            <input type="tel" value={phone}
               onChange={e => setPhone(e.target.value.replace(/\D/g, '').slice(0, 11))}
-              placeholder="05XX XXX XX XX"
-              style={{ width: '100%', padding: '11px 14px', border: '1.5px solid var(--gray-light)', borderRadius: '8px', fontSize: '14px', fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' }}
-              required
-            />
+              placeholder="05XX XXX XX XX" style={inputStyle} required />
           </div>
 
+          {/* E-posta */}
           <div style={{ marginBottom: '14px' }}>
-            <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--brown-mid)', display: 'block', marginBottom: '6px' }}>Şifre</label>
-            <input
-              type="password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              placeholder="En az 6 karakter"
-              style={{ width: '100%', padding: '11px 14px', border: '1.5px solid var(--gray-light)', borderRadius: '8px', fontSize: '14px', fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' }}
-              required
-            />
+            <label style={labelStyle}>
+              E-posta{' '}
+              <span style={{ fontSize: '11px', color: 'var(--gray)', fontWeight: 400 }}>
+                (isteğe bağlı — bildirimler için önerilir)
+              </span>
+            </label>
+            <input type="email" value={email} onChange={e => setEmail(e.target.value)}
+              placeholder="ornek@mail.com" style={inputStyle} />
           </div>
 
+          {/* Sifre */}
+          <div style={{ marginBottom: '14px' }}>
+            <label style={labelStyle}>Şifre *</label>
+            <input type="password" value={password} onChange={e => setPassword(e.target.value)}
+              placeholder="En az 6 karakter" style={inputStyle} required />
+          </div>
+
+          {/* Hesap Turu */}
           <div style={{ marginBottom: '20px' }}>
-            <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--brown-mid)', display: 'block', marginBottom: '8px' }}>Hesap Türü</label>
+            <label style={labelStyle}>Hesap Türü</label>
             <div style={{ display: 'flex', gap: '10px' }}>
-              <button
-                type="button"
-                onClick={() => setRole('buyer')}
-                style={{
+              {[
+                { val: 'buyer', icon: '🛒', label: 'Alıcı' },
+                { val: 'chef', icon: '👩\u200d🍳', label: 'Aşçı' },
+              ].map(({ val, icon, label }) => (
+                <button key={val} type="button" onClick={() => setRole(val)} style={{
                   flex: 1, padding: '12px', borderRadius: '10px', cursor: 'pointer',
-                  border: role === 'buyer' ? '2px solid var(--orange)' : '2px solid var(--gray-light)',
-                  background: role === 'buyer' ? '#FEF3EC' : 'white',
-                  color: role === 'buyer' ? 'var(--orange)' : 'var(--gray)',
+                  border: role === val ? '2px solid var(--orange)' : '2px solid var(--gray-light)',
+                  background: role === val ? '#FEF3EC' : 'white',
+                  color: role === val ? 'var(--orange)' : 'var(--gray)',
                   fontWeight: 600, fontSize: '13px', fontFamily: 'inherit',
-                }}
-              >🛒 Alıcı</button>
-              <button
-                type="button"
-                onClick={() => setRole('chef')}
-                style={{
-                  flex: 1, padding: '12px', borderRadius: '10px', cursor: 'pointer',
-                  border: role === 'chef' ? '2px solid var(--orange)' : '2px solid var(--gray-light)',
-                  background: role === 'chef' ? '#FEF3EC' : 'white',
-                  color: role === 'chef' ? 'var(--orange)' : 'var(--gray)',
-                  fontWeight: 600, fontSize: '13px', fontFamily: 'inherit',
-                }}
-              >👩‍🍳 Aşçı</button>
+                }}>
+                  {icon} {label}
+                </button>
+              ))}
             </div>
           </div>
 
@@ -179,17 +181,16 @@ export default function KayitPage() {
             }}>⚠️ {error}</div>
           )}
 
-          <button
-            type="submit"
-            disabled={loading}
-            style={{
-              width: '100%', padding: '13px',
-              background: loading ? 'var(--gray)' : 'var(--orange)',
-              color: 'white', border: 'none', borderRadius: '10px',
-              fontSize: '14px', fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer',
-              fontFamily: 'inherit',
-            }}
-          >{loading ? 'Kaydediliyor...' : '✨ Hesap Oluştur'}</button>
+          <button type="submit" disabled={loading} style={{
+            width: '100%', padding: '13px',
+            background: loading ? 'var(--gray)' : 'var(--orange)',
+            color: 'white', border: 'none', borderRadius: '10px',
+            fontSize: '14px', fontWeight: 700,
+            cursor: loading ? 'not-allowed' : 'pointer',
+            fontFamily: 'inherit',
+          }}>
+            {loading ? 'Kaydediliyor...' : '✨ Hesap Oluştur'}
+          </button>
         </form>
       </div>
     </div>

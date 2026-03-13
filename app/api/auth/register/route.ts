@@ -15,7 +15,7 @@ const supabaseAuth = createClient(
 
 export async function POST(req: NextRequest) {
   try {
-    const { full_name, phone, password, role } = await req.json()
+    const { full_name, phone, email, password, role } = await req.json()
 
     if (!full_name || !phone || !password || !role) {
       return NextResponse.json({ error: 'Tüm alanlar zorunlu.' }, { status: 400 })
@@ -58,6 +58,7 @@ export async function POST(req: NextRequest) {
         id: userId,
         full_name,
         phone,
+        email: email || null,
         role,
         is_active: true,
       }, { onConflict: 'id' })
