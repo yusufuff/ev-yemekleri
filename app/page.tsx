@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
+import { HeroSection } from '@/components/home/HeroSection'
 
 export const metadata: Metadata = {
   title: 'EV YEMEKLERİ — Mahallendeki Ev Aşçılarından Sipariş Ver',
@@ -28,32 +29,7 @@ export default function HomePage() {
   return (
     <div style={{ minHeight: '100vh', background: '#FAF6EF', fontFamily: "'DM Sans', sans-serif" }}>
 
-      {/* Hero */}
-      <section style={{ background: 'linear-gradient(135deg, #2C1500 0%, #4A2C0E 50%, #7A4A20 100%)', position: 'relative', overflow: 'hidden', padding: '72px 24px 88px' }}>
-        <div style={{ position: 'absolute', inset: 0, opacity: 0.12, backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)', backgroundSize: '28px 28px', pointerEvents: 'none' }} />
-        <div style={{ position: 'absolute', right: '6%', top: '50%', transform: 'translateY(-50%)', fontSize: '160px', opacity: 0.07, userSelect: 'none', pointerEvents: 'none' }}>👩‍🍳</div>
-        <div style={{ maxWidth: '640px', margin: '0 auto', position: 'relative' }}>
-          <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: 'clamp(30px, 5vw, 50px)', fontWeight: 900, color: 'white', lineHeight: 1.15, margin: '0 0 16px' }}>
-            Mahallendeki En İyi<br />Ev Yemeklerini Keşfet
-          </h1>
-          <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '15px', lineHeight: 1.7, margin: '0 0 32px', maxWidth: '400px' }}>
-            2–10 km çevrenizdeki ev aşçılarından taze, sıcak, elle yapılmış yemek sipariş edin.
-          </p>
-          <Link href="/kesif" style={{
-            display: 'inline-flex', alignItems: 'center', gap: '8px',
-            padding: '14px 28px', background: '#E8622A', color: 'white',
-            borderRadius: '12px', textDecoration: 'none', fontSize: '15px', fontWeight: 700,
-            marginBottom: '24px',
-          }}>
-            Aşçıları Keşfet →
-          </Link>
-          <div style={{ display: 'flex', gap: '10px', marginTop: '24px', flexWrap: 'wrap' }}>
-            {['✅ Güvenli Ödeme', '📍 Konum Bazlı', '⭐ Gerçek Yorumlar'].map(label => (
-              <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '20px', padding: '6px 14px', fontSize: '12px', color: 'rgba(255,255,255,0.8)', fontWeight: 500 }}>{label}</div>
-            ))}
-          </div>
-        </div>
-      </section>
+      <HeroSection />
 
       {/* Nasil Calisir */}
       <section style={{ maxWidth: '1152px', margin: '0 auto', padding: '64px 24px' }}>
