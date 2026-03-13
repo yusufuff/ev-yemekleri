@@ -1,7 +1,10 @@
-'use client'
-// @ts-nocheck
-import React, { useState } from 'react'
 import Link from 'next/link'
+import type { Metadata } from 'next'
+import { HeroSlider } from '@/components/home/HeroSlider'
+
+export const metadata: Metadata = {
+  title: 'EV YEMEKLERİ — Mahallendeki Ev Aşçılarından Sipariş Ver',
+}
 
 const POPULAR_ITEMS = [
   { emoji: '🍲', name: 'Kuru Fasulye & Pilav', price: 55, chef: 'Fatma H.', rating: '4.9', km: '1.2' },
@@ -22,11 +25,7 @@ const TESTIMONIALS = [
   { text: '"Aşçı olarak katıldım, ilk haftada 15 sipariş aldım. Platform çok kullanışlı."',          author: 'Gülay A., Aşçı' },
 ]
 
-const DISTANCES = [1, 5, 8, 10]
-
 export default function HomePage() {
-  const [km, setKm] = useState(5)
-
   return (
     <div style={{ minHeight: '100vh', background: '#FAF6EF', fontFamily: "'DM Sans', sans-serif" }}>
 
@@ -38,32 +37,16 @@ export default function HomePage() {
           </Link>
           <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
             <Link href="/kesif" style={{ fontSize: '14px', fontWeight: 500, color: '#8A7B6B', textDecoration: 'none' }}>Keşfet</Link>
-            <Link href="/giris" style={{ padding: '8px 16px', fontSize: '13px', fontWeight: 600, color: '#4A2C0E', border: '1px solid #E8E0D4', borderRadius: '8px', textDecoration: 'none' }}>
-              Giriş Yap
-            </Link>
-            <Link href="/kayit" style={{ padding: '8px 16px', fontSize: '13px', fontWeight: 600, color: 'white', background: '#E8622A', borderRadius: '8px', textDecoration: 'none' }}>
-              ✨ Kayıt Ol
-            </Link>
+            <Link href="/giris" style={{ padding: '8px 16px', fontSize: '13px', fontWeight: 600, color: '#4A2C0E', border: '1px solid #E8E0D4', borderRadius: '8px', textDecoration: 'none' }}>Giriş Yap</Link>
+            <Link href="/kayit" style={{ padding: '8px 16px', fontSize: '13px', fontWeight: 600, color: 'white', background: '#E8622A', borderRadius: '8px', textDecoration: 'none' }}>✨ Kayıt Ol</Link>
           </div>
         </div>
       </nav>
 
       {/* Hero */}
-      <section style={{
-        background: 'linear-gradient(135deg, #2C1500 0%, #4A2C0E 50%, #7A4A20 100%)',
-        position: 'relative', overflow: 'hidden', padding: '72px 24px 88px',
-      }}>
-        {/* Nokta doku */}
-        <div style={{
-          position: 'absolute', inset: 0, opacity: 0.12,
-          backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)',
-          backgroundSize: '28px 28px', pointerEvents: 'none',
-        }} />
-        {/* Sag emoji */}
-        <div style={{ position: 'absolute', right: '6%', top: '50%', transform: 'translateY(-50%)', fontSize: '160px', opacity: 0.07, userSelect: 'none', pointerEvents: 'none' }}>
-          👩‍🍳
-        </div>
-
+      <section style={{ background: 'linear-gradient(135deg, #2C1500 0%, #4A2C0E 50%, #7A4A20 100%)', position: 'relative', overflow: 'hidden', padding: '72px 24px 88px' }}>
+        <div style={{ position: 'absolute', inset: 0, opacity: 0.12, backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)', backgroundSize: '28px 28px', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', right: '6%', top: '50%', transform: 'translateY(-50%)', fontSize: '160px', opacity: 0.07, userSelect: 'none', pointerEvents: 'none' }}>👩‍🍳</div>
         <div style={{ maxWidth: '640px', margin: '0 auto', position: 'relative' }}>
           <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: 'clamp(30px, 5vw, 50px)', fontWeight: 900, color: 'white', lineHeight: 1.15, margin: '0 0 16px' }}>
             Mahallendeki En İyi<br />Ev Yemeklerini Keşfet
@@ -71,54 +54,10 @@ export default function HomePage() {
           <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '15px', lineHeight: 1.7, margin: '0 0 32px', maxWidth: '400px' }}>
             2–10 km çevrenizdeki ev aşçılarından taze, sıcak, elle yapılmış yemek sipariş edin.
           </p>
-
-          {/* Mesafe karti */}
-          <div style={{
-            background: 'rgba(255,255,255,0.09)', backdropFilter: 'blur(10px)',
-            border: '1px solid rgba(255,255,255,0.13)', borderRadius: '16px',
-            padding: '20px 24px', maxWidth: '480px',
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-              <span style={{ color: 'rgba(255,255,255,0.8)', fontSize: '13px', fontWeight: 600 }}>📍 Adana, Seyhan</span>
-              <span style={{ color: '#E8622A', fontSize: '13px', fontWeight: 700 }}>24 aşçı yakında</span>
-            </div>
-
-            <div style={{ marginBottom: '14px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginBottom: '6px' }}>
-                <span>1 km</span>
-                <span style={{ color: '#E8622A', fontWeight: 700, fontSize: '13px' }}>{km} km</span>
-                <span>10 km</span>
-              </div>
-              <input type="range" min={1} max={10} value={km} onChange={e => setKm(Number(e.target.value))}
-                style={{ width: '100%', accentColor: '#E8622A', cursor: 'pointer' }} />
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-              {DISTANCES.map(d => (
-                <button key={d} onClick={() => setKm(d)} style={{
-                  padding: '7px 14px', borderRadius: '20px', fontSize: '12px', fontWeight: 600,
-                  cursor: 'pointer', border: 'none', fontFamily: 'inherit',
-                  background: km === d ? 'white' : 'rgba(255,255,255,0.12)',
-                  color: km === d ? '#E8622A' : 'rgba(255,255,255,0.7)',
-                }}>{d} km</button>
-              ))}
-              <Link href={`/kesif?km=${km}`} style={{
-                marginLeft: 'auto', padding: '9px 20px', borderRadius: '20px',
-                background: '#E8622A', color: 'white', fontSize: '13px', fontWeight: 700,
-                textDecoration: 'none', whiteSpace: 'nowrap',
-              }}>Aşçıları Gör →</Link>
-            </div>
-          </div>
-
-          {/* Guven rozet */}
+          <HeroSlider />
           <div style={{ display: 'flex', gap: '10px', marginTop: '24px', flexWrap: 'wrap' }}>
             {['✅ Güvenli Ödeme', '📍 Konum Bazlı', '⭐ Gerçek Yorumlar'].map(label => (
-              <div key={label} style={{
-                display: 'flex', alignItems: 'center', gap: '6px',
-                background: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.15)',
-                borderRadius: '20px', padding: '6px 14px', fontSize: '12px',
-                color: 'rgba(255,255,255,0.8)', fontWeight: 500,
-              }}>{label}</div>
+              <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '20px', padding: '6px 14px', fontSize: '12px', color: 'rgba(255,255,255,0.8)', fontWeight: 500 }}>{label}</div>
             ))}
           </div>
         </div>
@@ -126,15 +65,11 @@ export default function HomePage() {
 
       {/* Nasil Calisir */}
       <section style={{ maxWidth: '1152px', margin: '0 auto', padding: '64px 24px' }}>
-        <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: '24px', fontWeight: 700, color: '#4A2C0E', textAlign: 'center', marginBottom: '40px' }}>
-          Nasıl Çalışır?
-        </h2>
+        <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: '24px', fontWeight: 700, color: '#4A2C0E', textAlign: 'center', marginBottom: '40px' }}>Nasıl Çalışır?</h2>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '24px' }}>
           {HOW_STEPS.map((step, i) => (
             <div key={i} style={{ textAlign: 'center' }}>
-              <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: '#F5EDD8', border: '2px solid #E8E0D4', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', margin: '0 auto 12px' }}>
-                {step.icon}
-              </div>
+              <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: '#F5EDD8', border: '2px solid #E8E0D4', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', margin: '0 auto 12px' }}>{step.icon}</div>
               <div style={{ fontWeight: 700, color: '#4A2C0E', fontSize: '14px', marginBottom: '6px' }}>{step.title}</div>
               <div style={{ color: '#8A7B6B', fontSize: '12px', lineHeight: 1.6 }}>{step.desc}</div>
             </div>
@@ -142,20 +77,16 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Populer Menuler */}
+      {/* Populer */}
       <section style={{ maxWidth: '1152px', margin: '0 auto', padding: '0 24px 64px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
-          <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: '24px', fontWeight: 700, color: '#4A2C0E', margin: 0 }}>
-            Bugünün Popüler Menüleri
-          </h2>
+          <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: '24px', fontWeight: 700, color: '#4A2C0E', margin: 0 }}>Bugünün Popüler Menüleri</h2>
           <Link href="/kesif" style={{ color: '#E8622A', fontSize: '14px', fontWeight: 600, textDecoration: 'none' }}>Tümünü Gör →</Link>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
           {POPULAR_ITEMS.map((item, i) => (
-            <Link href="/kesif" key={i} style={{ background: 'white', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 2px 12px rgba(74,44,14,0.08)', border: '1px solid rgba(232,224,212,0.6)', textDecoration: 'none', display: 'block', transition: 'transform 0.2s' }}>
-              <div style={{ height: '140px', background: 'linear-gradient(135deg, #FFECD2, #FCB69F)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '56px' }}>
-                {item.emoji}
-              </div>
+            <Link href="/kesif" key={i} style={{ background: 'white', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 2px 12px rgba(74,44,14,0.08)', border: '1px solid rgba(232,224,212,0.6)', textDecoration: 'none', display: 'block' }}>
+              <div style={{ height: '140px', background: 'linear-gradient(135deg, #FFECD2, #FCB69F)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '56px' }}>{item.emoji}</div>
               <div style={{ padding: '16px' }}>
                 <div style={{ fontWeight: 600, color: '#4A2C0E', fontSize: '14px', marginBottom: '8px' }}>{item.name}</div>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -169,7 +100,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Asci Ol CTA */}
+      {/* Asci Ol */}
       <section style={{ maxWidth: '1152px', margin: '0 auto', padding: '0 24px 64px' }}>
         <div style={{ background: 'linear-gradient(135deg, #3D6B47, #2e5236)', borderRadius: '20px', padding: '48px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '32px', position: 'relative', overflow: 'hidden' }}>
           <div style={{ position: 'absolute', right: '32px', fontSize: '120px', opacity: 0.08, userSelect: 'none' }}>👩‍🍳</div>
@@ -177,9 +108,7 @@ export default function HomePage() {
             <div style={{ color: '#6BA37A', fontSize: '11px', fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '8px' }}>EV AŞÇILARI İÇİN</div>
             <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: '28px', fontWeight: 900, color: 'white', margin: '0 0 8px' }}>Mutfağın Sana Gelir Getirsin</h2>
             <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '14px', marginBottom: '24px' }}>Kendi saatlerinde çalış, kendi fiyatını belirle.</p>
-            <Link href="/kayit" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '12px 24px', background: 'white', color: '#3D6B47', fontWeight: 700, borderRadius: '12px', textDecoration: 'none', fontSize: '14px' }}>
-              🍳 Hemen Aşçı Ol →
-            </Link>
+            <Link href="/kayit" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '12px 24px', background: 'white', color: '#3D6B47', fontWeight: 700, borderRadius: '12px', textDecoration: 'none', fontSize: '14px' }}>🍳 Hemen Aşçı Ol →</Link>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', flexShrink: 0 }}>
             {[['%90', 'Kazancın Sende'], ['0₺', 'Üyelik Ücreti'], ['24s', 'Ödeme Süresi'], ['⭐', 'Rozet Sistemi']].map(([n, l]) => (
@@ -194,9 +123,7 @@ export default function HomePage() {
 
       {/* Yorumlar */}
       <section style={{ maxWidth: '1152px', margin: '0 auto', padding: '0 24px 80px' }}>
-        <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: '24px', fontWeight: 700, color: '#4A2C0E', marginBottom: '24px' }}>
-          Kullanıcı Yorumları
-        </h2>
+        <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: '24px', fontWeight: 700, color: '#4A2C0E', marginBottom: '24px' }}>Kullanıcı Yorumları</h2>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
           {TESTIMONIALS.map((t, i) => (
             <div key={i} style={{ background: '#F5EDD8', borderRadius: '16px', padding: '20px', borderLeft: '4px solid #E8622A' }}>
