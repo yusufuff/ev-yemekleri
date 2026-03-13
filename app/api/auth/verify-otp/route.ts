@@ -69,12 +69,17 @@ export async function POST(req: NextRequest) {
 
     const { data: existingUser } = await supabaseAdmin
       .from('users')
-      .select('id, role')
+      .select('id, role, full_name')
       .eq('phone', phone)
       .single()
 
     let isNewUser = false
     let userRole = 'buyer'
+
+    if (existingUser) {
+      isNewUser = !existingUser.full_name || existingUser.full_name.trim() === ''
+      userRole = existingUser.role || 'buyer'
+    }
 
     if (!existingUser) {
       const { data: authList } = await supabaseAdmin.auth.admin.listUsers()
