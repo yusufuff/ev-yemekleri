@@ -1,15 +1,17 @@
-// @ts-nocheck
 /**
- * (buyer) grup layout "” siparişlerim, mesajlar, favorilerim, adreslerim
+ * (buyer) grup layout — siparişlerim, mesajlar, favorilerim, adreslerim
  * Giriş zorunlu.
  */
 import { redirect } from 'next/navigation'
 import { getCurrentUser } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { BottomNav } from '@/components/layout/BottomNav'
+import dynamic from 'next/dynamic'
+
+const CartButton = dynamic(() => import('@/components/cart/CartButton').then(m => m.CartButton), { ssr: false })
 
 export default async function BuyerLayout({ children }: { children: React.ReactNode }) {
-  const user = await getCurrentUser() as any
+  const user = await getCurrentUser()
 
   if (!user) {
     redirect('/giris?redirect=/siparislerim')
@@ -23,6 +25,7 @@ export default async function BuyerLayout({ children }: { children: React.ReactN
             EV YEMEKLERİ
           </Link>
           <div className="flex items-center gap-3 text-sm">
+            <CartButton />
             <Link href="/kesif" className="text-[#8A7B6B] hover:text-[#4A2C0E] font-medium hidden sm:block">Keşfet</Link>
             <Link href="/siparislerim" className="text-[#8A7B6B] hover:text-[#4A2C0E] font-medium hidden sm:block">Siparişlerim</Link>
             <div className="w-8 h-8 rounded-full bg-[#E8622A] flex items-center justify-center text-white text-sm font-bold">
