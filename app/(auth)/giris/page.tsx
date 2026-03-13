@@ -1,327 +1,159 @@
 ﻿'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 
-type Role = 'buyer' | 'chef'
-
-interface RoleCardProps {
-  role: Role
-  selected: boolean
-  onSelect: () => void
-  emoji: string
-  title: string
-  desc: string
-  tags: string[]
+// Türkiye telefon numarası validasyonu
+function normalizePhone(raw: string): string | null {
+  const digits = raw.replace(/\D/g, '')
+  if (digits.length === 10 && digits.startsWith('5')) return '+90' + digits
+  if (digits.length === 11 && digits.startsWith('05')) return '+90' + digits.slice(1)
+  if (digits.length === 12 && digits.startsWith('905')) return '+' + digits
+  if (digits.length === 13 && digits.startsWith('+905')) return digits
+  return null
 }
 
-function RoleCard({ role, selected, onSelect, emoji, title, desc, tags }: RoleCardProps) {
-  return (
-    <button
-      type="button"
-      className={`role-card ${selected ? 'selected' : ''}`}
-      onClick={onSelect}
-      aria-pressed={selected}
-    >
-      <div className="role-card-emoji">{emoji}</div>
-      <div className="role-card-body">
-        <div className="role-card-title">{title}</div>
-        <div className="role-card-desc">{desc}</div>
-        <div className="role-card-tags">
-          {tags.map(t => (
-            <span key={t} className="role-tag">{t}</span>
-          ))}
-        </div>
-      </div>
-      <div className="role-card-check" aria-hidden="true">
-        {selected ? 'âœ“' : ''}
-      </div>
-      <style>{`
-        .role-card {
-          display: flex;
-          align-items: flex-start;
-          gap: 14px;
-          width: 100%;
-          padding: 18px 16px;
-          border: 2px solid var(--gray-light);
-          border-radius: 14px;
-          background: var(--white);
-          cursor: pointer;
-          text-align: left;
-          transition: all 0.18s;
-          position: relative;
-        }
-
-        .role-card:hover:not(.selected) {
-          border-color: rgba(232,98,42,0.4);
-          background: #FFF9F5;
-          transform: translateY(-1px);
-        }
-
-        .role-card.selected {
-          border-color: var(--orange);
-          background: #FFF5EF;
-          box-shadow: 0 0 0 1px var(--orange), 0 4px 16px rgba(232,98,42,0.15);
-        }
-
-        .role-card-emoji {
-          font-size: 32px;
-          line-height: 1;
-          flex-shrink: 0;
-          margin-top: 2px;
-        }
-
-        .role-card-body { flex: 1; }
-
-        .role-card-title {
-          font-family: 'Playfair Display', serif;
-          font-size: 17px;
-          font-weight: 700;
-          color: var(--brown);
-          margin-bottom: 4px;
-        }
-
-        .role-card-desc {
-          font-size: 12.5px;
-          color: var(--gray);
-          line-height: 1.5;
-          margin-bottom: 8px;
-        }
-
-        .role-card-tags {
-          display: flex;
-          gap: 6px;
-          flex-wrap: wrap;
-        }
-
-        .role-tag {
-          font-size: 10px;
-          font-weight: 600;
-          padding: 2px 8px;
-          border-radius: 20px;
-          background: var(--warm);
-          color: var(--brown-mid);
-        }
-
-        .role-card.selected .role-tag {
-          background: rgba(232,98,42,0.1);
-          color: var(--orange);
-        }
-
-        .role-card-check {
-          width: 24px;
-          height: 24px;
-          border-radius: 50%;
-          border: 2px solid var(--gray-light);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 12px;
-          font-weight: 700;
-          flex-shrink: 0;
-          margin-top: 2px;
-          transition: all 0.18s;
-          color: white;
-        }
-
-        .role-card.selected .role-card-check {
-          background: var(--orange);
-          border-color: var(--orange);
-        }
-      `}</style>
-    </button>
-  )
+function formatDisplay(raw: string): string {
+  const digits = raw.replace(/\D/g, '').slice(0, 10)
+  if (digits.length <= 3) return digits
+  if (digits.length <= 6) return `(${digits.slice(0,3)}) ${digits.slice(3)}`
+  if (digits.length <= 8) return `(${digits.slice(0,3)}) ${digits.slice(3,6)} ${digits.slice(6)}`
+  return `(${digits.slice(0,3)}) ${digits.slice(3,6)} ${digits.slice(6,8)} ${digits.slice(8)}`
 }
 
-export default function ProfilPage() {
+export default function GirisPage() {
   const router = useRouter()
+  const inputRef = useRef<HTMLInputElement>(null)
 
-  const [fullName, setFullName]     = useState('')
-  const [role, setRole]             = useState<Role>('buyer')
+  const [rawPhone, setRawPhone]     = useState('')
   const [loading, setLoading]       = useState(false)
   const [error, setError]           = useState('')
-  const [nameError, setNameError]   = useState('')
-  const [accessToken, setAccessToken] = useState('')
+  const [focused, setFocused]       = useState(false)
 
-  // localStorage'dan token al
-  useEffect(() => {
-    const at = localStorage.getItem('ev_access_token') || ''
-    setAccessToken(at)
-  }, [])
-
-  const nameValid = fullName.trim().length >= 3
-
-  function validateName(val: string) {
-    if (val.trim().length < 3) {
-      setNameError('En az 3 karakter giriniz.')
-    } else {
-      setNameError('')
-    }
-  }
+  const displayValue = formatDisplay(rawPhone)
+  const normalized   = normalizePhone(rawPhone)
+  const isValid      = normalized !== null
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!nameValid || loading) return
-
+    if (!isValid || loading) return
     setError('')
     setLoading(true)
 
     try {
-      const uid = localStorage.getItem('ev_user_id') || ''
-      const res = await fetch('/api/auth/complete-profile', {
+      const res = await fetch('/api/auth/send-otp', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(at ? { 'Authorization': `Bearer ${at}` } : {}),
-        },
-        body: JSON.stringify({ full_name: fullName.trim(), role, user_id: uid }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: normalized }),
       })
 
       const json = await res.json()
 
       if (!res.ok) {
-        setError(json.error ?? 'Profil oluÅŸturulamadÄ±.')
+        setError(json.error ?? 'Bir sorun oluştu.')
         return
       }
 
-      // Role gÃ¶re yÃ¶nlendir
-      const rt = localStorage.getItem('ev_refresh_token') || ''
-
-      if (at && rt) {
-        // Supabase session'i dinamik import ile kur
-        const { createBrowserClient } = await import('@supabase/ssr')
-        const supabase = createBrowserClient(
-          process.env.NEXT_PUBLIC_SUPABASE_URL!,
-          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-        )
-        await supabase.auth.setSession({ access_token: at, refresh_token: rt })
-        // Temizle
-        localStorage.removeItem('ev_access_token')
-        localStorage.removeItem('ev_refresh_token')
-        localStorage.removeItem('ev_user_id')
-      }
-
-      const redirectTo = role === 'chef' ? '/dashboard' : '/?welcome=1'
-      window.location.href = redirectTo
+      // OTP sayfasına yönlendir
+      router.push(`/giris/otp?phone=${encodeURIComponent(normalized!)}`)
     } catch {
-      setError('BaÄŸlantÄ± hatasÄ±. LÃ¼tfen tekrar deneyin.')
+      setError('Bağlantı hatası. İnternet bağlantınızı kontrol edin.')
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div className="auth-card profil-card" data-loading={loading}>
+    <div className="auth-card" data-loading={loading}>
 
-      {/* BaÅŸlÄ±k */}
+      {/* Başlık */}
       <div className="auth-card-head">
-        <div className="auth-step-badge">AdÄ±m 3 / 3</div>
+        <div className="auth-step-badge">Adım 1 / 3</div>
         <h1 className="auth-title">
-          Sizi tanÄ±yalÄ±m
+          Hoş geldiniz
           <span className="auth-title-accent">.</span>
         </h1>
         <p className="auth-subtitle">
-          HesabÄ±nÄ±zÄ± kurmak iÃ§in birkaÃ§ bilgiye ihtiyacÄ±mÄ±z var.
+          Telefon numaranızı girin, size doğrulama kodu gönderelim.
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="profil-form" noValidate>
+      <form onSubmit={handleSubmit} className="auth-form" noValidate>
 
-        {/* Ä°sim */}
-        <div className="form-group">
-          <label className="form-label" htmlFor="full-name">
-            Ad Soyad <span className="required">*</span>
-          </label>
+        {/* Telefon input */}
+        <div className={`phone-field ${focused ? 'focused' : ''} ${error ? 'has-error' : ''} ${isValid && rawPhone ? 'is-valid' : ''}`}>
+          <div className="phone-prefix">
+            <span className="phone-flag">🇹🇷</span>
+            <span className="phone-code">+90</span>
+          </div>
+          <div className="phone-divider" />
           <input
-            id="full-name"
-            type="text"
-            className={`form-input-field ${nameError ? 'has-error' : ''} ${nameValid && fullName ? 'is-valid' : ''}`}
-            placeholder="AdÄ±nÄ±z SoyadÄ±nÄ±z"
-            value={fullName}
-            autoComplete="name"
+            ref={inputRef}
+            type="tel"
+            inputMode="numeric"
+            placeholder="(5__) ___ __ __"
+            value={displayValue}
             onChange={e => {
-              setFullName(e.target.value)
-              if (nameError) validateName(e.target.value)
+              setError('')
+              const digits = e.target.value.replace(/\D/g, '').slice(0, 10)
+              setRawPhone(digits)
             }}
-            onBlur={() => validateName(fullName)}
-            aria-describedby={nameError ? 'name-error' : undefined}
+            onFocus={() => setFocused(true)}
+            onBlur={() => setFocused(false)}
+            className="phone-input"
+            autoComplete="tel"
+            aria-label="Telefon numarası"
+            aria-invalid={!!error}
+            aria-describedby={error ? 'phone-error' : undefined}
           />
-          {nameError && (
-            <span className="field-error" id="name-error">{nameError}</span>
+          {isValid && rawPhone && (
+            <div className="phone-check">✓</div>
           )}
         </div>
 
-        {/* Rol seÃ§imi */}
-        <div className="form-group">
-          <label className="form-label">
-            Platformu nasÄ±l kullanacaksÄ±nÄ±z? <span className="required">*</span>
-          </label>
-          <div className="role-cards">
-            <RoleCard
-              role="buyer"
-              selected={role === 'buyer'}
-              onSelect={() => setRole('buyer')}
-              emoji="ğŸ›’"
-              title="SipariÅŸ Vermek Ä°stiyorum"
-              desc="YakÄ±nÄ±mdaki ev aÅŸÃ§Ä±larÄ±ndan yemek sipariÅŸ edelim."
-              tags={['HÄ±zlÄ± kurulum', 'Ãœcretsiz']}
-            />
-            <RoleCard
-              role="chef"
-              selected={role === 'chef'}
-              onSelect={() => setRole('chef')}
-              emoji="ğŸ‘©â€ğŸ³"
-              title="AÅŸÃ§Ä± Olarak KatÄ±lmak Ä°stiyorum"
-              desc="Kendi mutfaÄŸÄ±mdan yemek satarak gelir elde edeyim."
-              tags={['%10 komisyon', 'Kendi fiyatlarÄ±m', 'Esnek saat']}
-            />
-          </div>
-        </div>
-
-        {/* Genel hata */}
+        {/* Hata mesajı */}
         {error && (
-          <div className="auth-error" role="alert">
-            <span>âš ï¸</span> {error}
+          <div className="auth-error" id="phone-error" role="alert">
+            <span>⚠️</span> {error}
           </div>
         )}
 
-        {/* GÃ¶nder */}
+        {/* Gönder butonu */}
         <button
           type="submit"
           className="auth-btn"
-          disabled={!nameValid || loading}
+          disabled={!isValid || loading}
           aria-busy={loading}
         >
           {loading ? (
             <span className="auth-btn-inner">
               <span className="auth-spinner" />
-              Hesap oluÅŸturuluyorâ€¦
+              Gönderiliyor…
             </span>
           ) : (
             <span className="auth-btn-inner">
-              {role === 'chef' ? 'ğŸ‘©â€ğŸ³ AÅŸÃ§Ä± HesabÄ± OluÅŸtur' : 'ğŸ›’ HesabÄ± OluÅŸtur'}
-              <span className="auth-btn-arrow">â†’</span>
+              Doğrulama Kodu Gönder
+              <span className="auth-btn-arrow">→</span>
             </span>
           )}
         </button>
 
-        {role === 'chef' && (
-          <p className="chef-note">
-            ğŸ“‹ AÅŸÃ§Ä± hesabÄ± aÃ§tÄ±ktan sonra kimlik ve mutfak belgelerinizi yÃ¼kleyeceksiniz. Onay 1â€“2 iÅŸ gÃ¼nÃ¼ iÃ§inde tamamlanÄ±r.
-          </p>
-        )}
-
-        {/* KVKK */}
-        <p className="kvkk-note">
-          Devam ederek{' '}
-          <a href="/kullanim-kosullari" target="_blank">KullanÄ±m KoÅŸullarÄ±</a>
-          {' '}ve{' '}
-          <a href="/kvkk" target="_blank">KVKK AydÄ±nlatma Metni</a>
-          &apos;ni kabul etmiÅŸ sayÄ±lÄ±rsÄ±nÄ±z.
+        {/* Bilgi notu */}
+        <p className="auth-note">
+          🔒 Numaranız yalnızca giriş için kullanılır, üçüncü taraflarla paylaşılmaz.
         </p>
       </form>
 
+      {/* Kayıt yok — OTP otomatik kayıt yapar */}
+      <div className="auth-divider">
+        <span>Hesabınız yok mu?</span>
+      </div>
+      <p className="auth-register-note">
+        Endişelenmeyin — ilk girişinizde hesabınız otomatik oluşturulur.
+      </p>
+
       <style>{`
+        /* ── Kart ───────────────────────────────────────────── */
         .auth-card {
           background: var(--white);
           border-radius: 20px;
@@ -335,7 +167,8 @@ export default function ProfilPage() {
 
         .auth-card[data-loading="true"] { opacity: 0.7; pointer-events: none; }
 
-        .auth-card-head { margin-bottom: 28px; }
+        /* ── Başlık ─────────────────────────────────────────── */
+        .auth-card-head { margin-bottom: 32px; }
 
         .auth-step-badge {
           display: inline-block;
@@ -352,14 +185,16 @@ export default function ProfilPage() {
 
         .auth-title {
           font-family: 'Playfair Display', serif;
-          font-size: 34px;
+          font-size: 36px;
           font-weight: 900;
           color: var(--brown);
           line-height: 1.1;
           margin: 0 0 10px;
         }
 
-        .auth-title-accent { color: var(--orange); }
+        .auth-title-accent {
+          color: var(--orange);
+        }
 
         .auth-subtitle {
           font-size: 14px;
@@ -368,57 +203,85 @@ export default function ProfilPage() {
           margin: 0;
         }
 
-        .profil-form { display: flex; flex-direction: column; gap: 20px; }
+        /* ── Form ───────────────────────────────────────────── */
+        .auth-form { display: flex; flex-direction: column; gap: 16px; }
 
-        .form-group { display: flex; flex-direction: column; gap: 8px; }
-
-        .form-label {
-          font-size: 12px;
-          font-weight: 700;
-          color: var(--brown-mid);
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-        }
-
-        .required { color: var(--orange); }
-
-        .form-input-field {
-          width: 100%;
-          padding: 14px 16px;
+        /* ── Telefon input ───────────────────────────────────── */
+        .phone-field {
+          display: flex;
+          align-items: center;
           border: 2px solid var(--gray-light);
           border-radius: 12px;
-          font-size: 15px;
-          font-family: 'DM Sans', sans-serif;
-          color: var(--brown);
           background: var(--white);
-          outline: none;
           transition: border-color 0.2s, box-shadow 0.2s;
+          overflow: hidden;
         }
 
-        .form-input-field:focus {
+        .phone-field.focused {
           border-color: var(--orange);
           box-shadow: 0 0 0 3px rgba(232,98,42,0.12);
         }
 
-        .form-input-field.has-error {
+        .phone-field.has-error {
           border-color: #DC2626;
           box-shadow: 0 0 0 3px rgba(220,38,38,0.10);
         }
 
-        .form-input-field.is-valid {
+        .phone-field.is-valid {
           border-color: var(--green);
         }
 
-        .field-error {
-          font-size: 12px;
-          color: #DC2626;
+        .phone-prefix {
           display: flex;
           align-items: center;
-          gap: 4px;
+          gap: 6px;
+          padding: 14px 14px 14px 16px;
+          flex-shrink: 0;
         }
 
-        .role-cards { display: flex; flex-direction: column; gap: 10px; }
+        .phone-flag { font-size: 18px; line-height: 1; }
 
+        .phone-code {
+          font-size: 15px;
+          font-weight: 700;
+          color: var(--brown);
+        }
+
+        .phone-divider {
+          width: 1px;
+          height: 24px;
+          background: var(--gray-light);
+          flex-shrink: 0;
+        }
+
+        .phone-input {
+          flex: 1;
+          border: none;
+          outline: none;
+          padding: 14px 12px;
+          font-size: 18px;
+          font-weight: 600;
+          font-family: 'DM Sans', sans-serif;
+          color: var(--brown);
+          background: transparent;
+          letter-spacing: 0.5px;
+        }
+
+        .phone-input::placeholder {
+          color: rgba(138,123,107,0.4);
+          font-weight: 400;
+          font-size: 16px;
+          letter-spacing: 2px;
+        }
+
+        .phone-check {
+          padding: 0 16px;
+          color: var(--green);
+          font-size: 18px;
+          font-weight: 700;
+        }
+
+        /* ── Hata ───────────────────────────────────────────── */
         .auth-error {
           display: flex;
           align-items: center;
@@ -429,8 +292,16 @@ export default function ProfilPage() {
           padding: 10px 14px;
           border-radius: 8px;
           border: 1px solid #FECACA;
+          animation: shake 0.3s ease;
         }
 
+        @keyframes shake {
+          0%, 100% { transform: translateX(0); }
+          25% { transform: translateX(-4px); }
+          75% { transform: translateX(4px); }
+        }
+
+        /* ── Buton ──────────────────────────────────────────── */
         .auth-btn {
           width: 100%;
           padding: 16px 24px;
@@ -443,12 +314,30 @@ export default function ProfilPage() {
           font-weight: 700;
           cursor: pointer;
           transition: all 0.2s;
+          position: relative;
+          overflow: hidden;
         }
+
+        .auth-btn::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 100%);
+          opacity: 0;
+          transition: opacity 0.2s;
+        }
+
+        .auth-btn:hover:not(:disabled)::before { opacity: 1; }
 
         .auth-btn:hover:not(:disabled) {
           background: #d4541e;
           transform: translateY(-1px);
           box-shadow: 0 6px 20px rgba(232,98,42,0.4);
+        }
+
+        .auth-btn:active:not(:disabled) {
+          transform: translateY(0);
+          box-shadow: none;
         }
 
         .auth-btn:disabled {
@@ -466,11 +355,19 @@ export default function ProfilPage() {
           gap: 8px;
         }
 
-        .auth-btn-arrow { font-size: 18px; transition: transform 0.2s; }
-        .auth-btn:hover:not(:disabled) .auth-btn-arrow { transform: translateX(4px); }
+        .auth-btn-arrow {
+          font-size: 18px;
+          transition: transform 0.2s;
+        }
 
+        .auth-btn:hover:not(:disabled) .auth-btn-arrow {
+          transform: translateX(4px);
+        }
+
+        /* ── Spinner ────────────────────────────────────────── */
         .auth-spinner {
-          width: 18px; height: 18px;
+          width: 18px;
+          height: 18px;
           border: 2px solid rgba(255,255,255,0.3);
           border-top-color: white;
           border-radius: 50%;
@@ -480,18 +377,8 @@ export default function ProfilPage() {
 
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        .chef-note {
-          font-size: 12.5px;
-          color: var(--brown-mid);
-          background: var(--warm);
-          padding: 12px 14px;
-          border-radius: 10px;
-          border-left: 3px solid var(--orange);
-          margin: 0;
-          line-height: 1.6;
-        }
-
-        .kvkk-note {
+        /* ── Not ────────────────────────────────────────────── */
+        .auth-note {
           font-size: 11.5px;
           color: var(--gray);
           text-align: center;
@@ -499,13 +386,34 @@ export default function ProfilPage() {
           margin: 0;
         }
 
-        .kvkk-note a {
-          color: var(--orange);
-          text-decoration: none;
-          font-weight: 600;
+        /* ── Divider & Kayıt notu ──────────────────────────── */
+        .auth-divider {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          margin: 24px 0 12px;
+          color: var(--gray);
+          font-size: 12px;
         }
 
-        .kvkk-note a:hover { text-decoration: underline; }
+        .auth-divider::before,
+        .auth-divider::after {
+          content: '';
+          flex: 1;
+          height: 1px;
+          background: var(--gray-light);
+        }
+
+        .auth-register-note {
+          font-size: 12.5px;
+          color: var(--brown-mid);
+          text-align: center;
+          margin: 0;
+          line-height: 1.6;
+          background: var(--warm);
+          padding: 10px 16px;
+          border-radius: 8px;
+        }
       `}</style>
     </div>
   )
