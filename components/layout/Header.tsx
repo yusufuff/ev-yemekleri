@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client'
 
 import Link from 'next/link'
@@ -96,7 +95,7 @@ export default function Header({ title, subtitle, user, actions }: HeaderProps) 
         ) : (
           <div className="flex items-center gap-2">
             <Link href="/giris"   className="btn btn-ghost btn-sm">Giriş Yap</Link>
-            <Link href="/giris?tab=kayit" className="btn btn-primary btn-sm">✨ Aşçı Ol</Link>
+            <Link href="/kayit" className="btn btn-primary btn-sm">✨ Kayıt Ol</Link>
           </div>
         )}
       </div>
