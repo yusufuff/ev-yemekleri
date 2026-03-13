@@ -1,6 +1,6 @@
 'use client'
 // @ts-nocheck
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
@@ -76,14 +76,14 @@ export default function KayitPage() {
     }
   }
 
-  const inputStyle = {
+  const inputStyle: React.CSSProperties = {
     width: '100%', padding: '11px 14px',
     border: '1.5px solid var(--gray-light)', borderRadius: '8px',
     fontSize: '14px', fontFamily: 'inherit', outline: 'none',
     boxSizing: 'border-box',
   }
 
-  const labelStyle = {
+  const labelStyle: React.CSSProperties = {
     fontSize: '12px', fontWeight: 600, color: 'var(--brown-mid)',
     display: 'block', marginBottom: '6px',
   }
