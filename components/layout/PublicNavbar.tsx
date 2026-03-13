@@ -2,6 +2,7 @@
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { usePathname } from 'next/navigation'
+import { CartButton } from '@/components/cart/CartButton'
 
 const HIDDEN_PATHS = ['/giris', '/kayit', '/admin', '/dashboard']
 
@@ -28,6 +29,7 @@ export function PublicNavbar() {
           EV YEMEKLERİ
         </Link>
         <div className="flex items-center gap-2">
+          <CartButton />
           {user ? (
             <div className="flex items-center gap-3 text-sm">
               <Link href="/kesif" className="text-[#8A7B6B] hover:text-[#4A2C0E] font-medium hidden sm:block">Keşfet</Link>
