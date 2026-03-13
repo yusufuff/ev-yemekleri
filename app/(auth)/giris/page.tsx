@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
@@ -34,7 +34,7 @@ function RoleCard({ role, selected, onSelect, emoji, title, desc, tags }: RoleCa
         </div>
       </div>
       <div className="role-card-check" aria-hidden="true">
-        {selected ? '✓' : ''}
+        {selected ? 'âœ“' : ''}
       </div>
       <style>{`
         .role-card {
@@ -167,7 +167,6 @@ export default function ProfilPage() {
     setLoading(true)
 
     try {
-      const at = localStorage.getItem('ev_access_token') || ''
       const uid = localStorage.getItem('ev_user_id') || ''
       const res = await fetch('/api/auth/complete-profile', {
         method: 'POST',
@@ -181,13 +180,11 @@ export default function ProfilPage() {
       const json = await res.json()
 
       if (!res.ok) {
-        setError(json.error ?? 'Profil oluşturulamadı.')
+        setError(json.error ?? 'Profil oluÅŸturulamadÄ±.')
         return
       }
 
-      // Role göre yönlendir
-      // Browser'da session kur, sonra yonlendir
-      const at = localStorage.getItem('ev_access_token') || ''
+      // Role gÃ¶re yÃ¶nlendir
       const rt = localStorage.getItem('ev_refresh_token') || ''
 
       if (at && rt) {
@@ -207,7 +204,7 @@ export default function ProfilPage() {
       const redirectTo = role === 'chef' ? '/dashboard' : '/?welcome=1'
       window.location.href = redirectTo
     } catch {
-      setError('Bağlantı hatası. Lütfen tekrar deneyin.')
+      setError('BaÄŸlantÄ± hatasÄ±. LÃ¼tfen tekrar deneyin.')
     } finally {
       setLoading(false)
     }
@@ -216,21 +213,21 @@ export default function ProfilPage() {
   return (
     <div className="auth-card profil-card" data-loading={loading}>
 
-      {/* Başlık */}
+      {/* BaÅŸlÄ±k */}
       <div className="auth-card-head">
-        <div className="auth-step-badge">Adım 3 / 3</div>
+        <div className="auth-step-badge">AdÄ±m 3 / 3</div>
         <h1 className="auth-title">
-          Sizi tanıyalım
+          Sizi tanÄ±yalÄ±m
           <span className="auth-title-accent">.</span>
         </h1>
         <p className="auth-subtitle">
-          Hesabınızı kurmak için birkaç bilgiye ihtiyacımız var.
+          HesabÄ±nÄ±zÄ± kurmak iÃ§in birkaÃ§ bilgiye ihtiyacÄ±mÄ±z var.
         </p>
       </div>
 
       <form onSubmit={handleSubmit} className="profil-form" noValidate>
 
-        {/* İsim */}
+        {/* Ä°sim */}
         <div className="form-group">
           <label className="form-label" htmlFor="full-name">
             Ad Soyad <span className="required">*</span>
@@ -239,7 +236,7 @@ export default function ProfilPage() {
             id="full-name"
             type="text"
             className={`form-input-field ${nameError ? 'has-error' : ''} ${nameValid && fullName ? 'is-valid' : ''}`}
-            placeholder="Adınız Soyadınız"
+            placeholder="AdÄ±nÄ±z SoyadÄ±nÄ±z"
             value={fullName}
             autoComplete="name"
             onChange={e => {
@@ -254,29 +251,29 @@ export default function ProfilPage() {
           )}
         </div>
 
-        {/* Rol seçimi */}
+        {/* Rol seÃ§imi */}
         <div className="form-group">
           <label className="form-label">
-            Platformu nasıl kullanacaksınız? <span className="required">*</span>
+            Platformu nasÄ±l kullanacaksÄ±nÄ±z? <span className="required">*</span>
           </label>
           <div className="role-cards">
             <RoleCard
               role="buyer"
               selected={role === 'buyer'}
               onSelect={() => setRole('buyer')}
-              emoji="🛒"
-              title="Sipariş Vermek İstiyorum"
-              desc="Yakınımdaki ev aşçılarından yemek sipariş edelim."
-              tags={['Hızlı kurulum', 'Ücretsiz']}
+              emoji="ğŸ›’"
+              title="SipariÅŸ Vermek Ä°stiyorum"
+              desc="YakÄ±nÄ±mdaki ev aÅŸÃ§Ä±larÄ±ndan yemek sipariÅŸ edelim."
+              tags={['HÄ±zlÄ± kurulum', 'Ãœcretsiz']}
             />
             <RoleCard
               role="chef"
               selected={role === 'chef'}
               onSelect={() => setRole('chef')}
-              emoji="👩‍🍳"
-              title="Aşçı Olarak Katılmak İstiyorum"
-              desc="Kendi mutfağımdan yemek satarak gelir elde edeyim."
-              tags={['%10 komisyon', 'Kendi fiyatlarım', 'Esnek saat']}
+              emoji="ğŸ‘©â€ğŸ³"
+              title="AÅŸÃ§Ä± Olarak KatÄ±lmak Ä°stiyorum"
+              desc="Kendi mutfaÄŸÄ±mdan yemek satarak gelir elde edeyim."
+              tags={['%10 komisyon', 'Kendi fiyatlarÄ±m', 'Esnek saat']}
             />
           </div>
         </div>
@@ -284,11 +281,11 @@ export default function ProfilPage() {
         {/* Genel hata */}
         {error && (
           <div className="auth-error" role="alert">
-            <span>⚠️</span> {error}
+            <span>âš ï¸</span> {error}
           </div>
         )}
 
-        {/* Gönder */}
+        {/* GÃ¶nder */}
         <button
           type="submit"
           className="auth-btn"
@@ -298,29 +295,29 @@ export default function ProfilPage() {
           {loading ? (
             <span className="auth-btn-inner">
               <span className="auth-spinner" />
-              Hesap oluşturuluyor…
+              Hesap oluÅŸturuluyorâ€¦
             </span>
           ) : (
             <span className="auth-btn-inner">
-              {role === 'chef' ? '👩‍🍳 Aşçı Hesabı Oluştur' : '🛒 Hesabı Oluştur'}
-              <span className="auth-btn-arrow">→</span>
+              {role === 'chef' ? 'ğŸ‘©â€ğŸ³ AÅŸÃ§Ä± HesabÄ± OluÅŸtur' : 'ğŸ›’ HesabÄ± OluÅŸtur'}
+              <span className="auth-btn-arrow">â†’</span>
             </span>
           )}
         </button>
 
         {role === 'chef' && (
           <p className="chef-note">
-            📋 Aşçı hesabı açtıktan sonra kimlik ve mutfak belgelerinizi yükleyeceksiniz. Onay 1–2 iş günü içinde tamamlanır.
+            ğŸ“‹ AÅŸÃ§Ä± hesabÄ± aÃ§tÄ±ktan sonra kimlik ve mutfak belgelerinizi yÃ¼kleyeceksiniz. Onay 1â€“2 iÅŸ gÃ¼nÃ¼ iÃ§inde tamamlanÄ±r.
           </p>
         )}
 
         {/* KVKK */}
         <p className="kvkk-note">
           Devam ederek{' '}
-          <a href="/kullanim-kosullari" target="_blank">Kullanım Koşulları</a>
+          <a href="/kullanim-kosullari" target="_blank">KullanÄ±m KoÅŸullarÄ±</a>
           {' '}ve{' '}
-          <a href="/kvkk" target="_blank">KVKK Aydınlatma Metni</a>
-          &apos;ni kabul etmiş sayılırsınız.
+          <a href="/kvkk" target="_blank">KVKK AydÄ±nlatma Metni</a>
+          &apos;ni kabul etmiÅŸ sayÄ±lÄ±rsÄ±nÄ±z.
         </p>
       </form>
 
