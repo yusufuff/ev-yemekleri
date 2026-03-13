@@ -1,6 +1,5 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
-import { HeroSlider } from '@/components/home/HeroSlider'
 
 export const metadata: Metadata = {
   title: 'EV YEMEKLERİ — Mahallendeki Ev Aşçılarından Sipariş Ver',
@@ -54,7 +53,14 @@ export default function HomePage() {
           <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '15px', lineHeight: 1.7, margin: '0 0 32px', maxWidth: '400px' }}>
             2–10 km çevrenizdeki ev aşçılarından taze, sıcak, elle yapılmış yemek sipariş edin.
           </p>
-          <HeroSlider />
+          <Link href="/kesif" style={{
+            display: 'inline-flex', alignItems: 'center', gap: '8px',
+            padding: '14px 28px', background: '#E8622A', color: 'white',
+            borderRadius: '12px', textDecoration: 'none', fontSize: '15px', fontWeight: 700,
+            marginBottom: '24px',
+          }}>
+            Aşçıları Keşfet →
+          </Link>
           <div style={{ display: 'flex', gap: '10px', marginTop: '24px', flexWrap: 'wrap' }}>
             {['✅ Güvenli Ödeme', '📍 Konum Bazlı', '⭐ Gerçek Yorumlar'].map(label => (
               <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '20px', padding: '6px 14px', fontSize: '12px', color: 'rgba(255,255,255,0.8)', fontWeight: 500 }}>{label}</div>
