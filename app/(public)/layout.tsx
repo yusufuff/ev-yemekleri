@@ -4,10 +4,7 @@
  */
 import Link from 'next/link'
 import { BottomNav } from '@/components/layout/BottomNav'
-import dynamic from 'next/dynamic'
 import { getCurrentUser } from '@/lib/supabase/server'
-
-const CartButton = dynamic(() => import('@/components/cart/CartButton').then(m => m.CartButton), { ssr: false })
 
 export default async function PublicLayout({ children }: { children: React.ReactNode }) {
   // Kullanıcı varsa BottomNav için rolünü al
@@ -22,7 +19,6 @@ export default async function PublicLayout({ children }: { children: React.React
             EV YEMEKLERİ
           </Link>
           <div className="flex items-center gap-2">
-            <CartButton />
             {user ? (
               <div className="flex items-center gap-3 text-sm">
                 <Link href="/kesif"        className="text-[#8A7B6B] hover:text-[#4A2C0E] font-medium hidden sm:block">Keşfet</Link>
