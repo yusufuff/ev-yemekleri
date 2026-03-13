@@ -28,20 +28,6 @@ export default function HomePage() {
   return (
     <div style={{ minHeight: '100vh', background: '#FAF6EF', fontFamily: "'DM Sans', sans-serif" }}>
 
-      {/* Navbar */}
-      <nav style={{ background: 'white', borderBottom: '1px solid #E8E0D4', position: 'sticky', top: 0, zIndex: 50 }}>
-        <div style={{ maxWidth: '1152px', margin: '0 auto', padding: '0 24px', height: '64px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Link href="/" style={{ fontFamily: "'Playfair Display', serif", fontWeight: 900, fontSize: '20px', color: '#4A2C0E', textDecoration: 'none' }}>
-            EV YEMEKLERİ
-          </Link>
-          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-            <Link href="/kesif" style={{ fontSize: '14px', fontWeight: 500, color: '#8A7B6B', textDecoration: 'none' }}>Keşfet</Link>
-            <Link href="/giris" style={{ padding: '8px 16px', fontSize: '13px', fontWeight: 600, color: '#4A2C0E', border: '1px solid #E8E0D4', borderRadius: '8px', textDecoration: 'none' }}>Giriş Yap</Link>
-            <Link href="/kayit" style={{ padding: '8px 16px', fontSize: '13px', fontWeight: 600, color: 'white', background: '#E8622A', borderRadius: '8px', textDecoration: 'none' }}>✨ Kayıt Ol</Link>
-          </div>
-        </div>
-      </nav>
-
       {/* Hero */}
       <section style={{ background: 'linear-gradient(135deg, #2C1500 0%, #4A2C0E 50%, #7A4A20 100%)', position: 'relative', overflow: 'hidden', padding: '72px 24px 88px' }}>
         <div style={{ position: 'absolute', inset: 0, opacity: 0.12, backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)', backgroundSize: '28px 28px', pointerEvents: 'none' }} />
