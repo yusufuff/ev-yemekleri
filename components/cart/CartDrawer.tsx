@@ -15,7 +15,9 @@ const CATEGORY_EMOJI: Record<string, string> = {
 
 export function CartDrawer({ open, onClose }: CartDrawerProps) {
   const router = useRouter()
-  const { items, setQty, removeItem, summary, itemCount } = useCart()
+  const cart = useCart()
+  const { items, setQty, removeItem, itemCount } = cart
+  const summary = cart.summary ?? { subtotal: 0, delivery_fee: 0, discount: 0, total: 0 }
 
   const handleCheckout = () => {
     onClose()
