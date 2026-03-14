@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * useCart — Sepet state yönetimi
  *
@@ -305,8 +304,21 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
 // ── Hook ──────────────────────────────────────────────────────────────────────
 
+const EMPTY_CART: CartContextValue = {
+  items:      [],
+  chef_id:    null,
+  itemCount:  0,
+  summary:    { subtotal: 0, delivery_fee: 0, discount: 0, credit_used: 0, total: 0, platform_fee: 0, chef_earning: 0 },
+  addItem:    () => {},
+  removeItem: () => {},
+  setQty:     () => {},
+  setNote:    () => {},
+  clear:      () => {},
+  differentChefWarning:    null,
+  setDifferentChefWarning: () => {},
+}
+
 export function useCart(): CartContextValue {
   const ctx = useContext(CartContext)
-  if (!ctx) throw new Error('useCart must be used within <CartProvider>')
-  return ctx
+  return ctx ?? EMPTY_CART
 }
