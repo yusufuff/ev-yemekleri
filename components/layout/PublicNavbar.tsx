@@ -2,7 +2,12 @@
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { usePathname } from 'next/navigation'
-import { CartButton } from '@/components/cart/CartButton'
+import dynamic from 'next/dynamic'
+
+const CartButton = dynamic(
+  () => import('@/components/cart/CartButton').then(m => ({ default: m.CartButton })),
+  { ssr: false }
+)
 
 const HIDDEN_PATHS = ['/giris', '/kayit', '/admin', '/dashboard']
 
