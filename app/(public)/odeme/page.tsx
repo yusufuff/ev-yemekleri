@@ -14,6 +14,10 @@ export default function OdemePage() {
   const [address, setAddress] = useState('')
   const [note, setNote] = useState('')
   const [loading, setLoading] = useState(false)
+  const [coupon, setCoupon] = useState('')
+  const [couponApplied, setCouponApplied] = useState(false)
+  const [couponError, setCouponError] = useState('')
+  const discount = couponApplied ? Math.floor((summary.total || summary.subtotal) * 0.1) : 0
   const [step, setStep] = useState<1 | 2>(1)
 
   if (items.length === 0) {
@@ -94,7 +98,7 @@ export default function OdemePage() {
             ))}
             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 12, fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 700, color: '#E8622A' }}>
               <span>Toplam</span>
-              <span>₺{(summary.total || summary.subtotal).toFixed(0)}</span>
+              <span>₺{Math.max(0, (summary.total || summary.subtotal) - discount).toFixed(0)}</span>
             </div>
           </div>
 
@@ -137,6 +141,30 @@ export default function OdemePage() {
                 style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #E8E0D4', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', boxSizing: 'border-box' }}
               />
             </div>
+          </div>
+
+          {/* Kupon Kodu */}
+          <div style={{ background:'white', borderRadius:16, padding:20, boxShadow:'0 2px 12px rgba(74,44,14,0.08)' }}>
+            <div style={{ fontWeight:700, fontSize:15, color:'#4A2C0E', marginBottom:12 }}>🎁 Kupon Kodu</div>
+            {couponApplied ? (
+              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', background:'#ECFDF5', borderRadius:8, padding:'10px 14px' }}>
+                <span style={{ color:'#3D6B47', fontWeight:700, fontSize:13 }}>✅ "DEMO10" — %10 indirim uygulandı!</span>
+                <button onClick={() => { setCouponApplied(false); setCoupon('') }} style={{ background:'none', border:'none', cursor:'pointer', color:'#DC2626', fontSize:18 }}>✕</button>
+              </div>
+            ) : (
+              <div style={{ display:'flex', gap:10 }}>
+                <input value={coupon} onChange={e => { setCoupon(e.target.value.toUpperCase()); setCouponError('') }}
+                  placeholder="Kupon kodunuzu girin"
+                  style={{ flex:1, padding:'10px 14px', border:'1.5px solid #E8E0D4', borderRadius:8, fontSize:13, fontFamily:'inherit' }} />
+                <button onClick={() => {
+                  if (coupon === 'DEMO10') { setCouponApplied(true); setCouponError('') }
+                  else setCouponError('Geçersiz kupon kodu')
+                }} style={{ padding:'10px 16px', background:'#E8622A', color:'white', border:'none', borderRadius:8, fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>
+                  Uygula
+                </button>
+              </div>
+            )}
+            {couponError && <div style={{ fontSize:12, color:'#DC2626', marginTop:6 }}>{couponError}</div>}
           </div>
 
           {/* Ödeme - mock (direkt sipariş ver) */}

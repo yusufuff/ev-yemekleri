@@ -22,10 +22,66 @@ function formatDate(iso: string) {
   return d.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long' })
 }
 
+
+function ReviewModal({ orderId, chefName, onClose }: { orderId: string; chefName: string; onClose: () => void }) {
+  const [rating, setRating] = useState(5)
+  const [comment, setComment] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [done, setDone] = useState(false)
+
+  const submit = async () => {
+    setSaving(true)
+    await fetch('/api/reviews', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ order_id: orderId, rating, comment }) })
+    setDone(true)
+    setTimeout(onClose, 1500)
+  }
+
+  return (
+    <div style={{ position:'fixed', inset:0, background:'rgba(74,44,14,0.4)', zIndex:500, display:'flex', alignItems:'center', justifyContent:'center', padding:16 }}
+      onClick={e => e.target === e.currentTarget && onClose()}>
+      <div style={{ background:'white', borderRadius:20, padding:28, width:'100%', maxWidth:420 }}>
+        {done ? (
+          <div style={{ textAlign:'center', padding:'20px 0' }}>
+            <div style={{ fontSize:48, marginBottom:12 }}>🎉</div>
+            <div style={{ fontFamily:"'Playfair Display',serif", fontSize:20, fontWeight:700, color:'#4A2C0E' }}>Teşekkürler!</div>
+          </div>
+        ) : (
+          <>
+            <div style={{ fontFamily:"'Playfair Display',serif", fontSize:20, fontWeight:700, color:'#4A2C0E', marginBottom:4 }}>Değerlendirme</div>
+            <div style={{ fontSize:13, color:'#8A7B6B', marginBottom:20 }}>👩‍🍳 {chefName}</div>
+            <div style={{ display:'flex', gap:8, justifyContent:'center', marginBottom:20 }}>
+              {[1,2,3,4,5].map(s => (
+                <button key={s} onClick={() => setRating(s)} style={{ fontSize:32, background:'none', border:'none', cursor:'pointer', opacity: s <= rating ? 1 : 0.3, transition:'opacity 0.15s' }}>⭐</button>
+              ))}
+            </div>
+            <textarea value={comment} onChange={e => setComment(e.target.value)} rows={3}
+              placeholder="Deneyiminizi paylaşın..."
+              style={{ width:'100%', padding:'10px 14px', border:'1.5px solid #E8E0D4', borderRadius:8, fontSize:13, fontFamily:'inherit', resize:'none', boxSizing:'border-box', marginBottom:16 }} />
+            <div style={{ display:'flex', gap:10 }}>
+              <button onClick={submit} disabled={saving} style={{ flex:1, padding:'12px 0', background:'#E8622A', color:'white', border:'none', borderRadius:10, fontSize:14, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>
+                {saving ? '⏳ Gönderiliyor...' : '⭐ Değerlendir'}
+              </button>
+              <button onClick={onClose} style={{ padding:'12px 20px', background:'#F5EDD8', color:'#4A2C0E', border:'1.5px solid #E8E0D4', borderRadius:10, fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>İptal</button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+      {reviewOrder && (
+        <ReviewModal
+          orderId={reviewOrder.id}
+          chefName={reviewOrder.chef}
+          onClose={() => setReviewOrder(null)}
+        />
+      )}
+  )
+}
+
 export default function SiparislerimPage() {
   const [orders, setOrders] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState<'active' | 'past'>('active')
+  const [reviewOrder, setReviewOrder] = useState<{id:string;chef:string}|null>(null)
 
   const loadOrders = () => {
     fetch('/api/orders')
@@ -142,7 +198,7 @@ export default function SiparislerimPage() {
                         <Link href={`/asci/${order.chef_id}`} style={{ flex: 1, padding: '8px 0', background: '#E8622A', color: 'white', borderRadius: 8, fontSize: 12, fontWeight: 700, textAlign: 'center', textDecoration: 'none' }}>
                           🔁 Tekrar Sipariş
                         </Link>
-                        <button style={{ padding: '8px 14px', background: '#F5EDD8', border: '1.5px solid #E8E0D4', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', color: '#4A2C0E' }}>
+                        <button onClick={() => setReviewOrder({id: order.id, chef: order.chef_name})} style={{ padding: '8px 14px', background: '#FEF3C7', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', color: '#D97706' }}>
                           ⭐ Değerlendir
                         </button>
                       </div>
