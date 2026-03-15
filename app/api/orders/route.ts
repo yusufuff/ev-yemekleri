@@ -1,6 +1,6 @@
 ﻿import { NextResponse } from 'next/server'
 
-export const MOCK_ORDERS = [
+const MOCK_ORDERS = [
   {
     id: 'ord-1',
     created_at: new Date(Date.now() - 1000 * 60 * 20).toISOString(),
