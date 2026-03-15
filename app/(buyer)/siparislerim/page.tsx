@@ -67,13 +67,14 @@ function ReviewModal({ orderId, chefName, onClose }: { orderId: string; chefName
         )}
       </div>
     </div>
-      {reviewOrder && (
-        <ReviewModal
-          orderId={reviewOrder.id}
-          chefName={reviewOrder.chef}
-          onClose={() => setReviewOrder(null)}
-        />
-      )}
+    {reviewOrder && (
+      <ReviewModal
+        orderId={reviewOrder.id}
+        chefName={reviewOrder.chef}
+        onClose={() => setReviewOrder(null)}
+      />
+    )}
+    </>
   )
 }
 
@@ -101,6 +102,7 @@ export default function SiparislerimPage() {
   const shown  = tab === 'active' ? active : past
 
   return (
+    <>
     <div style={{ minHeight: '100vh', background: '#FAF6EF', fontFamily: "'DM Sans', sans-serif" }}>
       <div style={{ maxWidth: 680, margin: '0 auto', padding: '24px 16px' }}>
         <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: 26, fontWeight: 900, color: '#4A2C0E', marginBottom: 20 }}>
