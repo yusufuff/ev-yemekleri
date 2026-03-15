@@ -35,28 +35,20 @@ export function PublicNavbar() {
         </Link>
         <div className="flex items-center gap-2">
           <CartButton />
-          {user ? (
-            <div className="flex items-center gap-3 text-sm">
-              <Link href="/kesif" className="text-[#8A7B6B] hover:text-[#4A2C0E] font-medium hidden sm:block">Keşfet</Link>
-              <Link href="/siparislerim" className="text-[#8A7B6B] hover:text-[#4A2C0E] font-medium hidden sm:block">Siparişlerim</Link>
-              <Link href="/mesajlar" className="text-[#8A7B6B] hover:text-[#4A2C0E] font-medium hidden sm:block">Mesajlar</Link>
-              <div className="w-8 h-8 rounded-full bg-[#E8622A] flex items-center justify-center text-white text-sm font-bold">
-                {user.full_name?.charAt(0).toUpperCase() ?? '?'}
-              </div>
-            </div>
-          ) : (
-            <>
-              <Link href="/kesif" className="text-[#8A7B6B] hover:text-[#4A2C0E] font-medium text-sm hidden sm:block">Keşfet</Link>
-              <Link href="/giris"
-                className="px-3 py-1.5 text-xs font-semibold text-[#4A2C0E] border border-[#E8E0D4] rounded-lg hover:border-[#E8622A] hover:text-[#E8622A] transition-colors hidden sm:inline-flex">
-                Giriş Yap
-              </Link>
-              <Link href="/kayit"
-                className="px-3 py-1.5 text-xs font-semibold text-white bg-[#E8622A] rounded-lg hover:bg-[#d4541e] transition-colors">
-                ✨ Kayıt Ol
-              </Link>
-            </>
-          )}
+          <div className="flex items-center gap-3 text-sm">
+            <Link href="/kesif" className="text-[#8A7B6B] hover:text-[#4A2C0E] font-medium hidden sm:block">Keşfet</Link>
+            <Link href="/siparislerim" className="text-[#8A7B6B] hover:text-[#4A2C0E] font-medium hidden sm:block">Siparişlerim</Link>
+            <Link href="/mesajlar" className="text-[#8A7B6B] hover:text-[#4A2C0E] font-medium hidden sm:block">Mesajlar</Link>
+            <Link href="/dashboard" className="text-[#8A7B6B] hover:text-[#4A2C0E] font-medium hidden sm:block">Panel</Link>
+          </div>
+          <Link href="/giris"
+            className="px-3 py-1.5 text-xs font-semibold text-[#4A2C0E] border border-[#E8E0D4] rounded-lg hover:border-[#E8622A] hover:text-[#E8622A] transition-colors hidden sm:inline-flex">
+            Giriş Yap
+          </Link>
+          <Link href="/kayit"
+            className="px-3 py-1.5 text-xs font-semibold text-white bg-[#E8622A] rounded-lg hover:bg-[#d4541e] transition-colors">
+            ✨ Kayıt Ol
+          </Link>
         </div>
       </div>
     </nav>
