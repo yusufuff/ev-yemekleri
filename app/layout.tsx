@@ -4,6 +4,7 @@ import '@/styles/globals.css'
 import { CartProvider } from '@/hooks/useCart'
 import { PWAProvider } from '@/components/pwa/PWAPrompt'
 import { PublicNavbar } from '@/components/layout/PublicNavbar'
+import { ToastProvider } from '@/components/ui/Toast'
 
 const dmSans = DM_Sans({
   subsets: ['latin'],
@@ -64,10 +65,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="bg-cream text-brown antialiased">
         <CartProvider>
+          <ToastProvider>
           <PWAProvider>
             <PublicNavbar />
             {children}
           </PWAProvider>
+          </ToastProvider>
         </CartProvider>
       </body>
     </html>

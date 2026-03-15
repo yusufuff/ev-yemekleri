@@ -27,11 +27,17 @@ export default function SiparislerimPage() {
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState<'active' | 'past'>('active')
 
-  useEffect(() => {
+  const loadOrders = () => {
     fetch('/api/orders')
       .then(r => r.json())
       .then(d => { setOrders(d.orders ?? []); setLoading(false) })
       .catch(() => setLoading(false))
+  }
+
+  useEffect(() => {
+    loadOrders()
+    const interval = setInterval(loadOrders, 30000)
+    return () => clearInterval(interval)
   }, [])
 
   const active = orders.filter(o => !['delivered', 'cancelled'].includes(o.status))

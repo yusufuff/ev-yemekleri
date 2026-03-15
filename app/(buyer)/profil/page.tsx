@@ -2,105 +2,111 @@
 import { useState } from 'react'
 
 export default function ProfilPage() {
-  const [form, setForm] = useState({
-    full_name: 'Mehmet Yılmaz',
-    phone: '+90 532 987 65 43',
-    email: 'mehmet@gmail.com',
-    role: 'buyer',
-  })
+  const [role, setRole] = useState<'buyer' | 'chef'>('buyer')
+  const [form, setForm] = useState({ full_name: 'Mehmet Yılmaz', phone: '+90 532 987 65 43', email: 'mehmet@gmail.com' })
+  const [chefForm, setChefForm] = useState({ bio: 'Ev mutfağımdan lezzetli yemekler.', iban: 'TR12 3456 7890', radius: 5, min_order: 40 })
+  const [notifs, setNotifs] = useState({ orders: true, favorites: true, reviews: true, campaigns: false, stock: true })
   const [saved, setSaved] = useState(false)
-  const [notifs, setNotifs] = useState({
-    orders: true, favorites: true, reviews: true, campaigns: false, stock: true,
-  })
 
-  const save = () => {
-    setSaved(true)
-    setTimeout(() => setSaved(false), 2000)
-  }
+  const save = () => { setSaved(true); setTimeout(() => setSaved(false), 2000) }
 
   return (
     <div style={{ minHeight:'100vh', background:'#FAF6EF', fontFamily:"'DM Sans', sans-serif" }}>
-      <div style={{ maxWidth:700, margin:'0 auto', padding:'24px 16px' }}>
-        <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:26, fontWeight:900, color:'#4A2C0E', marginBottom:24 }}>
-          Profil & Ayarlar
-        </h1>
+      <div style={{ maxWidth:720, margin:'0 auto', padding:'24px 16px' }}>
+        <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:26, fontWeight:900, color:'#4A2C0E', marginBottom:20 }}>Profil & Ayarlar</h1>
 
-        <div style={{ display:'flex', flexDirection:'column', gap:20 }}>
+        {/* Rol seçimi */}
+        <div style={{ display:'flex', gap:10, marginBottom:24 }}>
+          {[['buyer','🛒','Alıcı'],['chef','👩‍🍳','Aşçı']].map(([r,icon,label]) => (
+            <button key={r} onClick={() => setRole(r as any)} style={{
+              flex:1, padding:'12px 0', borderRadius:12, cursor:'pointer', border:'2px solid',
+              borderColor: role === r ? '#E8622A' : '#E8E0D4',
+              background: role === r ? '#FEF3EC' : 'white',
+              color: role === r ? '#E8622A' : '#4A2C0E',
+              fontWeight:700, fontSize:14, fontFamily:'inherit',
+            }}>{icon} {label}</button>
+          ))}
+        </div>
 
-          {/* Profil Bilgileri */}
+        <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
+
+          {/* Kişisel Bilgiler */}
           <div style={{ background:'white', borderRadius:16, padding:24, boxShadow:'0 2px 12px rgba(74,44,14,0.08)' }}>
-            <div style={{ fontFamily:"'Playfair Display',serif", fontSize:17, fontWeight:700, color:'#4A2C0E', marginBottom:18 }}>Kişisel Bilgiler</div>
-
-            {/* Avatar */}
+            <div style={{ fontFamily:"'Playfair Display',serif", fontSize:17, fontWeight:700, color:'#4A2C0E', marginBottom:16 }}>Kişisel Bilgiler</div>
             <div style={{ display:'flex', alignItems:'center', gap:16, marginBottom:20 }}>
-              <div style={{ width:64, height:64, borderRadius:'50%', background:'#E8622A', display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontSize:24, fontWeight:700, flexShrink:0 }}>
+              <div style={{ width:64, height:64, borderRadius:'50%', background:'#E8622A', display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontSize:24, fontWeight:700 }}>
                 {form.full_name.charAt(0)}
               </div>
               <div>
                 <div style={{ fontWeight:700, fontSize:15, color:'#4A2C0E' }}>{form.full_name}</div>
-                <div style={{ fontSize:12, color:'#8A7B6B', marginTop:2 }}>{form.role === 'buyer' ? '🛒 Alıcı' : '👩‍🍳 Aşçı'}</div>
+                <div style={{ fontSize:12, color:'#8A7B6B' }}>{role === 'buyer' ? '🛒 Alıcı' : '👩‍🍳 Aşçı'}</div>
               </div>
             </div>
-
-            {[['Ad Soyad', 'full_name', 'text'], ['Telefon', 'phone', 'tel'], ['E-posta', 'email', 'email']].map(([label, key, type]) => (
-              <div key={key} style={{ marginBottom:14 }}>
-                <label style={{ fontSize:12, fontWeight:600, color:'#7A4A20', display:'block', marginBottom:6 }}>{label}</label>
-                <input
-                  type={type}
-                  value={form[key as keyof typeof form]}
-                  onChange={e => setForm(p => ({ ...p, [key]: e.target.value }))}
-                  style={{ width:'100%', padding:'10px 14px', border:'1.5px solid #E8E0D4', borderRadius:8, fontSize:13, fontFamily:'inherit', boxSizing:'border-box' }}
-                />
+            {[['Ad Soyad','full_name','text'],['Telefon','phone','tel'],['E-posta','email','email']].map(([label,key,type]) => (
+              <div key={key} style={{ marginBottom:12 }}>
+                <label style={{ fontSize:12, fontWeight:600, color:'#7A4A20', display:'block', marginBottom:5 }}>{label}</label>
+                <input type={type} value={form[key as keyof typeof form]} onChange={e => setForm(p => ({...p,[key]:e.target.value}))}
+                  style={{ width:'100%', padding:'10px 14px', border:'1.5px solid #E8E0D4', borderRadius:8, fontSize:13, fontFamily:'inherit', boxSizing:'border-box' }} />
               </div>
             ))}
-
-            <button onClick={save} style={{ padding:'10px 24px', background: saved ? '#3D6B47' : '#E8622A', color:'white', border:'none', borderRadius:10, fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit', transition:'background 0.2s' }}>
-              {saved ? '✅ Kaydedildi!' : '💾 Kaydet'}
-            </button>
           </div>
+
+          {/* Aşçı Ayarları */}
+          {role === 'chef' && (
+            <div style={{ background:'white', borderRadius:16, padding:24, boxShadow:'0 2px 12px rgba(74,44,14,0.08)' }}>
+              <div style={{ fontFamily:"'Playfair Display',serif", fontSize:17, fontWeight:700, color:'#4A2C0E', marginBottom:16 }}>Aşçı Ayarları</div>
+              <div style={{ marginBottom:12 }}>
+                <label style={{ fontSize:12, fontWeight:600, color:'#7A4A20', display:'block', marginBottom:5 }}>Biyografi</label>
+                <textarea value={chefForm.bio} onChange={e => setChefForm(p => ({...p,bio:e.target.value}))} rows={3}
+                  style={{ width:'100%', padding:'10px 14px', border:'1.5px solid #E8E0D4', borderRadius:8, fontSize:13, fontFamily:'inherit', resize:'none', boxSizing:'border-box' }} />
+              </div>
+              <div style={{ marginBottom:12 }}>
+                <label style={{ fontSize:12, fontWeight:600, color:'#7A4A20', display:'block', marginBottom:5 }}>IBAN</label>
+                <input value={chefForm.iban} onChange={e => setChefForm(p => ({...p,iban:e.target.value}))}
+                  style={{ width:'100%', padding:'10px 14px', border:'1.5px solid #E8E0D4', borderRadius:8, fontSize:13, fontFamily:'inherit', boxSizing:'border-box' }} />
+              </div>
+              <div style={{ marginBottom:12 }}>
+                <label style={{ fontSize:12, fontWeight:600, color:'#7A4A20', display:'block', marginBottom:8 }}>
+                  Teslimat Yarıçapı: <span style={{ color:'#E8622A' }}>{chefForm.radius} km</span>
+                </label>
+                <input type="range" min={1} max={10} value={chefForm.radius} onChange={e => setChefForm(p => ({...p,radius:Number(e.target.value)}))}
+                  style={{ width:'100%', accentColor:'#E8622A' }} />
+              </div>
+              <div style={{ marginBottom:4 }}>
+                <label style={{ fontSize:12, fontWeight:600, color:'#7A4A20', display:'block', marginBottom:5 }}>Min. Sipariş Tutarı (₺)</label>
+                <input type="number" value={chefForm.min_order} onChange={e => setChefForm(p => ({...p,min_order:Number(e.target.value)}))}
+                  style={{ width:'100%', padding:'10px 14px', border:'1.5px solid #E8E0D4', borderRadius:8, fontSize:13, fontFamily:'inherit', boxSizing:'border-box' }} />
+              </div>
+            </div>
+          )}
 
           {/* Bildirimler */}
           <div style={{ background:'white', borderRadius:16, padding:24, boxShadow:'0 2px 12px rgba(74,44,14,0.08)' }}>
-            <div style={{ fontFamily:"'Playfair Display',serif", fontSize:17, fontWeight:700, color:'#4A2C0E', marginBottom:18 }}>Bildirim Tercihleri</div>
-            {[
-              ['orders',    '📦 Sipariş Güncellemeleri', 'Onay, hazırlık, teslimat'],
-              ['favorites', '👩‍🍳 Favori Aşçı Bildirimleri', 'Yeni menü paylaşımları'],
-              ['reviews',   '⭐ Değerlendirme Hatırlatması', 'Teslimdan 30 dk sonra'],
-              ['campaigns', '🎁 Kampanya & Fırsatlar', 'Promosyon bildirimleri'],
-              ['stock',     '📉 Stok Uyarısı', 'Favori yemeklerde son porsiyon'],
-            ].map(([key, title, desc]) => (
-              <div key={key} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', paddingBottom:14, marginBottom:14, borderBottom:'1px solid #F5EDD8' }}>
+            <div style={{ fontFamily:"'Playfair Display',serif", fontSize:17, fontWeight:700, color:'#4A2C0E', marginBottom:16 }}>Bildirim Tercihleri</div>
+            {[['orders','📦 Sipariş Güncellemeleri','Onay, hazırlık, teslimat'],['favorites','👩‍🍳 Favori Aşçı','Yeni menü paylaşımları'],['reviews','⭐ Değerlendirme','Teslimdan 30 dk sonra'],['campaigns','🎁 Kampanyalar','Promosyon bildirimleri'],['stock','📉 Stok Uyarısı','Son porsiyon uyarısı']].map(([key,title,desc]) => (
+              <div key={key} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', paddingBottom:12, marginBottom:12, borderBottom:'1px solid #F5EDD8' }}>
                 <div>
                   <div style={{ fontWeight:600, fontSize:13, color:'#4A2C0E' }}>{title}</div>
-                  <div style={{ fontSize:11, color:'#8A7B6B', marginTop:2 }}>{desc}</div>
+                  <div style={{ fontSize:11, color:'#8A7B6B' }}>{desc}</div>
                 </div>
-                <button onClick={() => setNotifs(p => ({ ...p, [key]: !p[key as keyof typeof notifs] }))} style={{
-                  width:44, height:24, borderRadius:12, border:'none',
-                  background: notifs[key as keyof typeof notifs] ? '#3D6B47' : '#E8E0D4',
-                  cursor:'pointer', position:'relative', transition:'background 0.2s', flexShrink:0,
+                <button onClick={() => setNotifs(p => ({...p,[key]:!p[key as keyof typeof notifs]}))} style={{
+                  width:44, height:24, borderRadius:12, border:'none', cursor:'pointer', flexShrink:0,
+                  background: notifs[key as keyof typeof notifs] ? '#3D6B47' : '#E8E0D4', position:'relative', transition:'background 0.2s',
                 }}>
-                  <div style={{
-                    width:18, height:18, borderRadius:'50%', background:'white',
-                    position:'absolute', top:3,
-                    left: notifs[key as keyof typeof notifs] ? 23 : 3,
-                    transition:'left 0.2s', boxShadow:'0 1px 3px rgba(0,0,0,0.2)',
-                  }} />
+                  <div style={{ width:18, height:18, borderRadius:'50%', background:'white', position:'absolute', top:3, left: notifs[key as keyof typeof notifs] ? 23 : 3, transition:'left 0.2s' }} />
                 </button>
               </div>
             ))}
           </div>
 
-          {/* Hesap */}
-          <div style={{ background:'white', borderRadius:16, padding:24, boxShadow:'0 2px 12px rgba(74,44,14,0.08)' }}>
-            <div style={{ fontFamily:"'Playfair Display',serif", fontSize:17, fontWeight:700, color:'#4A2C0E', marginBottom:18 }}>Hesap Güvenliği</div>
-            <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
-              <button style={{ padding:'10px 16px', background:'#F5EDD8', color:'#4A2C0E', border:'1.5px solid #E8E0D4', borderRadius:10, fontSize:13, fontWeight:600, cursor:'pointer', textAlign:'left', fontFamily:'inherit' }}>
-                🔒 Şifre Değiştir
-              </button>
-              <button style={{ padding:'10px 16px', background:'#FEE2E2', color:'#DC2626', border:'none', borderRadius:10, fontSize:13, fontWeight:600, cursor:'pointer', textAlign:'left', fontFamily:'inherit' }}>
-                🗑️ Hesabı Sil
-              </button>
-            </div>
+          {/* Kaydet + Güvenlik */}
+          <div style={{ display:'flex', gap:10 }}>
+            <button onClick={save} style={{ flex:1, padding:'12px 0', background: saved ? '#3D6B47' : '#E8622A', color:'white', border:'none', borderRadius:10, fontSize:14, fontWeight:700, cursor:'pointer', fontFamily:'inherit', transition:'background 0.2s' }}>
+              {saved ? '✅ Kaydedildi!' : '💾 Kaydet'}
+            </button>
+            <button style={{ padding:'12px 20px', background:'#FEE2E2', color:'#DC2626', border:'none', borderRadius:10, fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>
+              Çıkış Yap
+            </button>
           </div>
 
         </div>

@@ -55,7 +55,7 @@ export default async function HomePage() {
       {/* Nasıl Çalışır */}
       <section style={{ maxWidth: '1152px', margin: '0 auto', padding: '64px 24px' }}>
         <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: '24px', fontWeight: 700, color: '#4A2C0E', textAlign: 'center', marginBottom: '40px' }}>Nasıl Çalışır?</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '24px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '24px' }}>
           {HOW_STEPS.map((step, i) => (
             <div key={i} style={{ textAlign: 'center' }}>
               <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: '#F5EDD8', border: '2px solid #E8E0D4', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', margin: '0 auto 12px' }}>{step.icon}</div>
@@ -72,7 +72,7 @@ export default async function HomePage() {
           <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: '24px', fontWeight: 700, color: '#4A2C0E', margin: 0 }}>Yakınındaki Aşçılar</h2>
           <Link href="/kesif" style={{ color: '#E8622A', fontSize: '14px', fontWeight: 600, textDecoration: 'none' }}>Tümünü Gör →</Link>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '20px' }}>
           {chefs.length > 0 ? chefs.map((chef: any, i: number) => {
             const badge = BADGE_META[chef.badge ?? 'new']
             return (
@@ -125,7 +125,7 @@ export default async function HomePage() {
 
       {/* Aşçı Ol CTA */}
       <section style={{ maxWidth: '1152px', margin: '0 auto', padding: '0 24px 64px' }}>
-        <div style={{ background: 'linear-gradient(135deg, #3D6B47, #2e5236)', borderRadius: '20px', padding: '48px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '32px', position: 'relative', overflow: 'hidden' }}>
+        <div style={{ background: 'linear-gradient(135deg, #3D6B47, #2e5236)', borderRadius: '20px', padding: '48px', display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '32px', position: 'relative', overflow: 'hidden' }}>
           <div style={{ position: 'absolute', right: '32px', fontSize: '120px', opacity: 0.08, userSelect: 'none' }}>👩‍🍳</div>
           <div>
             <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: '28px', fontWeight: 900, color: 'white', margin: '0 0 8px' }}>Mutfağın Sana Gelir Getirsin</h2>
@@ -146,7 +146,7 @@ export default async function HomePage() {
       {/* Yorumlar */}
       <section style={{ maxWidth: '1152px', margin: '0 auto', padding: '0 24px 80px' }}>
         <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: '24px', fontWeight: 700, color: '#4A2C0E', marginBottom: '24px' }}>Kullanıcı Yorumları</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '20px' }}>
           {TESTIMONIALS.map((t, i) => (
             <div key={i} style={{ background: '#F5EDD8', borderRadius: '16px', padding: '20px', borderLeft: '4px solid #E8622A' }}>
               <p style={{ color: '#4A2C0E', fontSize: '13px', fontStyle: 'italic', lineHeight: 1.7, marginBottom: '12px' }}>{t.text}</p>

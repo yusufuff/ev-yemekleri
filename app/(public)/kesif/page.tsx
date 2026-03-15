@@ -91,12 +91,21 @@ function MockMap({ chefs, radius, onRadius }: { chefs: Chef[]; radius: number; o
           const x = 50 + Math.cos(angle) * dist * 100
           const y = 50 + Math.sin(angle) * dist * 60
           return (
-            <Link key={chef.chef_id} href={`/asci/${chef.chef_id}`} style={{ position: 'absolute', left: `${x}%`, top: `${y}%`, transform: 'translate(-50%,-50%)', zIndex: 3 }}>
-              <div style={{ background: '#3D6B47', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', border: '2px solid white', boxShadow: '0 2px 8px rgba(0,0,0,0.2)', cursor: 'pointer' }}>👩‍🍳</div>
+            <div key={chef.chef_id} style={{ position: 'absolute', left: `${x}%`, top: `${y}%`, transform: 'translate(-50%,-50%)', zIndex: 3, cursor: 'pointer' }}
+              onClick={() => setSelectedPin(selectedPin === chef.chef_id ? null : chef.chef_id)}>
+              <div style={{ background: '#3D6B47', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', border: '2px solid white', boxShadow: '0 2px 8px rgba(0,0,0,0.2)' }}>👩‍🍳</div>
               <div style={{ position: 'absolute', bottom: '-18px', left: '50%', transform: 'translateX(-50%)', background: 'white', color: '#4A2C0E', fontSize: '9px', fontWeight: 700, padding: '2px 6px', borderRadius: '8px', whiteSpace: 'nowrap', boxShadow: '0 1px 4px rgba(0,0,0,0.15)' }}>
                 {chef.distance_km.toFixed(1)}km
               </div>
-            </Link>
+              {selectedPin === chef.chef_id && (
+                <div style={{ position: 'absolute', bottom: '40px', left: '50%', transform: 'translateX(-50%)', background: 'white', borderRadius: '10px', padding: '10px 12px', boxShadow: '0 4px 16px rgba(0,0,0,0.15)', minWidth: '160px', zIndex: 10, border: '1px solid #E8E0D4' }}>
+                  <div style={{ fontWeight: 700, fontSize: '13px', color: '#4A2C0E', marginBottom: '2px' }}>{chef.full_name}</div>
+                  <div style={{ fontSize: '11px', color: '#E8622A', marginBottom: '2px' }}>⭐ {chef.avg_rating?.toFixed(1)}</div>
+                  <div style={{ fontSize: '11px', color: '#8A7B6B', marginBottom: '8px' }}>📍 {chef.distance_km.toFixed(1)} km</div>
+                  <a href={`/asci/${chef.chef_id}`} style={{ display: 'block', textAlign: 'center', padding: '5px 0', background: '#E8622A', color: 'white', borderRadius: '6px', fontSize: '11px', fontWeight: 700, textDecoration: 'none' }}>Profile Git →</a>
+                </div>
+              )}
+            </div>
           )
         })}
 
@@ -207,6 +216,7 @@ function KesifInner() {
   const [loading, setLoading] = useState(true)
   const [activeFilters, setActiveFilters] = useState<string[]>(['radius_5', 'cat_main'])
   const [radius, setRadius] = useState(Number(searchParams.get('km') ?? 5))
+  const [selectedPin, setSelectedPin] = useState<string | null>(null)
   const [aiQuery, setAiQuery] = useState('')
   const [aiResult, setAiResult] = useState('')
   const [aiLoading, setAiLoading] = useState(false)
