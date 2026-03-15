@@ -1,115 +1,83 @@
-// @ts-nocheck
 'use client'
+import { useState, useEffect } from 'react'
+import Link from 'next/link'
 
-import { useAdminStats } from '@/hooks/useAdmin'
-
-// Basit bar grafik — recharts veya Chart.js yerine native SVG
-function MiniChart({ data }: { data: { day: string; count: number; revenue: number }[] }) {
-  const maxRev = Math.max(...data.map(d => d.revenue), 1)
+function StatCard({ label, value, icon, color, sub }: any) {
   return (
-    <div className="flex items-end gap-2 h-28 pt-2">
-      {data.map((d, i) => (
-        <div key={i} className="flex-1 flex flex-col items-center gap-1">
-          <div className="text-[10px] text-white/30 font-mono">
-            {d.revenue > 0 ? `₺${Math.round(d.revenue / 1000)}K` : ''}
-          </div>
-          <div
-            className="w-full rounded-t bg-gradient-to-t from-[#E8622A] to-[#F28B5E] transition-all duration-500"
-            style={{ height: `${Math.max((d.revenue / maxRev) * 80, 4)}%` }}
-          />
-          <div className="text-[10px] text-white/40">{d.day}</div>
-        </div>
-      ))}
+    <div style={{ background:'white', borderRadius:14, padding:20, boxShadow:'0 2px 12px rgba(74,44,14,0.08)', borderTop:`3px solid ${color}`, position:'relative' }}>
+      <div style={{ position:'absolute', right:16, top:16, fontSize:24, opacity:0.12 }}>{icon}</div>
+      <div style={{ fontSize:11, color:'#8A7B6B', fontWeight:600, textTransform:'uppercase', letterSpacing:0.5, marginBottom:6 }}>{label}</div>
+      <div style={{ fontFamily:"'Playfair Display',serif", fontSize:28, fontWeight:700, color:'#4A2C0E' }}>{value}</div>
+      {sub && <div style={{ fontSize:12, color:'#3D6B47', fontWeight:600, marginTop:4 }}>{sub}</div>}
     </div>
   )
 }
 
-function StatCard({
-  label, value, sub, color, icon,
-}: {
-  label: string; value: string | number; sub?: string; color: string; icon: string
-}) {
-  return (
-    <div className={`relative bg-[#1A1612] border border-white/[0.07] rounded-xl p-5 overflow-hidden`}>
-      <div className={`absolute top-0 left-0 right-0 h-0.5 ${color}`} />
-      <div className="absolute right-4 top-4 text-3xl opacity-10">{icon}</div>
-      <div className="text-[10px] font-semibold tracking-[1.5px] uppercase text-white/35 mb-2">{label}</div>
-      <div className="font-serif text-3xl font-bold text-white/90">{value}</div>
-      {sub && <div className="text-[12px] text-emerald-400/80 mt-1">{sub}</div>}
-    </div>
-  )
-}
+export default function AdminPage() {
+  const [stats, setStats] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
 
-export default function AdminDashboard() {
-  const { stats, chart, loading } = useAdminStats()
+  useEffect(() => {
+    fetch('/api/admin/stats').then(r => r.json()).then(d => { setStats(d); setLoading(false) }).catch(() => setLoading(false))
+  }, [])
 
-  if (loading) return (
-    <div className="p-8 flex items-center justify-center min-h-screen">
-      <div className="text-white/30 text-sm">Yükleniyor…</div>
-    </div>
-  )
+  if (loading) return <div style={{ display:'flex', alignItems:'center', justifyContent:'center', minHeight:'100vh', color:'#8A7B6B' }}>Yükleniyor…</div>
+
+  const chart = stats?.chart ?? []
+  const maxRevenue = Math.max(...chart.map((c: any) => c.revenue), 1)
 
   return (
-    <div className="p-8 max-w-6xl">
-      {/* Header */}
-      <div className="mb-8">
-        <div className="text-[11px] tracking-[3px] uppercase text-[#E8622A] mb-2 font-semibold">Admin Panel</div>
-        <h1 className="font-serif text-3xl font-bold text-white/90">Dashboard</h1>
-        <p className="text-white/35 text-sm mt-1">Platform genel durumu — gerçek zamanlı</p>
-      </div>
+    <div style={{ minHeight:'100vh', background:'#FAF6EF', fontFamily:"'DM Sans', sans-serif" }}>
+      {/* Admin navbar */}
+      <nav style={{ background:'#4A2C0E', padding:'0 24px', height:56, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+        <div style={{ fontFamily:"'Playfair Display',serif", fontWeight:900, color:'white', fontSize:18 }}>EV YEMEKLERİ · Admin</div>
+        <div style={{ display:'flex', gap:20 }}>
+          {[['Dashboard', '/admin'], ['Aşçılar', '/admin/asciler'], ['Kullanıcılar', '/admin/kullanicilar'], ['Siparişler', '/admin/siparisler'], ['Ödemeler', '/admin/odemeler']].map(([l, h]) => (
+            <Link key={h} href={h} style={{ color:'rgba(255,255,255,0.7)', fontSize:13, textDecoration:'none', fontWeight:500 }}>{l}</Link>
+          ))}
+        </div>
+      </nav>
 
-      {/* Stat grid */}
-      <div className="grid grid-cols-4 gap-4 mb-6">
-        <StatCard label="Toplam Kullanıcı"  value={stats?.total_users ?? 0}  icon="👥" color="bg-blue-500"
-          sub={`${stats?.today_orders ?? 0} bugün sipariş`} />
-        <StatCard label="Kayıtlı Aşçı"      value={stats?.total_chefs ?? 0}   icon="👩‍🍳" color="bg-amber-500"
-          sub={stats?.pending_chefs ? `${stats.pending_chefs} onay bekliyor` : undefined} />
-        <StatCard label="Toplam Sipariş"    value={stats?.total_orders ?? 0}  icon="📋" color="bg-[#E8622A]"
-          sub={`${stats?.active_orders ?? 0} aktif`} />
-        <StatCard label="Haftalık Gelir"
-          value={`₺${((stats?.week_revenue ?? 0) / 1000).toFixed(1)}K`}
-          icon="💰" color="bg-emerald-500"
-          sub={stats?.revenue_growth ? `↑ %${stats.revenue_growth} geçen haftaya göre` : undefined} />
-      </div>
+      <div style={{ maxWidth:1200, margin:'0 auto', padding:'28px 24px' }}>
+        <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:24, fontWeight:900, color:'#4A2C0E', marginBottom:24 }}>Dashboard</h1>
 
-      {/* Grafik + Hızlı linkler */}
-      <div className="grid grid-cols-3 gap-4 mb-6">
-        {/* Grafik */}
-        <div className="col-span-2 bg-[#1A1612] border border-white/[0.07] rounded-xl p-5">
-          <div className="flex justify-between items-center mb-4">
-            <div>
-              <div className="text-white/80 font-semibold text-sm">Haftalık Sipariş & Gelir</div>
-              <div className="text-white/30 text-[11px] mt-0.5">Son 7 gün</div>
-            </div>
-            <div className="text-[11px] text-white/30">
-              Toplam <span className="text-white/60 font-bold">
-                ₺{((stats?.week_revenue ?? 0)).toLocaleString('tr-TR')}
-              </span>
-            </div>
-          </div>
-          <MiniChart data={chart} />
+        {/* Stats */}
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(4, 1fr)', gap:16, marginBottom:28 }}>
+          <StatCard label="Toplam Kullanıcı"  value={stats?.total_users?.toLocaleString('tr-TR')}  icon="👥" color="#3B82F6" />
+          <StatCard label="Toplam Aşçı"       value={stats?.total_chefs}        icon="👩‍🍳" color="#E8622A" sub={`${stats?.pending_chefs} onay bekliyor`} />
+          <StatCard label="Bu Hafta Sipariş"  value={stats?.total_orders?.toLocaleString('tr-TR')} icon="📦" color="#3D6B47" sub={`Bugün: ${stats?.today_orders}`} />
+          <StatCard label="Haftalık Gelir"    value={`₺${stats?.week_revenue?.toLocaleString('tr-TR')}`} icon="💰" color="#F59E0B" sub={stats?.revenue_growth} />
         </div>
 
-        {/* Hızlı aksiyonlar */}
-        <div className="bg-[#1A1612] border border-white/[0.07] rounded-xl p-5">
-          <div className="text-white/60 text-sm font-semibold mb-4">Hızlı Erişim</div>
-          <div className="flex flex-col gap-2">
+        <div style={{ display:'grid', gridTemplateColumns:'2fr 1fr', gap:20 }}>
+          {/* Grafik */}
+          <div style={{ background:'white', borderRadius:16, padding:24, boxShadow:'0 2px 12px rgba(74,44,14,0.08)' }}>
+            <div style={{ fontFamily:"'Playfair Display',serif", fontSize:17, fontWeight:700, color:'#4A2C0E', marginBottom:20 }}>Haftalık Gelir</div>
+            <div style={{ display:'flex', alignItems:'flex-end', gap:10, height:160, marginBottom:10 }}>
+              {chart.map((c: any) => (
+                <div key={c.day} style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', gap:4 }}>
+                  <div style={{ fontSize:10, color:'#8A7B6B' }}>₺{(c.revenue/1000).toFixed(1)}k</div>
+                  <div style={{ width:'100%', background:'#E8622A', borderRadius:'4px 4px 0 0', height:`${(c.revenue/maxRevenue)*100}%`, opacity:0.8 }} />
+                  <div style={{ fontSize:11, color:'#8A7B6B', fontWeight:600 }}>{c.day}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Hızlı linkler */}
+          <div style={{ background:'white', borderRadius:16, padding:24, boxShadow:'0 2px 12px rgba(74,44,14,0.08)', display:'flex', flexDirection:'column', gap:12 }}>
+            <div style={{ fontFamily:"'Playfair Display',serif", fontSize:17, fontWeight:700, color:'#4A2C0E', marginBottom:4 }}>Hızlı Erişim</div>
             {[
-              { href: '/admin/asciler?status=pending', label: 'Onay Bekleyen Aşçılar', count: stats?.pending_chefs, color: 'text-amber-400', urgent: true },
-              { href: '/admin/siparisler?status=pending', label: 'Bekleyen Siparişler', count: stats?.today_orders, color: 'text-[#E8622A]', urgent: false },
-              { href: '/admin/kullanicilar', label: 'Tüm Kullanıcılar', count: stats?.total_users, color: 'text-blue-400', urgent: false },
-            ].map(item => (
-              <a key={item.href} href={item.href}
-                className="flex items-center justify-between p-3 rounded-lg bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.05] hover:border-white/10 transition-all group">
-                <span className={`text-[13px] font-medium ${item.urgent ? 'text-white/80' : 'text-white/50'} group-hover:text-white/80`}>
-                  {item.label}
-                </span>
-                {(item.count ?? 0) > 0 && (
-                  <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full bg-white/[0.08] ${item.color}`}>
-                    {item.count}
-                  </span>
-                )}
-              </a>
+              ['👩‍🍳', 'Aşçıları Yönet', '/admin/asciler', '#FEF3EC', '#E8622A'],
+              ['👥', 'Kullanıcılar', '/admin/kullanicilar', '#EFF6FF', '#3B82F6'],
+              ['📦', 'Siparişler', '/admin/siparisler', '#ECFDF5', '#3D6B47'],
+              ['💸', 'Ödemeler', '/admin/odemeler', '#FFFBEB', '#F59E0B'],
+            ].map(([icon, label, href, bg, color]) => (
+              <Link key={href} href={href} style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 14px', background: bg, borderRadius:10, textDecoration:'none', transition:'opacity 0.15s' }}>
+                <span style={{ fontSize:20 }}>{icon}</span>
+                <span style={{ fontWeight:600, fontSize:13, color:'#4A2C0E' }}>{label}</span>
+                <span style={{ marginLeft:'auto', color, fontWeight:700, fontSize:13 }}>→</span>
+              </Link>
             ))}
           </div>
         </div>

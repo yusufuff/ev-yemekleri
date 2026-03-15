@@ -1,79 +1,10 @@
-﻿// @ts-nocheck
-import { NextRequest, NextResponse } from 'next/server'
-import { getSupabaseServerClient } from '@/lib/supabase/server'
-import { getCurrentUser } from '@/lib/supabase/server'
-
-export const dynamic = 'force-dynamic'
-
-async function adminGuard() {
-  const user = await getCurrentUser() as any
-  if (!user || user.role !== 'admin') return null
-  return user
+﻿import { NextResponse } from 'next/server'
+export async function GET() {
+  return NextResponse.json({ users: [
+    { id: 'u1', full_name: 'Mehmet Yılmaz', phone: '+90 532 111 22 33', role: 'buyer',  is_active: true,  created_at: '2024-11-01', order_count: 12 },
+    { id: 'u2', full_name: 'Fatma Hanım',   phone: '+90 555 444 55 66', role: 'chef',   is_active: true,  created_at: '2024-10-15', order_count: 843 },
+    { id: 'u3', full_name: 'Selin Kaya',    phone: '+90 532 777 88 99', role: 'buyer',  is_active: true,  created_at: '2024-12-03', order_count: 5 },
+    { id: 'u4', full_name: 'Zeynep Arslan', phone: '+90 555 123 45 67', role: 'chef',   is_active: true,  created_at: '2024-09-20', order_count: 1241 },
+    { id: 'u5', full_name: 'Ali Rıza',      phone: '+90 532 000 11 22', role: 'buyer',  is_active: false, created_at: '2025-01-10', order_count: 1 },
+  ], total: 5 })
 }
-
-// â”€â”€ GET "” kullanıcı listesi â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-export async function GET(req: NextRequest) {
-  if (!await adminGuard()) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-
-  const sp       = req.nextUrl.searchParams
-  const page     = parseInt(sp.get('page') ?? '1')
-  const limit    = parseInt(sp.get('limit') ?? '20')
-  const role     = sp.get('role')        // buyer | chef | admin
-  const search   = sp.get('q')?.trim()
-  const active   = sp.get('active')      // 'true' | 'false'
-  const from     = (page - 1) * limit
-
-  const supabase = await getSupabaseServerClient()
-  let query = supabase
-    .from('users')
-    .select(`
-      id, full_name, phone, role, avatar_url,
-      is_active, platform_credit, created_at,
-      chef_profiles ( verification_status, average_rating, total_orders )
-    `, { count: 'exact' })
-    .order('created_at', { ascending: false })
-    .range(from, from + limit - 1)
-
-  if (role)   query = query.eq('role', role)
-  if (active) query = query.eq('is_active', active === 'true')
-  if (search) query = query.or(`full_name.ilike.%${search}%,phone.ilike.%${search}%`)
-
-  const { data, count, error } = await query
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-
-  return NextResponse.json({ users: data, total: count, page, limit })
-}
-
-// â”€â”€ PATCH "” ban / unban / role değiştir â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-export async function PATCH(req: NextRequest) {
-  if (!await adminGuard()) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-
-  const body: { user_id: string; action: 'ban' | 'unban' | 'set_role'; role?: string } = await req.json()
-  const { user_id, action, role } = body
-  if (!user_id || !action) return NextResponse.json({ error: 'user_id and action required' }, { status: 400 })
-
-  const supabase = await getSupabaseServerClient()
-
-  if (action === 'ban') {
-    const { error } = await (supabase as any).from('users').update({ is_active: false }).eq('id', user_id)
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-    return NextResponse.json({ ok: true, message: 'Kullanıcı banlandı' })
-  }
-
-  if (action === 'unban') {
-    const { error } = await (supabase as any).from('users').update({ is_active: true }).eq('id', user_id)
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-    return NextResponse.json({ ok: true, message: 'Ban kaldırıldı' })
-  }
-
-  if (action === 'set_role' && role) {
-    const { error } = await (supabase as any).from('users').update({ role }).eq('id', user_id)
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-    return NextResponse.json({ ok: true, message: `Rol güncellendi: ${role}` })
-  }
-
-  return NextResponse.json({ error: 'Unknown action' }, { status: 400 })
-}
-
-
-
