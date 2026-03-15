@@ -1,8 +1,8 @@
-import { createServerClient } from '@supabase/ssr'
+﻿import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-const AUTHENTICATED_ROUTES = ['/siparislerim','/favorilerim','/adreslerim','/profil','/odeme']
-const CHEF_ROUTES = ['/dashboard','/menu','/siparisler','/kazanc','/asci-ayarlar']
+const AUTHENTICATED_ROUTES: string[] = []
+const CHEF_ROUTES: string[] = []
 const ADMIN_ROUTES = ['/admin']
 const AUTH_PAGES = ['/giris', '/kayit']
 
