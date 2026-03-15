@@ -1,5 +1,4 @@
-﻿// @ts-nocheck
-import { NextRequest, NextResponse } from 'next/server'
+﻿import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
 const supabaseAdmin = createClient(
@@ -8,59 +7,71 @@ const supabaseAdmin = createClient(
   { auth: { autoRefreshToken: false, persistSession: false } }
 )
 
+function generateOTP(): string {
+  return Math.floor(100000 + Math.random() * 900000).toString()
+}
+
+async function sendSMS(phone: string, code: string): Promise<boolean> {
+  // Netgsm entegrasyonu
+  const username = process.env.NETGSM_USERNAME
+  const password = process.env.NETGSM_PASSWORD
+  const header   = process.env.NETGSM_HEADER ?? 'EVYEMEKLERI'
+
+  if (!username || !password) {
+    // SMS credentials yoksa sadece console'a yaz (dev/demo mod)
+    console.log(`[OTP] ${phone} → ${code}`)
+    return true
+  }
+
+  try {
+    const msg = `Ev Yemekleri giris kodunuz: ${code}. Bu kodu kimseyle paylasmayiniz.`
+    const url = `https://api.netgsm.com.tr/sms/send/get/?usercode=${username}&password=${password}&gsmno=${phone.replace('+90','').replace(/\s/g,'')}&message=${encodeURIComponent(msg)}&msgheader=${header}`
+    const res = await fetch(url)
+    const text = await res.text()
+    return text.startsWith('00') || text.startsWith('01')
+  } catch {
+    console.log(`[OTP fallback] ${phone} → ${code}`)
+    return true
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json()
-    const { phone } = body
+    const { phone } = await req.json()
 
-    if (!phone) {
-      return NextResponse.json({ error: 'Telefon numarası gerekli.' }, { status: 400 })
+    if (!phone || !/^(\+90|0)?[5][0-9]{9}$/.test(phone)) {
+      return NextResponse.json({ error: 'Geçerli bir Türkiye telefon numarası girin.' }, { status: 400 })
     }
 
-    // OTP üret
-    const code = Math.floor(100000 + Math.random() * 900000).toString()
+    // Normalize phone
+    const normalizedPhone = phone.startsWith('+90') ? phone : '+90' + phone.replace(/^0/, '')
+
+    // Rate limit — son 1 dakikada zaten gönderildiyse engelle
+    const { data: existing } = await supabaseAdmin
+      .from('otp_codes')
+      .select('created_at')
+      .eq('phone', normalizedPhone)
+      .single()
+
+    if (existing) {
+      const diff = (Date.now() - new Date(existing.created_at).getTime()) / 1000
+      if (diff < 60) {
+        return NextResponse.json({ error: `Lütfen ${Math.ceil(60 - diff)} saniye bekleyin.` }, { status: 429 })
+      }
+    }
+
+    const code      = generateOTP()
     const expiresAt = new Date(Date.now() + 3 * 60 * 1000).toISOString()
 
-    // Supabase'e kaydet (otp_codes tablosu yoksa direkt test modu)
-    try {
-      await supabaseAdmin
-        .from('otp_codes')
-        .upsert({ phone, code, expires_at: expiresAt, attempts: 0 }, { onConflict: 'phone' })
-    } catch (e) {
-      // Tablo yoksa devam et
-      console.log('otp_codes tablosu yok, test modunda devam ediliyor')
-    }
+    // otp_codes tablosuna kaydet
+    await supabaseAdmin
+      .from('otp_codes')
+      .upsert({ phone: normalizedPhone, code, expires_at: expiresAt, attempts: 0, created_at: new Date().toISOString() })
 
-    // Netgsm varsa SMS gönder
-    const hasNetgsm = process.env.NETGSM_USERCODE && process.env.NETGSM_PASSWORD
+    // SMS gönder
+    await sendSMS(normalizedPhone, code)
 
-    if (hasNetgsm) {
-      try {
-        await fetch('https://api.netgsm.com.tr/sms/send/otp', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            usercode:  process.env.NETGSM_USERCODE,
-            password:  process.env.NETGSM_PASSWORD,
-            msgheader: process.env.NETGSM_MSGHEADER ?? 'EVYEMEKLERI',
-            message:   `Ev Yemekleri dogrulama kodunuz: ${code}. 3 dakika gecerlidir.`,
-            gsm:       phone.replace('+', ''),
-          }),
-        })
-      } catch (e) {
-        console.error('SMS hatası:', e)
-      }
-    } else {
-      console.log(`🔑 TEST OTP [${phone}]: ${code}`)
-    }
-
-    return NextResponse.json({
-      success: true,
-      message: 'Doğrulama kodu gönderildi.',
-      // Test modunda kodu response'a ekle
-      ...(!hasNetgsm && { testCode: code }),
-    })
-
+    return NextResponse.json({ success: true, phone: normalizedPhone })
   } catch (err) {
     console.error('send-otp error:', err)
     return NextResponse.json({ error: 'Sunucu hatası.' }, { status: 500 })
