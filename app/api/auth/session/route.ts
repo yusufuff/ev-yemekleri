@@ -1,14 +1,35 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
+import { createServerClient } from '@supabase/ssr'
 
-// Demo: mock oturum - gerçek kullanıcı gibi davran
-export async function GET() {
-  return NextResponse.json({
-    user: {
-      id: 'user-demo',
-      full_name: 'Demo Kullanıcı',
-      phone: '+90 532 000 00 00',
-      role: 'buyer',
-      avatar_url: null,
+export async function GET(request: NextRequest) {
+  const response = NextResponse.next()
+  
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll: () => request.cookies.getAll(),
+        setAll: (cookiesToSet) => {
+          cookiesToSet.forEach(({ name, value, options }) =>
+            response.cookies.set(name, value, options)
+          )
+        },
+      },
     }
-  })
+  )
+
+  const { data: { user } } = await supabase.auth.getUser()
+  
+  if (!user) {
+    return NextResponse.json({ user: null })
+  }
+
+  const { data: profile } = await supabase
+    .from('users')
+    .select('*')
+    .eq('id', user.id)
+    .single()
+
+  return NextResponse.json({ user: profile ?? { id: user.id, full_name: null, role: 'buyer' } })
 }
