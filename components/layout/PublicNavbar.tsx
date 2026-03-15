@@ -1,6 +1,5 @@
 ﻿'use client'
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import dynamic from 'next/dynamic'
 
@@ -9,48 +8,92 @@ const CartButton = dynamic(
   { ssr: false }
 )
 
-const HIDDEN_PATHS = ['/giris', '/kayit', '/admin', '/dashboard']
+const NAV_LINKS = [
+  { href: '/kesif',       label: 'Keşfet',      icon: '🔍' },
+  { href: '/siparislerim',label: 'Siparişlerim', icon: '📦' },
+  { href: '/mesajlar',    label: 'Mesajlar',     icon: '💬' },
+  { href: '/favorilerim', label: 'Favoriler',    icon: '❤️' },
+  { href: '/dashboard',   label: 'Panel',        icon: '📊' },
+]
+
+const HIDDEN_PATHS = ['/giris', '/kayit', '/admin']
 
 export function PublicNavbar() {
   const pathname = usePathname()
-  const [user, setUser] = useState<{ full_name?: string } | null>(null)
-
   const hidden = HIDDEN_PATHS.some(p => pathname?.startsWith(p))
-
-  useEffect(() => {
-    if (hidden) return
-    fetch('/api/auth/session')
-      .then(r => r.ok ? r.json() : null)
-      .then(data => { if (data?.user) setUser(data.user) })
-      .catch(() => {})
-  }, [hidden])
-
   if (hidden) return null
 
   return (
-    <nav className="bg-white border-b border-[#E8E0D4] sticky top-0 z-50">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
-        <Link href="/" className="font-serif font-black text-lg text-[#4A2C0E]">
-          EV YEMEKLERİ
-        </Link>
-        <div className="flex items-center gap-2">
-          <CartButton />
-          <div className="flex items-center gap-3 text-sm">
-            <Link href="/kesif" className="text-[#8A7B6B] hover:text-[#4A2C0E] font-medium hidden sm:block">Keşfet</Link>
-            <Link href="/siparislerim" className="text-[#8A7B6B] hover:text-[#4A2C0E] font-medium hidden sm:block">Siparişlerim</Link>
-            <Link href="/mesajlar" className="text-[#8A7B6B] hover:text-[#4A2C0E] font-medium hidden sm:block">Mesajlar</Link>
-            <Link href="/dashboard" className="text-[#8A7B6B] hover:text-[#4A2C0E] font-medium hidden sm:block">Panel</Link>
+    <>
+      {/* Masaüstü Navbar */}
+      <nav style={{ background:'white', borderBottom:'1px solid #E8E0D4', position:'sticky', top:0, zIndex:50 }}>
+        <div style={{ maxWidth:1152, margin:'0 auto', padding:'0 24px', height:56, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+          <Link href="/" style={{ fontFamily:"'Playfair Display',serif", fontWeight:900, fontSize:20, color:'#4A2C0E', textDecoration:'none' }}>
+            EV YEMEKLERİ
+          </Link>
+
+          {/* Masaüstü linkler */}
+          <div style={{ display:'flex', alignItems:'center', gap:20 }} className="desktop-nav">
+            {NAV_LINKS.map(item => {
+              const active = item.href === '/' ? pathname === '/' : pathname?.startsWith(item.href)
+              return (
+                <Link key={item.href} href={item.href} style={{
+                  fontSize:13, fontWeight:600, textDecoration:'none',
+                  color: active ? '#E8622A' : '#8A7B6B',
+                  borderBottom: active ? '2px solid #E8622A' : '2px solid transparent',
+                  paddingBottom:2,
+                }}>{item.label}</Link>
+              )
+            })}
           </div>
-          <Link href="/giris"
-            className="px-3 py-1.5 text-xs font-semibold text-[#4A2C0E] border border-[#E8E0D4] rounded-lg hover:border-[#E8622A] hover:text-[#E8622A] transition-colors hidden sm:inline-flex">
-            Giriş Yap
-          </Link>
-          <Link href="/kayit"
-            className="px-3 py-1.5 text-xs font-semibold text-white bg-[#E8622A] rounded-lg hover:bg-[#d4541e] transition-colors">
-            ✨ Kayıt Ol
-          </Link>
+
+          <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+            <CartButton />
+            <Link href="/giris" style={{ padding:'7px 14px', fontSize:12, fontWeight:600, color:'#4A2C0E', border:'1.5px solid #E8E0D4', borderRadius:8, textDecoration:'none' }}>
+              Giriş Yap
+            </Link>
+            <Link href="/kayit" style={{ padding:'7px 14px', fontSize:12, fontWeight:700, color:'white', background:'#E8622A', borderRadius:8, textDecoration:'none' }}>
+              ✨ Kayıt Ol
+            </Link>
+          </div>
         </div>
-      </div>
-    </nav>
+      </nav>
+
+      {/* Mobil bottom nav */}
+      <nav style={{
+        position:'fixed', bottom:0, left:0, right:0, zIndex:200,
+        background:'white', borderTop:'1px solid #E8E0D4',
+        display:'flex', alignItems:'center',
+        paddingBottom:'env(safe-area-inset-bottom, 0px)',
+      }} className="mobile-nav">
+        {[{ href:'/', icon:'🏠', label:'Ana Sayfa' }, ...NAV_LINKS.slice(0,3), { href:'/profil', icon:'👤', label:'Profil' }].map(item => {
+          const active = item.href === '/' ? pathname === '/' : pathname?.startsWith(item.href)
+          return (
+            <Link key={item.href} href={item.href} style={{
+              flex:1, display:'flex', flexDirection:'column', alignItems:'center',
+              justifyContent:'center', padding:'8px 4px', textDecoration:'none', gap:2,
+            }}>
+              <span style={{ fontSize:20 }}>{item.icon}</span>
+              <span style={{ fontSize:10, fontWeight: active ? 700 : 500, color: active ? '#E8622A' : '#8A7B6B' }}>
+                {item.label}
+              </span>
+              {active && <div style={{ width:4, height:4, borderRadius:'50%', background:'#E8622A' }} />}
+            </Link>
+          )
+        })}
+        <div style={{ position:'absolute', top:0, right:16, height:'100%', display:'flex', alignItems:'center' }}>
+          <CartButton />
+        </div>
+      </nav>
+
+      <style>{`
+        .desktop-nav { display: flex; }
+        .mobile-nav { display: none; }
+        @media (max-width: 768px) {
+          .desktop-nav { display: none !important; }
+          .mobile-nav { display: flex !important; }
+        }
+      `}</style>
+    </>
   )
 }
