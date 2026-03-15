@@ -50,7 +50,7 @@ const FILTERS = [
 ]
 
 // ── Harita bileşeni (mock) ────────────────────────────────────────────────────
-function MockMap({ chefs, radius, onRadius }: { chefs: Chef[]; radius: number; onRadius: (v: number) => void }) {
+function MockMap({ chefs, radius, onRadius, selectedPin, onPinClick }: { chefs: Chef[]; radius: number; onRadius: (v: number) => void; selectedPin: string | null; onPinClick: (id: string | null) => void }) {
   return (
     <div style={{ position: 'sticky', top: '72px' }}>
       {/* Slider */}
@@ -92,7 +92,7 @@ function MockMap({ chefs, radius, onRadius }: { chefs: Chef[]; radius: number; o
           const y = 50 + Math.sin(angle) * dist * 60
           return (
             <div key={chef.chef_id} style={{ position: 'absolute', left: `${x}%`, top: `${y}%`, transform: 'translate(-50%,-50%)', zIndex: 3, cursor: 'pointer' }}
-              onClick={() => setSelectedPin(selectedPin === chef.chef_id ? null : chef.chef_id)}>
+              onClick={() => onPinClick(selectedPin === chef.chef_id ? null : chef.chef_id)}>
               <div style={{ background: '#3D6B47', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', border: '2px solid white', boxShadow: '0 2px 8px rgba(0,0,0,0.2)' }}>👩‍🍳</div>
               <div style={{ position: 'absolute', bottom: '-18px', left: '50%', transform: 'translateX(-50%)', background: 'white', color: '#4A2C0E', fontSize: '9px', fontWeight: 700, padding: '2px 6px', borderRadius: '8px', whiteSpace: 'nowrap', boxShadow: '0 1px 4px rgba(0,0,0,0.15)' }}>
                 {chef.distance_km.toFixed(1)}km
@@ -341,7 +341,7 @@ function KesifInner() {
                 KONUM HARİTASI — 1-10 KM YARIÇAP, AŞÇI PİNLERİ
               </span>
             </div>
-            <MockMap chefs={chefs} radius={radius} onRadius={setRadius} />
+            <MockMap chefs={chefs} radius={radius} onRadius={setRadius} selectedPin={selectedPin} onPinClick={setSelectedPin} />
           </div>
         </div>
       </div>
