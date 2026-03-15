@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 
 const AUTHENTICATED_ROUTES: string[] = []
 const CHEF_ROUTES: string[] = []
-const ADMIN_ROUTES = ['/admin']
+const ADMIN_ROUTES: string[] = []
 const AUTH_PAGES = ['/giris', '/kayit']
 
 export async function middleware(request: NextRequest) {
