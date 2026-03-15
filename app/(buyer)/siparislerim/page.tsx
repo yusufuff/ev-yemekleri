@@ -126,9 +126,9 @@ export default function SiparislerimPage() {
                           </div>
                         )}
                         <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
-                          <button style={{ flex: 1, padding: '8px 0', background: 'white', border: '1.5px solid #E8E0D4', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', color: '#4A2C0E' }}>
+                          <Link href={`/mesajlar?order_id=${order.id}`} style={{ flex: 1, padding: '8px 0', background: 'white', border: '1.5px solid #E8E0D4', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', color: '#4A2C0E', textDecoration: 'none', textAlign: 'center' }}>
                             💬 Aşçıya Yaz
-                          </button>
+                          </Link>
                           <button style={{ padding: '8px 14px', background: '#FEE2E2', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', color: '#DC2626' }}>
                             ❌ İptal
                           </button>
