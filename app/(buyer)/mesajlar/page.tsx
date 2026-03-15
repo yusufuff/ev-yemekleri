@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
@@ -151,7 +150,7 @@ function ConvRow({
 
 // ── Ana sayfa ─────────────────────────────────────────────────────────────────
 
-export default function MesajlarPage() {
+function MesajlarInner() {
   const { user } = useAuth()
   const searchParams = useSearchParams()
   const orderFromUrl = searchParams.get('order')
@@ -377,5 +376,14 @@ export default function MesajlarPage() {
         }
       `}</style>
     </div>
+  )
+}
+
+import { Suspense } from 'react'
+export default function MesajlarPage() {
+  return (
+    <Suspense fallback={<div style={{display:'flex',alignItems:'center',justifyContent:'center',minHeight:'100vh',color:'#8A7B6B'}}>Yükleniyor…</div>}>
+      <MesajlarInner />
+    </Suspense>
   )
 }
