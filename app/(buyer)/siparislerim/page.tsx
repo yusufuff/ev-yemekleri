@@ -1,379 +1,153 @@
-// @ts-nocheck
 'use client'
-
-import { useState } from 'react'
-import { useRealtimeBuyerOrders } from '@/hooks/useRealtimeOrder'
-import { OrderTracker } from '@/components/orders/OrderTracker'
-import { useAuth } from '@/hooks/useAuth'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 
-// ── Değerlendirme modal (basit) ───────────────────────────────────────────────
-
-function ReviewModal({
-  orderId,
-  onClose,
-}: {
-  orderId: string
-  onClose: () => void
-}) {
-  const [rating,  setRating]  = useState(5)
-  const [comment, setComment] = useState('')
-  const [saving,  setSaving]  = useState(false)
-  const [done,    setDone]    = useState(false)
-
-  const submit = async () => {
-    setSaving(true)
-    await fetch('/api/reviews', {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ order_id: orderId, rating, comment }),
-    })
-    setDone(true)
-    setTimeout(onClose, 1200)
-  }
-
-  return (
-    <div className="rm-overlay" onClick={onClose}>
-      <div className="rm-modal" onClick={e => e.stopPropagation()}>
-        {done ? (
-          <div className="rm-done">✅ Değerlendirmeniz alındı, teşekkürler!</div>
-        ) : (
-          <>
-            <div className="rm-title">Siparişinizi Değerlendirin ⭐</div>
-            <div className="rm-stars">
-              {[1,2,3,4,5].map(s => (
-                <button
-                  key={s}
-                  className={`rm-star ${s <= rating ? 'rm-star--on' : ''}`}
-                  onClick={() => setRating(s)}
-                  type="button"
-                  aria-label={`${s} yıldız`}
-                >★</button>
-              ))}
-            </div>
-            <textarea
-              className="rm-textarea"
-              placeholder="Yorumunuz (isteğe bağlı)…"
-              value={comment}
-              onChange={e => setComment(e.target.value)}
-              rows={3}
-            />
-            <div className="rm-actions">
-              <button className="rm-btn rm-btn--cancel" onClick={onClose} type="button">Vazgeç</button>
-              <button className="rm-btn rm-btn--submit" onClick={submit} disabled={saving} type="button">
-                {saving ? 'Kaydediliyor…' : 'Gönder'}
-              </button>
-            </div>
-          </>
-        )}
-      </div>
-
-      <style>{`
-        .rm-overlay {
-          position: fixed; inset: 0; z-index: 200;
-          background: rgba(0,0,0,0.5);
-          display: flex; align-items: center; justify-content: center;
-          padding: 24px;
-        }
-        .rm-modal {
-          background: var(--white); border-radius: 20px;
-          padding: 28px; max-width: 400px; width: 100%;
-          box-shadow: var(--shadow-lg);
-        }
-        .rm-title {
-          font-family: 'Playfair Display', serif;
-          font-size: 18px; font-weight: 700; color: var(--brown);
-          margin-bottom: 16px; text-align: center;
-        }
-        .rm-stars {
-          display: flex; justify-content: center; gap: 8px; margin-bottom: 16px;
-        }
-        .rm-star {
-          font-size: 32px; background: none; border: none; cursor: pointer;
-          color: var(--gray-light); transition: color 0.15s, transform 0.15s;
-          line-height: 1;
-        }
-        .rm-star--on  { color: #F59E0B; }
-        .rm-star:hover { transform: scale(1.2); }
-        .rm-textarea {
-          width: 100%; padding: 10px 14px;
-          border: 1.5px solid var(--gray-light); border-radius: 10px;
-          font-family: 'DM Sans', sans-serif; font-size: 13px;
-          color: var(--brown); resize: none; margin-bottom: 16px;
-        }
-        .rm-textarea:focus { outline: none; border-color: var(--orange); }
-        .rm-actions { display: flex; gap: 8px; }
-        .rm-btn {
-          flex: 1; padding: 10px; border-radius: 10px; border: none;
-          font-size: 13px; font-weight: 700; cursor: pointer;
-          font-family: 'DM Sans', sans-serif; transition: opacity 0.15s;
-        }
-        .rm-btn--cancel { background: var(--warm); color: var(--gray); }
-        .rm-btn--submit { background: var(--orange); color: white; }
-        .rm-btn:disabled { opacity: 0.6; cursor: not-allowed; }
-        .rm-done {
-          text-align: center; padding: 20px;
-          font-size: 15px; font-weight: 700; color: var(--green);
-        }
-      `}</style>
-    </div>
-  )
+const STATUS_META: Record<string, { label: string; color: string; bg: string; step: number }> = {
+  pending:    { label: 'Onay Bekleniyor', color: '#E8622A', bg: '#FEF3EC', step: 0 },
+  confirmed:  { label: 'Onaylandı',       color: '#3D6B47', bg: '#ECFDF5', step: 1 },
+  preparing:  { label: 'Hazırlanıyor',    color: '#E8622A', bg: '#FEF3EC', step: 2 },
+  on_the_way: { label: 'Yolda',           color: '#3B82F6', bg: '#EFF6FF', step: 3 },
+  delivered:  { label: 'Teslim Edildi',   color: '#3D6B47', bg: '#ECFDF5', step: 4 },
+  cancelled:  { label: 'İptal Edildi',    color: '#DC2626', bg: '#FEE2E2', step: -1 },
 }
 
-// ── Geçmiş sipariş satırı ─────────────────────────────────────────────────────
+const STEPS = ['Alındı', 'Onaylandı', 'Hazırlanıyor', 'Yolda', 'Teslim']
 
-function PastOrderRow({ order, onReview }: { order: any; onReview: (id: string) => void }) {
-  const items   = order.order_items ?? []
-  const chef    = order.chef_profiles?.users
-  const date    = new Date(order.created_at).toLocaleDateString('tr-TR', {
-    day: 'numeric', month: 'long', year: 'numeric'
-  })
-  const isCancelled = order.status === 'cancelled'
-
-  return (
-    <div className={`por-row ${isCancelled ? 'por-row--cancelled' : ''}`}>
-      <div className="por-left">
-        <div className="por-num">#{order.order_number}</div>
-        <div className="por-items">
-          {items.slice(0, 2).map((i: any) => i.item_name).join(', ')}
-          {items.length > 2 && ` +${items.length - 2}`}
-        </div>
-        <div className="por-meta">
-          👩‍🍳 {chef?.full_name ?? 'Aşçı'} · {date}
-        </div>
-      </div>
-      <div className="por-right">
-        <div className="por-price">₺{Number(order.total_amount ?? 0).toFixed(0)}</div>
-        <div className={`por-status ${isCancelled ? 'por-status--cancelled' : 'por-status--done'}`}>
-          {isCancelled ? '❌ İptal' : '✅ Teslim Edildi'}
-        </div>
-        <div className="por-actions">
-          {!isCancelled && (
-            <button
-              className="por-btn por-btn--review"
-              onClick={() => onReview(order.id)}
-              type="button"
-            >
-              ⭐ Değerlendir
-            </button>
-          )}
-          <Link href={`/asci/${order.chef_id}#menu`} className="por-btn por-btn--reorder">
-            🔁 Tekrar
-          </Link>
-        </div>
-      </div>
-
-      <style>{`
-        .por-row {
-          display: flex; align-items: center; justify-content: space-between;
-          gap: 14px; padding: 14px 16px;
-          background: var(--white); border-radius: 14px;
-          border: 1.5px solid var(--gray-light);
-          transition: border-color 0.15s;
-        }
-        .por-row:hover { border-color: var(--orange-light); }
-        .por-row--cancelled { opacity: 0.6; }
-
-        .por-num    { font-size: 11px; color: var(--gray); font-weight: 700; margin-bottom: 3px; }
-        .por-items  { font-weight: 700; font-size: 13.5px; color: var(--brown); margin-bottom: 3px; }
-        .por-meta   { font-size: 11.5px; color: var(--gray); }
-
-        .por-right  { text-align: right; flex-shrink: 0; }
-        .por-price  { font-family: 'Playfair Display', serif; font-size: 16px; font-weight: 700; color: var(--brown); margin-bottom: 4px; }
-
-        .por-status          { font-size: 11px; font-weight: 700; margin-bottom: 8px; }
-        .por-status--done    { color: var(--green); }
-        .por-status--cancelled { color: #DC2626; }
-
-        .por-actions { display: flex; gap: 6px; justify-content: flex-end; }
-        .por-btn {
-          padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 700;
-          text-decoration: none; cursor: pointer; border: none;
-          font-family: 'DM Sans', sans-serif; transition: opacity 0.15s;
-        }
-        .por-btn--review  { background: #FFFBEB; color: #92400E; border: 1.5px solid #FDE68A; }
-        .por-btn--reorder { background: var(--orange); color: white; }
-        .por-btn:hover    { opacity: 0.85; }
-      `}</style>
-    </div>
-  )
+function formatDate(iso: string) {
+  const d = new Date(iso)
+  const now = new Date()
+  const diff = Math.floor((now.getTime() - d.getTime()) / 1000 / 60)
+  if (diff < 60) return `${diff} dakika önce`
+  if (diff < 1440) return `${Math.floor(diff / 60)} saat önce`
+  return d.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long' })
 }
-
-// ── Ana sayfa ─────────────────────────────────────────────────────────────────
 
 export default function SiparislerimPage() {
-  const { user } = useAuth()
-  const { active, completed, loading } = useRealtimeBuyerOrders(user?.id ?? '')
-  const [reviewOrderId, setReviewOrderId] = useState<string | null>(null)
+  const [orders, setOrders] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState<'active' | 'past'>('active')
 
-  if (!user) return (
-    <div className="sl-empty">
-      <div style={{ fontSize: 48, marginBottom: 12 }}>🔐</div>
-      <div className="sl-empty-title">Giriş Yapmanız Gerekiyor</div>
-      <Link href="/giris" className="sl-login-btn">Giriş Yap</Link>
-    </div>
-  )
+  useEffect(() => {
+    fetch('/api/orders')
+      .then(r => r.json())
+      .then(d => { setOrders(d.orders ?? []); setLoading(false) })
+      .catch(() => setLoading(false))
+  }, [])
+
+  const active = orders.filter(o => !['delivered', 'cancelled'].includes(o.status))
+  const past   = orders.filter(o =>  ['delivered', 'cancelled'].includes(o.status))
+  const shown  = tab === 'active' ? active : past
 
   return (
-    <div className="sl-page">
+    <div style={{ minHeight: '100vh', background: '#FAF6EF', fontFamily: "'DM Sans', sans-serif" }}>
+      <div style={{ maxWidth: 680, margin: '0 auto', padding: '24px 16px' }}>
+        <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: 26, fontWeight: 900, color: '#4A2C0E', marginBottom: 20 }}>
+          Siparişlerim
+        </h1>
 
-      {/* Başlık */}
-      <div className="sl-header">
-        <h1 className="sl-title">Siparişlerim</h1>
-        {active.length > 0 && (
-          <div className="sl-live-badge">
-            <span className="sl-live-dot" />
-            {active.length} aktif sipariş canlı izleniyor
+        {/* Tabs */}
+        <div style={{ display: 'flex', borderBottom: '2px solid #E8E0D4', marginBottom: 20 }}>
+          {[['active', `🔴 Aktif (${active.length})`], ['past', `📦 Geçmiş (${past.length})`]].map(([key, label]) => (
+            <button key={key} onClick={() => setTab(key as any)} style={{
+              padding: '10px 20px', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+              border: 'none', background: 'transparent', fontFamily: 'inherit',
+              color: tab === key ? '#E8622A' : '#8A7B6B',
+              borderBottom: `2px solid ${tab === key ? '#E8622A' : 'transparent'}`,
+              marginBottom: -2,
+            }}>{label}</button>
+          ))}
+        </div>
+
+        {loading ? (
+          <div style={{ textAlign: 'center', padding: 48, color: '#8A7B6B' }}>Yükleniyor…</div>
+        ) : shown.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: 48 }}>
+            <div style={{ fontSize: 48, marginBottom: 12 }}>📦</div>
+            <div style={{ fontWeight: 700, fontSize: 16, color: '#4A2C0E', marginBottom: 8 }}>
+              {tab === 'active' ? 'Aktif sipariş yok' : 'Geçmiş sipariş yok'}
+            </div>
+            <Link href="/kesif" style={{ display: 'inline-block', marginTop: 8, padding: '10px 20px', background: '#E8622A', color: 'white', borderRadius: 10, textDecoration: 'none', fontWeight: 700, fontSize: 13 }}>
+              🍽️ Sipariş Ver
+            </Link>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {shown.map(order => {
+              const meta = STATUS_META[order.status] ?? STATUS_META.pending
+              const isActive = !['delivered', 'cancelled'].includes(order.status)
+              return (
+                <div key={order.id} style={{ background: 'white', borderRadius: 16, overflow: 'hidden', boxShadow: '0 2px 12px rgba(74,44,14,0.08)', border: isActive ? '2px solid #E8622A' : '1px solid rgba(232,224,212,0.6)' }}>
+                  {/* Header */}
+                  <div style={{ padding: '14px 16px', borderBottom: '1px solid #F5EDD8', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <div style={{ fontSize: 11, color: '#8A7B6B' }}>#{order.id} · {formatDate(order.created_at)}</div>
+                      <div style={{ fontWeight: 700, fontSize: 15, color: '#4A2C0E', marginTop: 2 }}>👩‍🍳 {order.chef_name}</div>
+                    </div>
+                    <span style={{ background: meta.bg, color: meta.color, fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 20 }}>{meta.label}</span>
+                  </div>
+
+                  {/* İçerik */}
+                  <div style={{ padding: '12px 16px' }}>
+                    <div style={{ fontSize: 13, color: '#4A2C0E', marginBottom: 8 }}>
+                      {order.items.map((i: any) => `${i.name} ×${i.quantity}`).join(', ')}
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: 12, color: '#8A7B6B' }}>
+                        {order.delivery_type === 'delivery' ? '🛵 Teslimat' : '🚶 Gel-Al'}
+                      </span>
+                      <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 700, color: '#E8622A' }}>₺{order.total_amount}</span>
+                    </div>
+
+                    {/* Progress bar - aktif siparişler için */}
+                    {isActive && order.status !== 'cancelled' && (
+                      <div style={{ marginTop: 14 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                          {STEPS.map((step, i) => (
+                            <div key={i} style={{ textAlign: 'center', flex: 1 }}>
+                              <div style={{
+                                width: 24, height: 24, borderRadius: '50%', margin: '0 auto 4px',
+                                background: i <= meta.step ? '#E8622A' : '#E8E0D4',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                fontSize: 10, color: i <= meta.step ? 'white' : '#8A7B6B', fontWeight: 700,
+                              }}>{i <= meta.step ? '✓' : i + 1}</div>
+                              <div style={{ fontSize: 9, color: i <= meta.step ? '#4A2C0E' : '#8A7B6B', fontWeight: i <= meta.step ? 700 : 400 }}>{step}</div>
+                            </div>
+                          ))}
+                        </div>
+                        {order.estimated_minutes > 0 && (
+                          <div style={{ textAlign: 'center', fontSize: 12, color: '#E8622A', fontWeight: 600, marginTop: 8, background: '#FEF3EC', borderRadius: 8, padding: '6px 12px' }}>
+                            ⏱️ Tahmini teslim: {order.estimated_minutes} dakika
+                          </div>
+                        )}
+                        <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+                          <button style={{ flex: 1, padding: '8px 0', background: 'white', border: '1.5px solid #E8E0D4', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', color: '#4A2C0E' }}>
+                            💬 Aşçıya Yaz
+                          </button>
+                          <button style={{ padding: '8px 14px', background: '#FEE2E2', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', color: '#DC2626' }}>
+                            ❌ İptal
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Geçmiş sipariş aksiyonları */}
+                    {order.status === 'delivered' && (
+                      <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+                        <Link href={`/asci/${order.chef_id}`} style={{ flex: 1, padding: '8px 0', background: '#E8622A', color: 'white', borderRadius: 8, fontSize: 12, fontWeight: 700, textAlign: 'center', textDecoration: 'none' }}>
+                          🔁 Tekrar Sipariş
+                        </Link>
+                        <button style={{ padding: '8px 14px', background: '#F5EDD8', border: '1.5px solid #E8E0D4', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', color: '#4A2C0E' }}>
+                          ⭐ Değerlendir
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
           </div>
         )}
       </div>
-
-      {/* Sekmeler */}
-      <div className="sl-tabs">
-        <button
-          className={`sl-tab ${tab === 'active' ? 'sl-tab--active' : ''}`}
-          onClick={() => setTab('active')}
-          type="button"
-        >
-          🔴 Aktif {active.length > 0 && `(${active.length})`}
-        </button>
-        <button
-          className={`sl-tab ${tab === 'past' ? 'sl-tab--active' : ''}`}
-          onClick={() => setTab('past')}
-          type="button"
-        >
-          📦 Geçmiş {completed.length > 0 && `(${completed.length})`}
-        </button>
-      </div>
-
-      {/* İçerik */}
-      {loading ? (
-        <div className="sl-loading">
-          <div className="sl-spinner" />
-          <span>Siparişler yükleniyor…</span>
-        </div>
-      ) : tab === 'active' ? (
-        active.length === 0 ? (
-          <div className="sl-empty">
-            <div style={{ fontSize: 48, marginBottom: 12 }}>📦</div>
-            <div className="sl-empty-title">Aktif Sipariş Yok</div>
-            <div className="sl-empty-sub">Yakınındaki lezzetleri keşfetmek ister misin?</div>
-            <Link href="/kesif" className="sl-discover-btn">🔍 Keşfet</Link>
-          </div>
-        ) : (
-          <div className="sl-active-list">
-            {active.map(order => (
-              <OrderTracker
-                key={order.id}
-                orderId={order.id}
-                onReview={setReviewOrderId}
-              />
-            ))}
-          </div>
-        )
-      ) : (
-        completed.length === 0 ? (
-          <div className="sl-empty">
-            <div style={{ fontSize: 48, marginBottom: 12 }}>🍽️</div>
-            <div className="sl-empty-title">Henüz Sipariş Vermediniz</div>
-            <Link href="/kesif" className="sl-discover-btn">🔍 İlk Siparişi Ver</Link>
-          </div>
-        ) : (
-          <div className="sl-past-list">
-            {completed.map(order => (
-              <PastOrderRow
-                key={order.id}
-                order={order}
-                onReview={setReviewOrderId}
-              />
-            ))}
-          </div>
-        )
-      )}
-
-      {/* Değerlendirme modal */}
-      {reviewOrderId && (
-        <ReviewModal
-          orderId={reviewOrderId}
-          onClose={() => setReviewOrderId(null)}
-        />
-      )}
-
-      <style>{`
-        .sl-page { max-width: 680px; margin: 0 auto; padding: 24px 20px 80px; }
-
-        /* Başlık */
-        .sl-header {
-          display: flex; align-items: center;
-          justify-content: space-between; gap: 12px;
-          margin-bottom: 20px; flex-wrap: wrap;
-        }
-        .sl-title {
-          font-family: 'Playfair Display', serif;
-          font-size: 24px; font-weight: 900; color: var(--brown);
-        }
-        .sl-live-badge {
-          display: flex; align-items: center; gap: 6px;
-          font-size: 12px; font-weight: 700; color: var(--green);
-          background: #ECFDF5; padding: 6px 12px; border-radius: 20px;
-        }
-        .sl-live-dot {
-          width: 8px; height: 8px; border-radius: 50%;
-          background: var(--green); animation: pulse 2s infinite;
-        }
-        @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.35;} }
-
-        /* Sekmeler */
-        .sl-tabs {
-          display: flex; border-bottom: 2px solid var(--gray-light);
-          margin-bottom: 20px;
-        }
-        .sl-tab {
-          padding: 10px 18px; font-size: 13.5px; font-weight: 700;
-          color: var(--gray); cursor: pointer; background: none; border: none;
-          border-bottom: 2.5px solid transparent; margin-bottom: -2px;
-          transition: all 0.15s; font-family: 'DM Sans', sans-serif;
-        }
-        .sl-tab:hover      { color: var(--brown); }
-        .sl-tab--active    { color: var(--orange); border-bottom-color: var(--orange); }
-
-        /* Listeler */
-        .sl-active-list, .sl-past-list {
-          display: flex; flex-direction: column; gap: 16px;
-        }
-
-        /* Yükleniyor */
-        .sl-loading {
-          display: flex; flex-direction: column;
-          align-items: center; gap: 12px; padding: 48px;
-          font-size: 13px; color: var(--gray);
-        }
-        .sl-spinner {
-          width: 32px; height: 32px;
-          border: 3px solid var(--gray-light);
-          border-top-color: var(--orange);
-          border-radius: 50%;
-          animation: spin 0.8s linear infinite;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
-
-        /* Boş durum */
-        .sl-empty {
-          text-align: center; padding: 48px 24px;
-          display: flex; flex-direction: column; align-items: center; gap: 8px;
-        }
-        .sl-empty-title { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 700; color: var(--brown); }
-        .sl-empty-sub   { font-size: 13px; color: var(--gray); margin-bottom: 8px; }
-        .sl-discover-btn, .sl-login-btn {
-          display: inline-flex; align-items: center; gap: 6px;
-          padding: 11px 22px; background: var(--orange); color: white;
-          border-radius: 12px; text-decoration: none;
-          font-size: 13.5px; font-weight: 700; margin-top: 8px;
-          transition: background 0.15s;
-        }
-        .sl-discover-btn:hover, .sl-login-btn:hover { background: #d4541e; }
-      `}</style>
     </div>
   )
 }

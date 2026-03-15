@@ -1,373 +1,168 @@
-// @ts-nocheck
 'use client'
-
-import { useChefDashboard }  from '@/hooks/useChefDashboard'
-import { OpenToggle }        from '@/components/chef/dashboard/OpenToggle'
-import { StatsRow }          from '@/components/chef/dashboard/StatsRow'
-import { PendingOrders }     from '@/components/chef/dashboard/PendingOrders'
-import { ActiveOrders }      from '@/components/chef/dashboard/ActiveOrders'
-import { EarningsChart }     from '@/components/chef/dashboard/EarningsChart'
-import { StockPanel }        from '@/components/chef/dashboard/StockPanel'
-import { RecentOrders }      from '@/components/chef/dashboard/RecentOrders'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 
-// ── Skeleton bileşeni ─────────────────────────────────────────────────────────
-function Skeleton({ w = '100%', h = 20, radius = 6 }: { w?: string; h?: number; radius?: number }) {
+function StatCard({ label, value, icon, color }: { label: string; value: string; icon: string; color: string }) {
   return (
-    <div
-      style={{
-        width: w, height: h, borderRadius: radius,
-        background: 'linear-gradient(90deg, var(--gray-light) 25%, var(--warm) 50%, var(--gray-light) 75%)',
-        backgroundSize: '200% 100%',
-        animation: 'shimmer 1.4s infinite',
-      }}
-    />
-  )
-}
-
-function DashboardSkeleton() {
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-      <style>{`
-        @keyframes shimmer {
-          0%   { background-position: 200% 0; }
-          100% { background-position: -200% 0; }
-        }
-      `}</style>
-      {/* Stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 14 }}>
-        {[...Array(4)].map((_, i) => <Skeleton key={i} h={90} radius={14} />)}
-      </div>
-      {/* İki sütun */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-        <Skeleton h={280} radius={14} />
-        <Skeleton h={280} radius={14} />
-      </div>
-      <Skeleton h={180} radius={14} />
+    <div style={{ background: 'white', borderRadius: 14, padding: 20, boxShadow: '0 2px 12px rgba(74,44,14,0.08)', border: '1px solid rgba(232,224,212,0.6)', borderTop: `3px solid ${color}`, position: 'relative' }}>
+      <div style={{ position: 'absolute', right: 16, top: 16, fontSize: 24, opacity: 0.15 }}>{icon}</div>
+      <div style={{ fontSize: 11, color: '#8A7B6B', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 }}>{label}</div>
+      <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 28, fontWeight: 700, color: '#4A2C0E' }}>{value}</div>
     </div>
   )
 }
 
-// ── Hata ekranı ───────────────────────────────────────────────────────────────
-function ErrorBanner({ message, onRetry }: { message: string; onRetry: () => void }) {
-  return (
-    <div style={{
-      background: '#FEF2F2',
-      border: '1.5px solid #FECACA',
-      borderRadius: 12,
-      padding: '16px 20px',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      gap: 12,
-      marginBottom: 16,
-    }}>
-      <span style={{ fontSize: 13, color: '#DC2626' }}>⚠️ {message}</span>
-      <button
-        onClick={onRetry}
-        style={{
-          padding: '6px 14px',
-          background: '#DC2626',
-          color: 'white',
-          border: 'none',
-          borderRadius: 8,
-          fontSize: 12,
-          fontWeight: 700,
-          cursor: 'pointer',
-          fontFamily: "'DM Sans', sans-serif",
-        }}
-      >
-        Yenile
-      </button>
-    </div>
-  )
-}
+export default function DashboardPage() {
+  const [data, setData] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+  const [isOpen, setIsOpen] = useState(true)
 
-// ── Kart sarmalayıcı ──────────────────────────────────────────────────────────
-function Panel({
-  title,
-  action,
-  children,
-}: {
-  title:    string
-  action?:  React.ReactNode
-  children: React.ReactNode
-}) {
-  return (
-    <div className="dashboard-panel">
-      <div className="panel-header">
-        <h2 className="panel-title">{title}</h2>
-        {action && <div className="panel-action">{action}</div>}
-      </div>
-      {children}
-      <style>{`
-        .dashboard-panel {
-          background: var(--white);
-          border-radius: 16px;
-          padding: 20px;
-          box-shadow: 0 2px 16px rgba(74,44,14,0.07);
-          border: 1px solid rgba(232,224,212,0.6);
-        }
-        .panel-header {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          margin-bottom: 16px;
-        }
-        .panel-title {
-          font-family: 'Playfair Display', serif;
-          font-size: 15px;
-          font-weight: 700;
-          color: var(--brown);
-          margin: 0;
-          display: flex;
-          align-items: center;
-          gap: 6px;
-        }
-        .panel-title::after {
-          content: '';
-          flex: 1;
-        }
-        .panel-action { flex-shrink: 0; }
-      `}</style>
-    </div>
-  )
-}
+  useEffect(() => {
+    fetch('/api/chef/dashboard')
+      .then(r => r.json())
+      .then(d => { setData(d); setIsOpen(d.is_open); setLoading(false) })
+      .catch(() => setLoading(false))
+  }, [])
 
-// ── Ana bileşen ───────────────────────────────────────────────────────────────
-export default function ChefDashboard() {
-  const {
-    data,
-    isLoading,
-    error,
-    refresh,
-    updateOrderStatus,
-    toggleOpen,
-  } = useChefDashboard()
-
-  // ── Yükleniyor ──
-  if (isLoading && !data) {
-    return (
-      <div className="dash-wrap">
-        <div className="dash-header-skeleton">
-          <Skeleton w="200px" h={28} />
-          <Skeleton w="120px" h={28} />
-        </div>
-        <DashboardSkeleton />
-      </div>
-    )
+  const toggleOpen = async () => {
+    const next = !isOpen
+    setIsOpen(next)
+    await fetch('/api/chef/dashboard', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ is_open: next }) })
   }
 
-  if (!data) return null
+  if (loading) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', color: '#8A7B6B' }}>Yükleniyor…</div>
 
-  const { stats, pendingOrders, activeOrders, recentOrders, earningsByDay, stockItems, chefName } = data
-
-  const hasPending = pendingOrders.length > 0
-  const hasActive  = activeOrders.length > 0
+  const stats = data?.stats ?? {}
 
   return (
-    <div className="dash-wrap">
+    <div style={{ minHeight: '100vh', background: '#FAF6EF', fontFamily: "'DM Sans', sans-serif" }}>
+      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '24px 16px' }}>
 
-      {/* ── Üst bar ──────────────────────────────────────────────────────── */}
-      <div className="dash-topbar">
-        <OpenToggle
-          isOpen={stats.is_open}
-          chefName={chefName}
-          onToggle={toggleOpen}
-          pendingCount={stats.pending_count}
-          onRefresh={refresh}
-        />
-      </div>
-
-      {/* ── Hata banner ────────────────────────────────────────────────── */}
-      {error && <ErrorBanner message={error} onRetry={refresh} />}
-
-      {/* ── İstatistikler ──────────────────────────────────────────────── */}
-      <StatsRow stats={stats} />
-
-      {/* ── Siparişler + Stok (iki sütun) ─────────────────────────────── */}
-      <div className="dash-grid-2">
-
-        {/* Sol sütun — Siparişler */}
-        <div className="dash-orders-col">
-
-          {hasPending && (
-            <Panel
-              title={`⏳ Bekleyen (${pendingOrders.length})`}
-              action={
-                <span style={{ fontSize: 11, color: 'var(--orange)', fontWeight: 700 }}>
-                  Yeni sipariş!
-                </span>
-              }
-            >
-              <PendingOrders orders={pendingOrders} onAction={updateOrderStatus} />
-            </Panel>
-          )}
-
-          {hasActive && (
-            <Panel title={`🍳 Aktif (${activeOrders.length})`}>
-              <ActiveOrders orders={activeOrders} onAction={updateOrderStatus} />
-            </Panel>
-          )}
-
-          {!hasPending && !hasActive && (
-            <Panel title="📋 Siparişler">
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
+          <div>
+            <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: 26, fontWeight: 900, color: '#4A2C0E', margin: 0 }}>Aşçı Paneli</h1>
+            <p style={{ color: '#8A7B6B', fontSize: 13, margin: '4px 0 0' }}>Merhaba, Fatma Hanım 👋</p>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <span style={{ fontSize: 13, fontWeight: 600, color: isOpen ? '#3D6B47' : '#8A7B6B' }}>
+              {isOpen ? '🟢 Açık' : '🔴 Kapalı'}
+            </span>
+            <button onClick={toggleOpen} style={{
+              width: 48, height: 26, borderRadius: 13, border: 'none', cursor: 'pointer',
+              background: isOpen ? '#3D6B47' : '#E8E0D4', position: 'relative', transition: 'background 0.2s',
+            }}>
               <div style={{
-                textAlign: 'center',
-                padding: '32px 20px',
-                color: 'var(--gray)',
-                fontSize: 13,
-              }}>
-                <div style={{ fontSize: 36, marginBottom: 10 }}>
-                  {stats.is_open ? '☕' : '😴'}
+                width: 20, height: 20, borderRadius: '50%', background: 'white',
+                position: 'absolute', top: 3, left: isOpen ? 25 : 3, transition: 'left 0.2s',
+                boxShadow: '0 1px 4px rgba(0,0,0,0.2)',
+              }} />
+            </button>
+          </div>
+        </div>
+
+        {/* Stats */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
+          <StatCard label="Bekleyen Sipariş" value={String(data?.pending_orders?.length ?? 0)} icon="🛒" color="#E8622A" />
+          <StatCard label="Bugünkü Kazanç" value={`₺${stats.today_earnings ?? 0}`} icon="💰" color="#3D6B47" />
+          <StatCard label="Tamamlanan" value={String(stats.today_orders ?? 0)} icon="🍳" color="#4A2C0E" />
+          <StatCard label="Puan Ortalaması" value={String(stats.avg_rating ?? '—')} icon="⭐" color="#3B82F6" />
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+
+          {/* Bekleyen Siparişler */}
+          <div>
+            <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 700, color: '#4A2C0E', marginBottom: 14 }}>Bekleyen Siparişler</h2>
+            {(data?.pending_orders ?? []).length === 0 ? (
+              <div style={{ background: 'white', borderRadius: 14, padding: 24, textAlign: 'center', color: '#8A7B6B', fontSize: 13 }}>Bekleyen sipariş yok ✨</div>
+            ) : (data?.pending_orders ?? []).map((order: any) => (
+              <div key={order.id} style={{ background: 'white', borderRadius: 14, padding: 16, boxShadow: '0 2px 12px rgba(74,44,14,0.08)', borderLeft: '4px solid #E8622A', marginBottom: 12 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: 8 }}>
+                  <div>
+                    <div style={{ fontSize: 11, color: '#8A7B6B' }}>#{order.id}</div>
+                    <div style={{ fontWeight: 700, fontSize: 14, color: '#4A2C0E' }}>{order.buyer_name} · {order.distance_km} km</div>
+                    <div style={{ fontSize: 12, color: '#8A7B6B', marginTop: 2 }}>
+                      {order.items.map((i: any) => `${i.name} ×${i.quantity}`).join(', ')}
+                    </div>
+                  </div>
+                  <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 700, color: '#E8622A' }}>₺{order.total_amount}</div>
                 </div>
-                <div style={{ fontWeight: 700, color: 'var(--brown)', marginBottom: 6 }}>
-                  {stats.is_open ? 'Sipariş bekleniyor' : 'Şu an kapalısınız'}
-                </div>
-                <div style={{ fontSize: 12 }}>
-                  {stats.is_open
-                    ? 'Yeni siparişler gerçek zamanlı olarak görünür'
-                    : 'Sipariş almak için yukarıdaki butonu açık konuma getirin'}
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button style={{ flex: 1, padding: '8px 0', background: '#ECFDF5', color: '#3D6B47', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>✅ Onayla</button>
+                  <button style={{ padding: '8px 14px', background: '#FEE2E2', color: '#DC2626', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>❌</button>
+                  <button style={{ padding: '8px 14px', background: '#F5EDD8', color: '#4A2C0E', border: '1.5px solid #E8E0D4', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>💬</button>
                 </div>
               </div>
-            </Panel>
-          )}
-        </div>
+            ))}
 
-        {/* Sağ sütun — Grafik + Stok */}
-        <div className="dash-right-col">
+            {/* Aktif Siparişler */}
+            {(data?.active_orders ?? []).length > 0 && (
+              <>
+                <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 700, color: '#4A2C0E', margin: '20px 0 14px' }}>Aktif Siparişler</h2>
+                {data.active_orders.map((order: any) => (
+                  <div key={order.id} style={{ background: 'white', borderRadius: 14, padding: 16, boxShadow: '0 2px 12px rgba(74,44,14,0.08)', borderLeft: '4px solid #3D6B47', marginBottom: 12 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                      <div>
+                        <div style={{ fontWeight: 700, fontSize: 14, color: '#4A2C0E' }}>{order.buyer_name}</div>
+                        <div style={{ fontSize: 12, color: '#8A7B6B' }}>{order.items.map((i: any) => `${i.name} ×${i.quantity}`).join(', ')}</div>
+                      </div>
+                      <span style={{ background: '#FEF3EC', color: '#E8622A', fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 20 }}>Hazırlanıyor</span>
+                    </div>
+                    <button style={{ width: '100%', padding: '8px 0', background: '#E8622A', color: 'white', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>🛵 Yola Çıktım</button>
+                  </div>
+                ))}
+              </>
+            )}
+          </div>
 
-          <Panel
-            title="📊 Kazanç"
-            action={
-              <Link
-                href="/kazanc"
-                style={{ fontSize: 11.5, color: 'var(--orange)', fontWeight: 700, textDecoration: 'none' }}
-              >
-                Tümü →
+          {/* Stok + Hızlı Linkler */}
+          <div>
+            <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 700, color: '#4A2C0E', marginBottom: 14 }}>Stok Durumu</h2>
+            <div style={{ background: 'white', borderRadius: 14, padding: 20, boxShadow: '0 2px 12px rgba(74,44,14,0.08)', marginBottom: 20 }}>
+              {(data?.stock ?? []).map((item: any) => {
+                const pct = item.daily_stock > 0 ? (item.remaining_stock / item.daily_stock) * 100 : 0
+                const barColor = pct === 0 ? '#DC2626' : pct < 40 ? '#E8622A' : '#3D6B47'
+                return (
+                  <div key={item.id} style={{ marginBottom: 14 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 5 }}>
+                      <span style={{ color: '#4A2C0E' }}>{item.name}</span>
+                      <span style={{ fontWeight: 600, color: barColor }}>{item.remaining_stock} / {item.daily_stock}</span>
+                    </div>
+                    <div style={{ background: '#E8E0D4', borderRadius: 4, height: 5, overflow: 'hidden' }}>
+                      <div style={{ height: '100%', width: `${pct}%`, background: barColor, borderRadius: 4, transition: 'width 0.3s' }} />
+                    </div>
+                  </div>
+                )
+              })}
+              <Link href="/menu" style={{ display: 'block', textAlign: 'center', marginTop: 14, padding: '8px 0', background: '#F5EDD8', color: '#4A2C0E', borderRadius: 8, textDecoration: 'none', fontSize: 12, fontWeight: 600, border: '1.5px solid #E8E0D4' }}>
+                📦 Stok Güncelle
               </Link>
-            }
-          >
-            <EarningsChart
-              data={earningsByDay}
-              weekTotal={stats.week_earning}
-              monthTotal={stats.month_earning}
-              pendingBalance={stats.pending_balance}
-            />
-          </Panel>
+            </div>
 
-          <Panel
-            title="📦 Stok Durumu"
-            action={
-              <Link
-                href="/menu"
-                style={{ fontSize: 11.5, color: 'var(--orange)', fontWeight: 700, textDecoration: 'none' }}
-              >
-                Menüyü Yönet →
-              </Link>
-            }
-          >
-            <StockPanel items={stockItems} onRefresh={refresh} />
-          </Panel>
+            {/* Haftalık Kazanç Grafiği */}
+            <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 700, color: '#4A2C0E', marginBottom: 14 }}>Haftalık Kazanç</h2>
+            <div style={{ background: 'white', borderRadius: 14, padding: 20, boxShadow: '0 2px 12px rgba(74,44,14,0.08)' }}>
+              <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, height: 120, marginBottom: 8 }}>
+                {(data?.weekly_earnings ?? []).map((v: number, i: number) => {
+                  const max = Math.max(...(data?.weekly_earnings ?? [1]))
+                  const pct = (v / max) * 100
+                  const isToday = i === 6
+                  return (
+                    <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                      <div style={{ fontSize: 9, color: '#8A7B6B' }}>₺{v}</div>
+                      <div style={{ width: '100%', height: `${pct}%`, background: isToday ? '#E8622A' : '#F28B5E', borderRadius: '4px 4px 0 0', opacity: isToday ? 1 : 0.7 }} />
+                    </div>
+                  )
+                })}
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#8A7B6B' }}>
+                {['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'].map(d => <span key={d}>{d}</span>)}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-
-      {/* ── Son siparişler (tam genişlik) ─────────────────────────────── */}
-      {recentOrders.length > 0 && (
-        <Panel
-          title="🕐 Son Siparişler"
-          action={
-            <Link
-              href="/siparisler"
-              style={{ fontSize: 11.5, color: 'var(--orange)', fontWeight: 700, textDecoration: 'none' }}
-            >
-              Tümünü Gör →
-            </Link>
-          }
-        >
-          <RecentOrders orders={recentOrders} />
-        </Panel>
-      )}
-
-      {/* ── Hızlı linkler ─────────────────────────────────────────────── */}
-      <div className="quick-links">
-        <Link href="/menu/yeni"        className="quick-link">➕ Yemek Ekle</Link>
-        <Link href="/siparisler"       className="quick-link">📋 Tüm Siparişler</Link>
-        <Link href="/kazanc"           className="quick-link">💰 Kazanç & Ödeme</Link>
-        <Link href="/asci-ayarlar"     className="quick-link">⚙️ Profil Ayarları</Link>
-        <Link href="/asci-istatistik"  className="quick-link">📈 İstatistikler</Link>
-      </div>
-
-      <style>{`
-        .dash-wrap {
-          display: flex;
-          flex-direction: column;
-          gap: 20px;
-        }
-
-        .dash-topbar {
-          background: var(--white);
-          border-radius: 16px;
-          padding: 18px 24px;
-          box-shadow: 0 2px 16px rgba(74,44,14,0.07);
-          border: 1px solid rgba(232,224,212,0.6);
-        }
-
-        .dash-header-skeleton {
-          display: flex;
-          justify-content: space-between;
-          margin-bottom: 16px;
-        }
-
-        .dash-grid-2 {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 20px;
-          align-items: start;
-        }
-
-        @media (max-width: 900px) {
-          .dash-grid-2 {
-            grid-template-columns: 1fr;
-          }
-        }
-
-        .dash-orders-col,
-        .dash-right-col {
-          display: flex;
-          flex-direction: column;
-          gap: 16px;
-        }
-
-        /* Hızlı linkler */
-        .quick-links {
-          display: flex;
-          gap: 8px;
-          flex-wrap: wrap;
-          padding-bottom: 8px;
-        }
-
-        .quick-link {
-          padding: 8px 16px;
-          background: var(--white);
-          border: 1.5px solid var(--gray-light);
-          border-radius: 20px;
-          font-size: 12px;
-          font-weight: 600;
-          color: var(--brown-mid);
-          text-decoration: none;
-          transition: all 0.15s;
-          box-shadow: 0 1px 4px rgba(74,44,14,0.06);
-        }
-
-        .quick-link:hover {
-          border-color: var(--orange);
-          color: var(--orange);
-          background: #FFF9F5;
-          transform: translateY(-1px);
-          box-shadow: 0 3px 10px rgba(232,98,42,0.12);
-        }
-      `}</style>
     </div>
   )
 }
