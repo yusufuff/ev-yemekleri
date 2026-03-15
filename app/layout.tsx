@@ -4,6 +4,7 @@ import '@/styles/globals.css'
 import { CartProvider } from '@/hooks/useCart'
 import { PWAProvider } from '@/components/pwa/PWAPrompt'
 import { PublicNavbar } from '@/components/layout/PublicNavbar'
+import { BottomNav } from '@/components/layout/BottomNav'
 
 const dmSans = DM_Sans({
   subsets: ['latin'],
@@ -67,6 +68,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <PWAProvider>
             <PublicNavbar />
             {children}
+            <BottomNav />
           </PWAProvider>
         </CartProvider>
       </body>
