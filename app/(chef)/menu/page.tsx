@@ -151,6 +151,7 @@ export default function MenuPage() {
   const [items, setItems] = useState<MenuItem[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
+  const [uploading, setUploading] = useState(false)
   const [editItem, setEditItem] = useState<MenuItem | null>(null)
 
   useEffect(() => {
