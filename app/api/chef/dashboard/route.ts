@@ -1,54 +1,193 @@
-﻿import { NextResponse } from 'next/server'
+﻿import { NextRequest, NextResponse } from 'next/server'
+import { createServerClient } from '@supabase/ssr'
 
-export async function GET() {
-  return NextResponse.json({
-    is_open: true,
-    stats: {
-      today_orders: 3,
-      today_earnings: 420,
-      pending_count: 2,
-      avg_rating: 4.9,
-      total_reviews: 127,
-    },
-    pending_orders: [
-      {
-        id: 'ord-p1',
-        created_at: new Date(Date.now() - 1000 * 60 * 3).toISOString(),
-        buyer_name: 'Ayşe Y.',
-        distance_km: 1.8,
-        delivery_type: 'delivery',
-        total_amount: 110,
-        items: [{ name: 'Kuru Fasulye & Pilav', quantity: 2 }],
+export async function GET(request: NextRequest) {
+  const response = NextResponse.next()
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll: () => request.cookies.getAll(),
+        setAll: (cs) => cs.forEach(({ name, value, options }) => response.cookies.set(name, value, options)),
       },
-      {
-        id: 'ord-p2',
-        created_at: new Date(Date.now() - 1000 * 60 * 7).toISOString(),
-        buyer_name: 'Mehmet A.',
-        distance_km: 0.6,
-        delivery_type: 'pickup',
-        total_amount: 90,
-        items: [{ name: 'Sütlaç', quantity: 1 }, { name: 'Kuru Fasulye', quantity: 1 }],
+    }
+  )
+
+  const { data: { user } } = await supabase.auth.getUser()
+
+  // Kullanıcı yoksa mock döndür
+  if (!user) return getMockDashboard()
+
+  try {
+    // Chef profile bul
+    const { data: cp } = await supabase
+      .from('chef_profiles')
+      .select('id, is_open, avg_rating, total_orders')
+      .eq('user_id', user.id)
+      .single()
+
+    if (!cp) return getMockDashboard()
+
+    const chefId = cp.id
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+
+    // Bugünkü siparişler
+    const { data: todayOrders } = await supabase
+      .from('orders')
+      .select('id, status, subtotal, created_at, delivery_type, buyer_id, order_items(name, quantity)')
+      .eq('chef_id', chefId)
+      .gte('created_at', today.toISOString())
+
+    const todayEarnings = (todayOrders ?? [])
+      .filter(o => o.status !== 'cancelled')
+      .reduce((sum, o) => sum + (o.subtotal * 0.9), 0)
+
+    const pendingOrders = (todayOrders ?? []).filter(o => o.status === 'pending')
+    const activeOrder = (todayOrders ?? []).find(o => ['confirmed','preparing','on_way'].includes(o.status))
+
+    // Alıcı isimlerini çek
+    const buyerIds = [...new Set((todayOrders ?? []).map(o => o.buyer_id))]
+    const { data: buyers } = buyerIds.length > 0
+      ? await supabase.from('users').select('id, full_name').in('id', buyerIds)
+      : { data: [] }
+
+    const buyerMap = Object.fromEntries((buyers ?? []).map(b => [b.id, b.full_name]))
+
+    // Stok durumu
+    const { data: menuItems } = await supabase
+      .from('menu_items')
+      .select('id, name, remaining_stock, daily_stock, is_active')
+      .eq('chef_id', chefId)
+      .eq('is_active', true)
+
+    // Review sayısı
+    const { count: reviewCount } = await supabase
+      .from('reviews')
+      .select('*', { count: 'exact', head: true })
+      .eq('chef_id', chefId)
+
+    // Haftalık kazanç (son 7 gün)
+    const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+    const { data: weekOrders } = await supabase
+      .from('orders')
+      .select('subtotal, created_at, status')
+      .eq('chef_id', chefId)
+      .gte('created_at', weekAgo.toISOString())
+      .neq('status', 'cancelled')
+
+    const weekEarnings = (weekOrders ?? []).reduce((sum, o) => sum + (o.subtotal * 0.9), 0)
+
+    // Haftalık chart verisi
+    const chart = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(Date.now() - (6 - i) * 24 * 60 * 60 * 1000)
+      const dayStr = d.toISOString().split('T')[0]
+      const days = ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt']
+      const dayOrders = (weekOrders ?? []).filter(o => o.created_at.startsWith(dayStr))
+      return {
+        day: days[d.getDay()],
+        earnings: dayOrders.reduce((sum, o) => sum + (o.subtotal * 0.9), 0),
+        count: dayOrders.length,
+      }
+    })
+
+    return NextResponse.json({
+      is_open: cp.is_open,
+      stats: {
+        today_orders: (todayOrders ?? []).length,
+        today_earnings: Math.round(todayEarnings),
+        pending_count: pendingOrders.length,
+        avg_rating: cp.avg_rating ?? 0,
+        total_reviews: reviewCount ?? 0,
+        week_earnings: Math.round(weekEarnings),
       },
-    ],
-    active_orders: [
-      {
-        id: 'ord-a1',
-        buyer_name: 'Selin K.',
-        status: 'preparing',
-        total_amount: 45,
-        items: [{ name: 'İmam Bayıldı', quantity: 1 }],
-      },
-    ],
-    stock: [
-      { id: 'mi-1', name: 'Kuru Fasulye & Pilav', remaining_stock: 5, daily_stock: 12 },
-      { id: 'mi-2', name: 'Sütlaç', remaining_stock: 8, daily_stock: 10 },
-      { id: 'mi-10', name: 'İmam Bayıldı', remaining_stock: 0, daily_stock: 8 },
-    ],
-    weekly_earnings: [320, 480, 390, 550, 490, 620, 420],
-  })
+      pending_orders: pendingOrders.map(o => ({
+        id: o.id,
+        created_at: o.created_at,
+        buyer_name: buyerMap[o.buyer_id] ?? 'Misafir',
+        delivery_type: o.delivery_type,
+        total_amount: o.subtotal,
+        items: (o.order_items as any[]) ?? [],
+      })),
+      active_order: activeOrder ? {
+        id: activeOrder.id,
+        status: activeOrder.status,
+        buyer_name: buyerMap[activeOrder.buyer_id] ?? 'Misafir',
+        items: (activeOrder.order_items as any[]) ?? [],
+      } : null,
+      menu_items: (menuItems ?? []).map(m => ({
+        id: m.id,
+        name: m.name,
+        remaining_stock: m.remaining_stock ?? 0,
+        daily_stock: m.daily_stock ?? 10,
+        stock_status: !m.remaining_stock ? 'out_of_stock'
+          : m.remaining_stock <= 2 ? 'critical'
+          : m.remaining_stock <= 5 ? 'low' : 'ok',
+      })),
+      chart,
+    })
+  } catch (err: any) {
+    console.error('[chef/dashboard]', err)
+    return getMockDashboard()
+  }
 }
 
-export async function PATCH(req: Request) {
-  const body = await req.json()
-  return NextResponse.json({ success: true, ...body })
+export async function PATCH(request: NextRequest) {
+  const response = NextResponse.next()
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll: () => request.cookies.getAll(),
+        setAll: (cs) => cs.forEach(({ name, value, options }) => response.cookies.set(name, value, options)),
+      },
+    }
+  )
+
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const body = await request.json()
+
+  const { data: cp } = await supabase
+    .from('chef_profiles')
+    .select('id')
+    .eq('user_id', user.id)
+    .single()
+
+  if (!cp) return NextResponse.json({ error: 'Chef not found' }, { status: 404 })
+
+  await supabase
+    .from('chef_profiles')
+    .update({ is_open: body.is_open })
+    .eq('id', cp.id)
+
+  return NextResponse.json({ success: true })
+}
+
+function getMockDashboard() {
+  return NextResponse.json({
+    is_open: true,
+    stats: { today_orders: 3, today_earnings: 420, pending_count: 2, avg_rating: 4.9, total_reviews: 127, week_earnings: 1240 },
+    pending_orders: [
+      { id: 'ord-p1', created_at: new Date(Date.now()-180000).toISOString(), buyer_name: 'Ayşe Y.', delivery_type: 'delivery', total_amount: 110, items: [{ name: 'Kuru Fasulye', quantity: 2 }] },
+    ],
+    active_order: null,
+    menu_items: [
+      { id: 'mi-1', name: 'Kuru Fasulye', remaining_stock: 5, daily_stock: 12, stock_status: 'low' },
+      { id: 'mi-2', name: 'Sütlaç', remaining_stock: 8, daily_stock: 10, stock_status: 'ok' },
+    ],
+    chart: [
+      { day: 'Pzt', earnings: 320, count: 4 },
+      { day: 'Sal', earnings: 480, count: 6 },
+      { day: 'Çar', earnings: 210, count: 3 },
+      { day: 'Per', earnings: 560, count: 7 },
+      { day: 'Cum', earnings: 420, count: 5 },
+      { day: 'Cmt', earnings: 380, count: 5 },
+      { day: 'Paz', earnings: 0, count: 0 },
+    ],
+  })
 }
