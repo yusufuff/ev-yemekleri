@@ -1,10 +1,10 @@
-import type { Metadata } from 'next'
+﻿import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Kayıt Ol',
-  description: 'EV YEMEKLERİ'ne katılın. Aşçı olun veya sipariş verin.',
+  title: 'Kayit Ol',
+  description: 'EV YEMEKLERINE katilin. Asci olun veya siparis verin.',
   openGraph: {
-    title: 'Kayıt Ol | EV YEMEKLERİ',
-    description: 'EV YEMEKLERİ'ne katılın. Aşçı olun veya sipariş verin.',
+    title: 'Kayit Ol | EV YEMEKLERI',
+    description: 'EV YEMEKLERINE katilin. Asci olun veya siparis verin.',
   },
 }
