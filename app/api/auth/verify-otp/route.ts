@@ -8,123 +8,155 @@ const supabaseAdmin = createClient(
   { auth: { autoRefreshToken: false, persistSession: false } }
 )
 
-const supabaseAuth = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-)
-
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json()
-    const { phone, code } = body
+    const { phone, code } = await req.json()
 
     if (!phone || !code) {
       return NextResponse.json({ error: 'Telefon ve kod gerekli.' }, { status: 400 })
     }
 
+    // Normalize phone
+    const normalizedPhone = phone.startsWith('+90') ? phone : '+90' + phone.replace(/^0/, '')
+
+    // OTP doğrula (123456 her zaman geçerli - test)
     let verified = false
 
     if (code === '123456') {
       verified = true
     } else {
-      const { data: otpRecord, error: otpError } = await supabaseAdmin
+      const { data: otpRecord } = await supabaseAdmin
         .from('otp_codes')
         .select('*')
-        .eq('phone', phone)
+        .eq('phone', normalizedPhone)
         .single()
 
-      if (otpError || !otpRecord) {
-        return NextResponse.json({ error: 'Kodun suresi dolmus. Yeni kod isteyin.' }, { status: 400 })
+      if (!otpRecord) {
+        return NextResponse.json({ error: 'Kod bulunamadı. Yeni kod isteyin.' }, { status: 400 })
       }
-
       if (otpRecord.attempts >= 3) {
-        await supabaseAdmin.from('otp_codes').delete().eq('phone', phone)
-        return NextResponse.json({ error: 'Cok fazla hatali deneme.' }, { status: 429 })
+        await supabaseAdmin.from('otp_codes').delete().eq('phone', normalizedPhone)
+        return NextResponse.json({ error: 'Çok fazla hatalı deneme.' }, { status: 429 })
       }
-
       if (new Date(otpRecord.expires_at) < new Date()) {
-        await supabaseAdmin.from('otp_codes').delete().eq('phone', phone)
-        return NextResponse.json({ error: 'Kodun suresi dolmus.' }, { status: 400 })
+        await supabaseAdmin.from('otp_codes').delete().eq('phone', normalizedPhone)
+        return NextResponse.json({ error: 'Kodun süresi dolmuş.' }, { status: 400 })
       }
-
       if (otpRecord.code !== code) {
-        await supabaseAdmin
-          .from('otp_codes')
-          .update({ attempts: otpRecord.attempts + 1 })
-          .eq('phone', phone)
-        const remaining = 3 - otpRecord.attempts - 1
-        return NextResponse.json({ error: `Hatali kod. ${remaining} deneme hakkiniz kaldi.` }, { status: 400 })
+        await supabaseAdmin.from('otp_codes').update({ attempts: otpRecord.attempts + 1 }).eq('phone', normalizedPhone)
+        return NextResponse.json({ error: `Hatalı kod. ${3 - otpRecord.attempts - 1} hakkınız kaldı.` }, { status: 400 })
       }
-
-      await supabaseAdmin.from('otp_codes').delete().eq('phone', phone)
+      await supabaseAdmin.from('otp_codes').delete().eq('phone', normalizedPhone)
       verified = true
     }
 
     if (!verified) {
-      return NextResponse.json({ error: 'Dogrulama basarisiz.' }, { status: 400 })
+      return NextResponse.json({ error: 'Doğrulama başarısız.' }, { status: 400 })
     }
 
-    const fakeEmail = `${phone.replace('+', '')}@phone.evyemekleri.internal`
-    const fakePassword = `EVY_${phone.replace('+', '')}_2025`
+    const fakeEmail    = `${normalizedPhone.replace('+', '')}@phone.evyemekleri.internal`
+    const fakePassword = `EVY_${normalizedPhone.replace('+', '')}_2025`
 
-    const { data: existingUser } = await supabaseAdmin
+    // Kullanıcı var mı kontrol et
+    const { data: existingUserDb } = await supabaseAdmin
       .from('users')
       .select('id, role, full_name')
-      .eq('phone', phone)
+      .eq('phone', normalizedPhone)
       .single()
 
+    // Auth user var mı kontrol et
+    const { data: { users: authUsers } } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 })
+    const existingAuth = authUsers?.find(u => u.email === fakeEmail)
+
     let isNewUser = false
-    let userRole = 'buyer'
+    let userId: string
 
-    if (existingUser) {
-      isNewUser = !existingUser.full_name || existingUser.full_name.trim() === ''
-      userRole = existingUser.role || 'buyer'
-    }
+    if (!existingAuth) {
+      // Yeni auth kullanıcısı oluştur
+      const { data: newAuth, error: createError } = await supabaseAdmin.auth.admin.createUser({
+        email: fakeEmail,
+        password: fakePassword,
+        email_confirm: true,
+        user_metadata: { phone: normalizedPhone, role: 'buyer' },
+      })
 
-    if (!existingUser) {
-      const { data: authList } = await supabaseAdmin.auth.admin.listUsers()
-      const existingAuth = authList?.users?.find((u) => u.email === fakeEmail)
-
-      if (!existingAuth) {
-        const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-          email: fakeEmail,
-          password: fakePassword,
-          email_confirm: true,
-          user_metadata: { phone, role: 'buyer', full_name: '' },
-        })
-
-        if (authError || !authData.user) {
-          console.error('Kullanici olusturma hatasi:', authError)
-          return NextResponse.json({ error: 'Hesap olusturulamadi.' }, { status: 500 })
-        }
+      if (createError || !newAuth?.user) {
+        console.error('[verify-otp] createUser error:', createError)
+        return NextResponse.json({ error: 'Hesap oluşturulamadı: ' + createError?.message }, { status: 500 })
       }
 
+      userId = newAuth.user.id
       isNewUser = true
-      userRole = 'buyer'
     } else {
-      userRole = existingUser.role
+      userId = existingAuth.id
+      // Şifreyi güncelle (her seferinde sync et)
+      await supabaseAdmin.auth.admin.updateUserById(userId, { password: fakePassword })
+      isNewUser = !existingUserDb?.full_name
     }
 
-    const { data: signInData, error: signInError } = await supabaseAuth.auth.signInWithPassword({
+    // users tablosuna upsert
+    await supabaseAdmin.from('users').upsert({
+      id: userId,
+      phone: normalizedPhone,
+      full_name: existingUserDb?.full_name ?? '',
+      role: existingUserDb?.role ?? 'buyer',
+    }, { onConflict: 'id' })
+
+    // Oturum aç
+    const { data: signInData, error: signInError } = await supabaseAdmin.auth.admin.generateLink({
+      type: 'magiclink',
+      email: fakeEmail,
+    })
+
+    if (signInError || !signInData) {
+      console.error('[verify-otp] generateLink error:', signInError)
+      // Fallback: signInWithPassword dene
+      const anonClient = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+      )
+      const { data: pwData, error: pwError } = await anonClient.auth.signInWithPassword({
+        email: fakeEmail,
+        password: fakePassword,
+      })
+      if (pwError || !pwData.session) {
+        console.error('[verify-otp] signInWithPassword error:', pwError)
+        return NextResponse.json({ error: 'Oturum açılamadı.' }, { status: 500 })
+      }
+      return NextResponse.json({
+        success: true,
+        isNewUser,
+        role: existingUserDb?.role ?? 'buyer',
+        access_token: pwData.session.access_token,
+        refresh_token: pwData.session.refresh_token,
+      })
+    }
+
+    // Token'ı al
+    const anonClient = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    )
+    const { data: pwData, error: pwError } = await anonClient.auth.signInWithPassword({
       email: fakeEmail,
       password: fakePassword,
     })
 
-    if (signInError || !signInData.session) {
-      console.error('SignIn hatasi:', signInError)
-      return NextResponse.json({ error: 'Oturum acilamadi. Lutfen tekrar deneyin.' }, { status: 500 })
+    if (pwError || !pwData.session) {
+      console.error('[verify-otp] final signIn error:', pwError)
+      return NextResponse.json({ error: 'Oturum açılamadı: ' + pwError?.message }, { status: 500 })
     }
 
     return NextResponse.json({
       success: true,
       isNewUser,
-      role: userRole,
-      access_token: signInData.session.access_token,
-      refresh_token: signInData.session.refresh_token,
+      role: existingUserDb?.role ?? 'buyer',
+      access_token: pwData.session.access_token,
+      refresh_token: pwData.session.refresh_token,
     })
 
-  } catch (err) {
-    console.error('verify-otp error:', err)
-    return NextResponse.json({ error: 'Sunucu hatasi.' }, { status: 500 })
+  } catch (err: any) {
+    console.error('[verify-otp] unexpected error:', err)
+    return NextResponse.json({ error: 'Sunucu hatası: ' + err.message }, { status: 500 })
   }
 }
