@@ -40,6 +40,20 @@ export default function ProfilPage() {
               <div>
                 <div style={{ fontWeight:700, fontSize:15, color:'#4A2C0E' }}>{form.full_name}</div>
                 <div style={{ fontSize:12, color:'#8A7B6B' }}>{role === 'buyer' ? '🛒 Alıcı' : '👩‍🍳 Aşçı'}</div>
+              <label style={{ fontSize:11, color:'#E8622A', fontWeight:600, cursor:'pointer', marginTop:6, display:'inline-block' }}>
+                📷 Fotoğraf Değiştir
+                <input type="file" accept="image/*" style={{ display:'none' }} onChange={async (e) => {
+                  const file = e.target.files?.[0]
+                  if (!file) return
+                  const fd = new FormData()
+                  fd.append('file', file)
+                  fd.append('bucket', 'chef-avatars')
+                  fd.append('folder', 'avatars')
+                  const res = await fetch('/api/upload', { method:'POST', body: fd })
+                  const json = await res.json()
+                  if (json.url) alert('Fotograf yuklendi!')
+                }} />
+              </label>
               </div>
             </div>
             {[['Ad Soyad','full_name','text'],['Telefon','phone','tel'],['E-posta','email','email']].map(([label,key,type]) => (
