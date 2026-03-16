@@ -33,12 +33,13 @@ export default function KayitPage() {
         if (signUpError) { setError(signUpError.message); return }
         // users tablosuna ekle
         if (data.user) {
+          // @ts-ignore
           await supabase.from('users').upsert({
             id: data.user.id,
             full_name: form.full_name,
             phone: form.phone || data.user.id.slice(0,10),
             role: form.role,
-          }, { onConflict: 'id' })
+          } as any, { onConflict: 'id' })
         }
         window.location.href = form.role === 'chef' ? '/dashboard' : '/'
       } else {
