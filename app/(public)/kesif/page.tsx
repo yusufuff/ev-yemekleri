@@ -216,6 +216,17 @@ function KesifInner() {
   const [loading, setLoading] = useState(true)
   const [activeFilters, setActiveFilters] = useState<string[]>(['radius_5', 'cat_main'])
   const [radius, setRadius] = useState(Number(searchParams.get('km') ?? 5))
+  const [userCoords, setUserCoords] = useState<{lat:number;lng:number} | null>(null)
+  const [locating, setLocating] = useState(false)
+
+  const getLocation = () => {
+    if (!navigator.geolocation) return
+    setLocating(true)
+    navigator.geolocation.getCurrentPosition(
+      pos => { setUserCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude }); setLocating(false) },
+      () => setLocating(false)
+    )
+  }
   const [selectedPin, setSelectedPin] = useState<string | null>(null)
   const [aiQuery, setAiQuery] = useState('')
   const [aiResult, setAiResult] = useState('')
