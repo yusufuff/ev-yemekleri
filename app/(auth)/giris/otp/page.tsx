@@ -1,4 +1,5 @@
 'use client'
+import { getSupabaseBrowserClient } from '@/lib/supabase/client'
 
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -167,6 +168,7 @@ function OtpPageInner() {
   const displayPhone = phone
     ? phone.replace('+90', '').replace(/(\d{3})(\d{3})(\d{2})(\d{2})/, '($1) $2 $3 $4')
     : ''
+
   const verify = useCallback(async (otpCode: string) => {
     if (loading) return
     setError('')
@@ -188,9 +190,12 @@ function OtpPageInner() {
       }
 
       if (json.access_token && json.refresh_token) {
-        localStorage.setItem('ev_access_token', json.access_token)
-        localStorage.setItem('ev_refresh_token', json.refresh_token)
-        localStorage.setItem('ev_user_id', json.userId || '')
+        // Supabase session'ı cookie'ye yaz
+        const supabase = getSupabaseBrowserClient()
+        await supabase.auth.setSession({
+          access_token: json.access_token,
+          refresh_token: json.refresh_token,
+        })
         localStorage.setItem('ev_is_new_user', json.isNewUser ? '1' : '0')
         localStorage.setItem('ev_role', json.role || 'buyer')
         const redirectTo = json.isNewUser ? '/giris/profil' : (json.role === 'chef' ? '/dashboard' : '/')
