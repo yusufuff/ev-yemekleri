@@ -39,12 +39,12 @@ export async function POST(req: NextRequest) {
   try {
     const { phone } = await req.json()
 
-    if (!phone || !/^(\+90|0)?[5][0-9]{9}$/.test(phone)) {
-      return NextResponse.json({ error: 'Geçerli bir Türkiye telefon numarası girin.' }, { status: 400 })
+    if (!phone || phone.trim().length < 5) {
+      return NextResponse.json({ error: 'Geçerli bir telefon numarası girin.' }, { status: 400 })
     }
 
     // Normalize phone
-    const normalizedPhone = phone.startsWith('+90') ? phone : '+90' + phone.replace(/^0/, '')
+    const normalizedPhone = phone.trim().replace(/\s/g, '')
 
     // Rate limit — son 1 dakikada zaten gönderildiyse engelle
     const { data: existing } = await supabaseAdmin

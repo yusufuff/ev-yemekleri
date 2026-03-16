@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Normalize phone
-    const normalizedPhone = (phone.startsWith('+90') ? phone : '+90' + phone.replace(/^0/, '')).replace(/\s/g, '')
+    const normalizedPhone = phone.trim().replace(/\s/g, '')
 
     // OTP doğrula (123456 her zaman geçerli - test)
     let verified = false
