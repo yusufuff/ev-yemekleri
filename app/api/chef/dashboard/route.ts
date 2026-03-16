@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
     const activeOrder = (todayOrders ?? []).find(o => ['confirmed','preparing','on_way'].includes(o.status))
 
     // Alıcı isimlerini çek
-    const buyerIds = [...new Set((todayOrders ?? []).map(o => o.buyer_id))]
+    const buyerIds = Array.from(new Set((todayOrders ?? []).map(o => o.buyer_id)))
     const { data: buyers } = buyerIds.length > 0
       ? await supabase.from('users').select('id, full_name').in('id', buyerIds)
       : { data: [] }
