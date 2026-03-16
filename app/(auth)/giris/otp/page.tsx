@@ -196,6 +196,9 @@ function OtpPageInner() {
           access_token: json.access_token,
           refresh_token: json.refresh_token,
         })
+        // Profil sayfası için localStorage'a da kaydet
+        localStorage.setItem('ev_access_token', json.access_token)
+        localStorage.setItem('ev_refresh_token', json.refresh_token)
         localStorage.setItem('ev_is_new_user', json.isNewUser ? '1' : '0')
         localStorage.setItem('ev_role', json.role || 'buyer')
         const redirectTo = json.isNewUser ? '/giris/profil' : (json.role === 'chef' ? '/dashboard' : '/')
