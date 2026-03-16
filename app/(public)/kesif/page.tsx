@@ -270,6 +270,22 @@ function KesifInner() {
     <div style={{ minHeight: 'calc(100vh - 56px)', background: '#FAF6EF' }}>
       <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '20px 24px' }}>
 
+        {/* Konum + başlık */}
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16 }}>
+          <div style={{ fontSize:13, color:'#8A7B6B' }}>
+            {userCoords ? '📍 Konumunuz aktif' : '📍 Adana, Seyhan (varsayılan)'}
+          </div>
+          <button onClick={getLocation} style={{
+            display:'flex', alignItems:'center', gap:6, padding:'8px 16px',
+            background: userCoords ? '#ECFDF5' : 'white',
+            border:'1.5px solid ' + (userCoords ? '#3D6B47' : '#E8E0D4'),
+            borderRadius:20, fontSize:12, fontWeight:700, cursor:'pointer',
+            color: userCoords ? '#3D6B47' : '#4A2C0E', fontFamily:'inherit',
+          }}>
+            {locating ? '⏳ Konum alınıyor...' : userCoords ? '✅ Konum Aktif' : '📍 Konumumu Kullan'}
+          </button>
+        </div>
+
         {/* AI Arama barı */}
         <div style={{ display: 'flex', gap: '10px', marginBottom: '16px' }}>
           <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '10px', background: 'white', border: '1.5px solid #E8E0D4', borderRadius: '12px', padding: '0 16px', boxShadow: '0 2px 8px rgba(74,44,14,0.06)' }}>
