@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { getSupabaseBrowserClient } from '@/lib/supabase/client'
 
 const STATUS_META: Record<string, { label: string; color: string; bg: string; step: number }> = {
   pending:    { label: 'Onay Bekleniyor', color: '#E8622A', bg: '#FEF3EC', step: 0 },
@@ -33,10 +34,8 @@ function ReviewModal({ orderId, chefName, onClose }: { orderId: string; chefName
   }
 
   return (
-    <div
-      style={{ position:'fixed', inset:0, background:'rgba(74,44,14,0.4)', zIndex:500, display:'flex', alignItems:'center', justifyContent:'center', padding:16 }}
-      onClick={e => { if (e.target === e.currentTarget) onClose() }}
-    >
+    <div style={{ position:'fixed', inset:0, background:'rgba(74,44,14,0.4)', zIndex:500, display:'flex', alignItems:'center', justifyContent:'center', padding:16 }}
+      onClick={e => { if (e.target === e.currentTarget) onClose() }}>
       <div style={{ background:'white', borderRadius:20, padding:28, width:'100%', maxWidth:420 }}>
         {done ? (
           <div style={{ textAlign:'center', padding:'20px 0' }}>
@@ -84,8 +83,22 @@ export default function SiparislerimPage() {
 
   useEffect(() => {
     loadOrders()
+    // 30sn polling fallback
     const interval = setInterval(loadOrders, 30000)
-    return () => clearInterval(interval)
+
+    // Supabase Realtime
+    const supabase = getSupabaseBrowserClient()
+    const channel = supabase
+      .channel('orders-changes')
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders' }, () => {
+        loadOrders()
+      })
+      .subscribe()
+
+    return () => {
+      clearInterval(interval)
+      supabase.removeChannel(channel)
+    }
   }, [])
 
   const active = orders.filter(o => !['delivered','cancelled'].includes(o.status))
@@ -144,7 +157,6 @@ export default function SiparislerimPage() {
                         <span style={{ fontSize:12, color:'#8A7B6B' }}>{order.delivery_type === 'delivery' ? '🛵 Teslimat' : '🚶 Gel-Al'}</span>
                         <span style={{ fontFamily:"'Playfair Display',serif", fontSize:18, fontWeight:700, color:'#E8622A' }}>₺{order.total_amount}</span>
                       </div>
-
                       {isActive && order.status !== 'cancelled' && (
                         <div style={{ marginTop:14 }}>
                           <div style={{ display:'flex', justifyContent:'space-between', marginBottom:6 }}>
@@ -172,7 +184,6 @@ export default function SiparislerimPage() {
                           </div>
                         </div>
                       )}
-
                       {order.status === 'delivered' && (
                         <div style={{ display:'flex', gap:8, marginTop:10 }}>
                           <Link href={'/asci/' + order.chef_id} style={{ flex:1, padding:'8px 0', background:'#E8622A', color:'white', borderRadius:8, fontSize:12, fontWeight:700, textAlign:'center', textDecoration:'none' }}>
@@ -192,13 +203,8 @@ export default function SiparislerimPage() {
           )}
         </div>
       </div>
-
       {reviewOrder && (
-        <ReviewModal
-          orderId={reviewOrder.id}
-          chefName={reviewOrder.chef}
-          onClose={() => setReviewOrder(null)}
-        />
+        <ReviewModal orderId={reviewOrder.id} chefName={reviewOrder.chef} onClose={() => setReviewOrder(null)} />
       )}
     </>
   )
