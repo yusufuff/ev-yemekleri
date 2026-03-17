@@ -1,4 +1,5 @@
 'use client'
+import { useNotifications } from '@/hooks/useNotifications'
 import { useState } from 'react'
 
 export default function ProfilPage() {
@@ -7,6 +8,7 @@ export default function ProfilPage() {
   const [chefForm, setChefForm] = useState({ bio: 'Ev mutfağımdan lezzetli yemekler.', iban: 'TR12 3456 7890', radius: 5, min_order: 40 })
   const [notifs, setNotifs] = useState({ orders: true, favorites: true, reviews: true, campaigns: false, stock: true })
   const [saved, setSaved] = useState(false)
+  const { permission, requestPermission } = useNotifications()
 
   const save = () => { setSaved(true); setTimeout(() => setSaved(false), 2000) }
 
@@ -97,7 +99,19 @@ export default function ProfilPage() {
           {/* Bildirimler */}
           <div style={{ background:'white', borderRadius:16, padding:24, boxShadow:'0 2px 12px rgba(74,44,14,0.08)' }}>
             <div style={{ fontFamily:"'Playfair Display',serif", fontSize:17, fontWeight:700, color:'#4A2C0E', marginBottom:16 }}>Bildirim Tercihleri</div>
-            {[['orders','📦 Sipariş Güncellemeleri','Onay, hazırlık, teslimat'],['favorites','👩‍🍳 Favori Aşçı','Yeni menü paylaşımları'],['reviews','⭐ Değerlendirme','Teslimdan 30 dk sonra'],['campaigns','🎁 Kampanyalar','Promosyon bildirimleri'],['stock','📉 Stok Uyarısı','Son porsiyon uyarısı']].map(([key,title,desc]) => (
+            {/* Bildirim izni */}
+          {permission !== 'granted' && (
+            <div style={{ background:'#FEF3EC', borderRadius:10, padding:'12px 14px', marginBottom:16, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+              <div>
+                <div style={{ fontWeight:700, fontSize:13, color:'#4A2C0E' }}>🔔 Bildirim İzni</div>
+                <div style={{ fontSize:11, color:'#8A7B6B' }}>Sipariş güncellemelerini anlık alın</div>
+              </div>
+              <button onClick={requestPermission} style={{ padding:'7px 14px', background:'#E8622A', color:'white', border:'none', borderRadius:8, fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>
+                İzin Ver
+              </button>
+            </div>
+          )}
+          {[['orders','📦 Sipariş Güncellemeleri','Onay, hazırlık, teslimat'],['favorites','👩‍🍳 Favori Aşçı','Yeni menü paylaşımları'],['reviews','⭐ Değerlendirme','Teslimdan 30 dk sonra'],['campaigns','🎁 Kampanyalar','Promosyon bildirimleri'],['stock','📉 Stok Uyarısı','Son porsiyon uyarısı']].map(([key,title,desc]) => (
               <div key={key} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', paddingBottom:12, marginBottom:12, borderBottom:'1px solid #F5EDD8' }}>
                 <div>
                   <div style={{ fontWeight:600, fontSize:13, color:'#4A2C0E' }}>{title}</div>
