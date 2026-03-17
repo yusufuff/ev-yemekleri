@@ -77,5 +77,38 @@ export async function POST(request: NextRequest) {
     }
   }
 
+  // Aşçıya bildirim gönder (fire and forget)
+  try {
+    const supabaseAdmin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      { auth: { autoRefreshToken: false, persistSession: false } }
+    )
+    const { data: chefUser } = await supabaseAdmin
+      .from('chef_profiles')
+      .select('user_id')
+      .eq('id', body.chef_id)
+      .single()
+    if (chefUser) {
+      const { data: chefProfile } = await supabaseAdmin
+        .from('users')
+        .select('fcm_token')
+        .eq('id', chefUser.user_id)
+        .single()
+      if (chefProfile?.fcm_token) {
+        fetch(new URL('/api/notifications', request.url).toString(), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            token: chefProfile.fcm_token,
+            title: 'Yeni Sipariş! 🛒',
+            body: `${body.items?.length ?? 1} ürün · ₺${body.total_amount}`,
+            data: { order_id: newOrder.id, type: 'new_order' },
+          }),
+        }).catch(() => {})
+      }
+    }
+  } catch {}
+
   return NextResponse.json({ order: newOrder, payment_url: '/siparis-basari?order_id=' + newOrder.id })
 }
