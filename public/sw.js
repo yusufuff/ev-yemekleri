@@ -19,8 +19,7 @@ const STATIC_ASSETS = [
   '/',
   '/offline',
   '/manifest.json',
-  '/icons/icon-192.png',
-  '/icons/icon-512.png',
+
 ]
 
 // API endpoint'leri offline cache'e alınır
@@ -153,8 +152,8 @@ self.addEventListener('push', (event) => {
   const {
     title = 'Ev Yemekleri',
     body  = '',
-    icon  = '/icons/icon-192.png',
-    badge = '/icons/badge-72.png',
+    icon  =
+    badge =
     image,
     data  = {},
     tag,
@@ -260,8 +259,8 @@ async function syncPendingNotifications() {
       for (const notif of notifications ?? []) {
         await self.registration.showNotification(notif.title, {
           body:  notif.body,
-          icon:  '/icons/icon-192.png',
-          badge: '/icons/badge-72.png',
+          icon:
+          badge:
           data:  notif.data,
           tag:   notif.type,
         })
@@ -299,8 +298,8 @@ try {
     const { title, body } = payload.notification ?? {}
     self.registration.showNotification(title ?? 'EV YEMEKLERİ', {
       body: body ?? 'Yeni bildiriminiz var.',
-      icon: '/icons/icon-192.png',
-      badge: '/icons/icon-72.png',
+      icon:
+      badge:
       data: payload.data,
     })
   })
