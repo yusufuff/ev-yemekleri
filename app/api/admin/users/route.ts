@@ -1,10 +1,35 @@
-﻿import { NextResponse } from 'next/server'
-export async function GET() {
-  return NextResponse.json({ users: [
-    { id: 'u1', full_name: 'Mehmet Yılmaz', phone: '+90 532 111 22 33', role: 'buyer',  is_active: true,  created_at: '2024-11-01', order_count: 12 },
-    { id: 'u2', full_name: 'Fatma Hanım',   phone: '+90 555 444 55 66', role: 'chef',   is_active: true,  created_at: '2024-10-15', order_count: 843 },
-    { id: 'u3', full_name: 'Selin Kaya',    phone: '+90 532 777 88 99', role: 'buyer',  is_active: true,  created_at: '2024-12-03', order_count: 5 },
-    { id: 'u4', full_name: 'Zeynep Arslan', phone: '+90 555 123 45 67', role: 'chef',   is_active: true,  created_at: '2024-09-20', order_count: 1241 },
-    { id: 'u5', full_name: 'Ali Rıza',      phone: '+90 532 000 11 22', role: 'buyer',  is_active: false, created_at: '2025-01-10', order_count: 1 },
-  ], total: 5 })
+﻿import { NextRequest, NextResponse } from 'next/server'
+import { createServerClient } from '@supabase/ssr'
+import { createClient } from '@supabase/supabase-js'
+
+export async function POST(request: NextRequest) {
+  const response = NextResponse.next()
+  const { token } = await request.json()
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll: () => request.cookies.getAll(),
+        setAll: (cs) => cs.forEach(({ name, value, options }) => response.cookies.set(name, value, options)),
+      },
+    }
+  )
+
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const supabaseAdmin = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { autoRefreshToken: false, persistSession: false } }
+  )
+
+  await supabaseAdmin
+    .from('users')
+    .update({ fcm_token: token } as any)
+    .eq('id', user.id)
+
+  return NextResponse.json({ success: true })
 }

@@ -77,6 +77,16 @@ export default function SiparislerimPage() {
   const [tab, setTab] = useState<'active' | 'past'>('active')
   const [reviewOrder, setReviewOrder] = useState<{id:string;chef:string}|null>(null)
 
+  const cancelOrder = async (orderId: string) => {
+    if (!confirm('Siparişi iptal etmek istediğinize emin misiniz?')) return
+    try {
+      await fetch(`/api/orders/${orderId}/cancel`, { method: 'POST' })
+      loadOrders()
+    } catch {
+      alert('İptal işlemi başarısız.')
+    }
+  }
+
   const loadOrders = () => {
     fetch('/api/orders').then(r => r.json()).then(d => { setOrders(d.orders ?? []); setLoading(false) }).catch(() => setLoading(false))
   }
@@ -178,8 +188,8 @@ export default function SiparislerimPage() {
                             <Link href={'/mesajlar?order_id=' + order.id} style={{ flex:1, padding:'8px 0', background:'white', border:'1.5px solid #E8E0D4', borderRadius:8, fontSize:12, fontWeight:600, color:'#4A2C0E', textDecoration:'none', textAlign:'center' }}>
                               💬 Asciya Yaz
                             </Link>
-                            <button style={{ padding:'8px 14px', background:'#FEE2E2', border:'none', borderRadius:8, fontSize:12, fontWeight:600, cursor:'pointer', color:'#DC2626' }}>
-                              Iptal
+                            <button onClick={() => cancelOrder(order.id)} style={{ padding:'8px 14px', background:'#FEE2E2', border:'none', borderRadius:8, fontSize:12, fontWeight:600, cursor:'pointer', color:'#DC2626' }}>
+                              ❌ İptal
                             </button>
                           </div>
                         </div>

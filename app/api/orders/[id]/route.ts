@@ -1,82 +1,47 @@
-﻿// @ts-nocheck
-/**
- * GET /api/orders/[id]
- * Tek bir siparişin tüm detaylarını döndürür.
- * RLS: buyer kendi siparişini, chef kendi restoranının siparişini görür.
- */
-import { NextRequest, NextResponse } from 'next/server'
-import { getSupabaseServerClient, getCurrentUser } from '@/lib/supabase/server'
+﻿import { NextRequest, NextResponse } from 'next/server'
+import { createServerClient } from '@supabase/ssr'
+import { createClient } from '@supabase/supabase-js'
 
-export async function GET(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  const user = await getCurrentUser() as any
-  if (!user) {
-    return NextResponse.json({ error: 'Giriş gerekli.' }, { status: 401 })
+export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+  const response = NextResponse.next()
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll: () => req.cookies.getAll(),
+        setAll: (cs) => cs.forEach(({ name, value, options }) => response.cookies.set(name, value, options)),
+      },
+    }
+  )
+
+  const { data: { user } } = await supabase.auth.getUser()
+
+  // Gerçek Supabase güncelleme
+  if (user) {
+    const supabaseAdmin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      { auth: { autoRefreshToken: false, persistSession: false } }
+    )
+
+    const { data: order } = await supabaseAdmin
+      .from('orders')
+      .select('status, buyer_id')
+      .eq('id', params.id)
+      .single()
+
+    if (!order) return NextResponse.json({ error: 'Sipariş bulunamadı.' }, { status: 404 })
+    if (order.buyer_id !== user.id) return NextResponse.json({ error: 'Yetkisiz.' }, { status: 403 })
+    if (['delivered', 'cancelled', 'on_way'].includes(order.status)) {
+      return NextResponse.json({ error: 'Bu sipariş iptal edilemez.' }, { status: 400 })
+    }
+
+    await supabaseAdmin
+      .from('orders')
+      .update({ status: 'cancelled' })
+      .eq('id', params.id)
   }
 
-  const supabase = await getSupabaseServerClient()
-
-  const { data: order, error } = await supabase
-    .from('orders')
-    .select(`
-      id,
-      order_number,
-      status,
-      delivery_type,
-      subtotal,
-      delivery_fee,
-      discount_amount,
-      credit_used,
-      total_amount,
-      payment_status,
-      notes,
-      coupon_code,
-      delivery_address,
-      created_at,
-      confirmed_at,
-      preparing_at,
-      ready_at,
-      on_way_at,
-      delivered_at,
-      order_items (
-        id,
-        item_name,
-        item_price,
-        quantity,
-        line_total,
-        notes
-      ),
-      chef_profiles!inner (
-        id,
-        location_approx,
-        avg_rating,
-        working_hours,
-        users!inner (
-          full_name,
-          avatar_url,
-          phone
-        )
-      )
-    `)
-    .eq('id', params.id)
-    .single()
-
-  if (error || !order) {
-    return NextResponse.json({ error: 'Sipariş bulunamadı.' }, { status: 404 })
-  }
-
-  // Tahmini süre (dakika) "” delivery_type'a ve hazırlık süresine göre
-  const estimatedMin = order.delivery_type === 'delivery' ? 30 : 20
-  const estimatedMax = order.delivery_type === 'delivery' ? 45 : 30
-
-  return NextResponse.json({
-    order,
-    estimated_min: estimatedMin,
-    estimated_max: estimatedMax,
-  })
+  return NextResponse.json({ success: true })
 }
-
-
-
