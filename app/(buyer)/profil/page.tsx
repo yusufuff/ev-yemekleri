@@ -1,5 +1,4 @@
 'use client'
-import { useNotifications } from '@/hooks/useNotifications'
 import { useState } from 'react'
 
 export default function ProfilPage() {
@@ -8,9 +7,24 @@ export default function ProfilPage() {
   const [chefForm, setChefForm] = useState({ bio: 'Ev mutfağımdan lezzetli yemekler.', iban: 'TR12 3456 7890', radius: 5, min_order: 40 })
   const [notifs, setNotifs] = useState({ orders: true, favorites: true, reviews: true, campaigns: false, stock: true })
   const [saved, setSaved] = useState(false)
-  const { permission, requestPermission } = useNotifications()
+  const [notifStatus, setNotifStatus] = useState<'idle'|'loading'|'done'>('idle')
 
   const save = () => { setSaved(true); setTimeout(() => setSaved(false), 2000) }
+
+  const requestNotification = async () => {
+    setNotifStatus('loading')
+    try {
+      const perm = await Notification.requestPermission()
+      if (perm === 'granted') {
+        setNotifStatus('done')
+      } else {
+        setNotifStatus('idle')
+        alert('Bildirim izni reddedildi.')
+      }
+    } catch {
+      setNotifStatus('idle')
+    }
+  }
 
   return (
     <div style={{ minHeight:'100vh', background:'#FAF6EF', fontFamily:"'DM Sans', sans-serif" }}>
@@ -41,21 +55,21 @@ export default function ProfilPage() {
               </div>
               <div>
                 <div style={{ fontWeight:700, fontSize:15, color:'#4A2C0E' }}>{form.full_name}</div>
-                <div style={{ fontSize:12, color:'#8A7B6B' }}>{role === 'buyer' ? '🛒 Alıcı' : '👩‍🍳 Aşçı'}</div>
-              <label style={{ fontSize:11, color:'#E8622A', fontWeight:600, cursor:'pointer', marginTop:6, display:'inline-block' }}>
-                📷 Fotoğraf Değiştir
-                <input type="file" accept="image/*" style={{ display:'none' }} onChange={async (e) => {
-                  const file = e.target.files?.[0]
-                  if (!file) return
-                  const fd = new FormData()
-                  fd.append('file', file)
-                  fd.append('bucket', 'chef-avatars')
-                  fd.append('folder', 'avatars')
-                  const res = await fetch('/api/upload', { method:'POST', body: fd })
-                  const json = await res.json()
-                  if (json.url) alert('Fotograf yuklendi!')
-                }} />
-              </label>
+                <div style={{ fontSize:12, color:'#8A7B6B', marginTop:2 }}>{role === 'buyer' ? '🛒 Alıcı' : '👩‍🍳 Aşçı'}</div>
+                <label style={{ fontSize:11, color:'#E8622A', fontWeight:600, cursor:'pointer', marginTop:4, display:'inline-block' }}>
+                  📷 Fotoğraf Değiştir
+                  <input type="file" accept="image/*" style={{ display:'none' }} onChange={async (e) => {
+                    const file = e.target.files?.[0]
+                    if (!file) return
+                    const fd = new FormData()
+                    fd.append('file', file)
+                    fd.append('bucket', 'chef-avatars')
+                    fd.append('folder', 'avatars')
+                    const res = await fetch('/api/upload', { method:'POST', body: fd })
+                    const json = await res.json()
+                    if (json.url) alert('Fotoğraf yüklendi!')
+                  }} />
+                </label>
               </div>
             </div>
             {[['Ad Soyad','full_name','text'],['Telefon','phone','tel'],['E-posta','email','email']].map(([label,key,type]) => (
@@ -88,7 +102,7 @@ export default function ProfilPage() {
                 <input type="range" min={1} max={10} value={chefForm.radius} onChange={e => setChefForm(p => ({...p,radius:Number(e.target.value)}))}
                   style={{ width:'100%', accentColor:'#E8622A' }} />
               </div>
-              <div style={{ marginBottom:4 }}>
+              <div>
                 <label style={{ fontSize:12, fontWeight:600, color:'#7A4A20', display:'block', marginBottom:5 }}>Min. Sipariş Tutarı (₺)</label>
                 <input type="number" value={chefForm.min_order} onChange={e => setChefForm(p => ({...p,min_order:Number(e.target.value)}))}
                   style={{ width:'100%', padding:'10px 14px', border:'1.5px solid #E8E0D4', borderRadius:8, fontSize:13, fontFamily:'inherit', boxSizing:'border-box' }} />
@@ -99,17 +113,32 @@ export default function ProfilPage() {
           {/* Bildirimler */}
           <div style={{ background:'white', borderRadius:16, padding:24, boxShadow:'0 2px 12px rgba(74,44,14,0.08)' }}>
             <div style={{ fontFamily:"'Playfair Display',serif", fontSize:17, fontWeight:700, color:'#4A2C0E', marginBottom:16 }}>Bildirim Tercihleri</div>
-            {/* Bildirim izni */}
+
+            {/* Push bildirim izni */}
             <div style={{ background:'#FEF3EC', borderRadius:10, padding:'12px 14px', marginBottom:16, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
               <div>
-                <div style={{ fontWeight:700, fontSize:13, color:'#4A2C0E' }}>🔔 Bildirim İzni</div>
-                <div style={{ fontSize:11, color:'#8A7B6B' }}>Sipariş güncellemelerini anlık alın</div>
+                <div style={{ fontWeight:700, fontSize:13, color:'#4A2C0E' }}>🔔 Push Bildirimler</div>
+                <div style={{ fontSize:11, color:'#8A7B6B' }}>
+                  {notifStatus === 'done' ? '✅ Bildirimler aktif' : 'Sipariş güncellemelerini anlık alın'}
+                </div>
               </div>
-              <button onClick={requestPermission} style={{ padding:'7px 14px', background:'#E8622A', color:'white', border:'none', borderRadius:8, fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>
-                İzin Ver
-              </button>
+              {notifStatus !== 'done' && (
+                <button
+                  onClick={requestNotification}
+                  disabled={notifStatus === 'loading'}
+                  style={{ padding:'7px 14px', background:'#E8622A', color:'white', border:'none', borderRadius:8, fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>
+                  {notifStatus === 'loading' ? '⏳...' : 'İzin Ver'}
+                </button>
+              )}
             </div>
-          {[['orders','📦 Sipariş Güncellemeleri','Onay, hazırlık, teslimat'],['favorites','👩‍🍳 Favori Aşçı','Yeni menü paylaşımları'],['reviews','⭐ Değerlendirme','Teslimdan 30 dk sonra'],['campaigns','🎁 Kampanyalar','Promosyon bildirimleri'],['stock','📉 Stok Uyarısı','Son porsiyon uyarısı']].map(([key,title,desc]) => (
+
+            {[
+              ['orders','📦 Sipariş Güncellemeleri','Onay, hazırlık, teslimat'],
+              ['favorites','👩‍🍳 Favori Aşçı','Yeni menü paylaşımları'],
+              ['reviews','⭐ Değerlendirme','Teslimdan 30 dk sonra'],
+              ['campaigns','🎁 Kampanyalar','Promosyon bildirimleri'],
+              ['stock','📉 Stok Uyarısı','Son porsiyon uyarısı'],
+            ].map(([key,title,desc]) => (
               <div key={key} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', paddingBottom:12, marginBottom:12, borderBottom:'1px solid #F5EDD8' }}>
                 <div>
                   <div style={{ fontWeight:600, fontSize:13, color:'#4A2C0E' }}>{title}</div>
@@ -125,7 +154,7 @@ export default function ProfilPage() {
             ))}
           </div>
 
-          {/* Kaydet + Güvenlik */}
+          {/* Kaydet */}
           <div style={{ display:'flex', gap:10 }}>
             <button onClick={save} style={{ flex:1, padding:'12px 0', background: saved ? '#3D6B47' : '#E8622A', color:'white', border:'none', borderRadius:10, fontSize:14, fontWeight:700, cursor:'pointer', fontFamily:'inherit', transition:'background 0.2s' }}>
               {saved ? '✅ Kaydedildi!' : '💾 Kaydet'}
