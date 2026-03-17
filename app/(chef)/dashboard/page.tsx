@@ -24,6 +24,23 @@ export default function DashboardPage() {
       .catch(() => setLoading(false))
   }, [])
 
+  const updateOrderStatus = async (orderId: string, status: string) => {
+    if (orderId.startsWith('ord-p')) return // Mock veri - işlem yapma
+    try {
+      await fetch(`/api/chef/orders/${orderId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status }),
+      })
+      // Veriyi yenile
+      const res = await fetch('/api/chef/dashboard')
+      const d = await res.json()
+      setData(d)
+    } catch (err) {
+      console.error('Order update error:', err)
+    }
+  }
+
   const toggleOpen = async () => {
     const next = !isOpen
     setIsOpen(next)
@@ -89,8 +106,8 @@ export default function DashboardPage() {
                   <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 700, color: '#E8622A' }}>₺{order.total_amount}</div>
                 </div>
                 <div style={{ display: 'flex', gap: 8 }}>
-                  <button style={{ flex: 1, padding: '8px 0', background: '#ECFDF5', color: '#3D6B47', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>✅ Onayla</button>
-                  <button style={{ padding: '8px 14px', background: '#FEE2E2', color: '#DC2626', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>❌</button>
+                  <button onClick={() => updateOrderStatus(order.id, 'confirmed')} style={{ flex: 1, padding: '8px 0', background: '#ECFDF5', color: '#3D6B47', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>✅ Onayla</button>
+                  <button onClick={() => updateOrderStatus(order.id, 'cancelled')} style={{ padding: '8px 14px', background: '#FEE2E2', color: '#DC2626', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>❌</button>
                   <button style={{ padding: '8px 14px', background: '#F5EDD8', color: '#4A2C0E', border: '1.5px solid #E8E0D4', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>💬</button>
                 </div>
               </div>
@@ -107,7 +124,9 @@ export default function DashboardPage() {
                         <div style={{ fontWeight: 700, fontSize: 14, color: '#4A2C0E' }}>{order.buyer_name}</div>
                         <div style={{ fontSize: 12, color: '#8A7B6B' }}>{order.items.map((i: any) => `${i.name} ×${i.quantity}`).join(', ')}</div>
                       </div>
-                      <span style={{ background: '#FEF3EC', color: '#E8622A', fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 20 }}>Hazırlanıyor</span>
+                      <span style={{ background: '#FEF3EC', color: '#E8622A', fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 20 }}>
+                        {order.status === 'confirmed' ? '✅ Onaylandı' : order.status === 'preparing' ? '👨‍🍳 Hazırlanıyor' : order.status === 'on_way' ? '🛵 Yolda' : order.status}
+                      </span>
                     </div>
                     <button style={{ width: '100%', padding: '8px 0', background: '#E8622A', color: 'white', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>🛵 Yola Çıktım</button>
                   </div>
