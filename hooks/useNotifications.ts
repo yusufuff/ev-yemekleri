@@ -21,6 +21,7 @@ export function useNotifications() {
       const supabase = getSupabaseBrowserClient()
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
+        // @ts-ignore
         await supabase.from('users').update({ fcm_token: token } as any).eq('id', user.id)
       }
     }
