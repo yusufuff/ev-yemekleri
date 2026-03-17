@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Ev Yemekleri Service Worker
  *
  * Stratejiler:
@@ -152,8 +152,8 @@ self.addEventListener('push', (event) => {
   const {
     title = 'Ev Yemekleri',
     body  = '',
-    icon  =
-    badge =
+    icon  = '/icons/icon-192.png',
+    badge = '/icons/icon-72.png',
     image,
     data  = {},
     tag,
@@ -259,8 +259,8 @@ async function syncPendingNotifications() {
       for (const notif of notifications ?? []) {
         await self.registration.showNotification(notif.title, {
           body:  notif.body,
-          icon:
-          badge:
+          icon: '/icons/icon-192.png',
+          badge: '/icons/icon-72.png',
           data:  notif.data,
           tag:   notif.type,
         })
