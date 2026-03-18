@@ -11,15 +11,19 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   try {
     const { data: cp, error } = await supabase
       .from('chef_profiles')
-      .select(`*, users!inner(id, full_name, avatar_url, created_at)`)
+      .select('*')
       .eq('id', params.id)
       .single()
 
-    console.log('[chefs] id:', params.id, 'cp:', cp?.id ?? 'null', 'error:', error?.message ?? 'none')
-
     if (error || !cp) {
-      return NextResponse.json({ error: 'Asci bulunamadi: ' + (error?.message ?? 'no data') }, { status: 404 })
+      return NextResponse.json({ error: 'Aşçı bulunamadı.' }, { status: 404 })
     }
+
+    const { data: userData } = await supabase
+      .from('users')
+      .select('id, full_name, avatar_url, created_at')
+      .eq('id', cp.user_id)
+      .single()
 
     const { data: menu_items } = await supabase
       .from('menu_items')
@@ -43,7 +47,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     reviewsRaw?.forEach(r => { rating_dist[r.rating] = (rating_dist[r.rating] ?? 0) + 1 })
 
     return NextResponse.json({
-      profile: { ...cp, users: cp.users },
+      profile: { ...cp, users: userData },
       menu_items: menu_items ?? [],
       reviews: (reviewsRaw ?? []).map(r => ({ ...r, users: r.users })),
       review_count: count ?? 0,
@@ -52,7 +56,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       favorite_count: 0,
     })
   } catch (err: any) {
-    console.error('[chefs] unexpected error:', err.message)
-    return NextResponse.json({ error: 'Sunucu hatasi: ' + err.message }, { status: 500 })
+    console.error('[chefs] error:', err.message)
+    return NextResponse.json({ error: 'Sunucu hatası.' }, { status: 500 })
   }
 }
