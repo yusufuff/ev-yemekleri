@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { serialize } from 'cookie'
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -29,7 +30,7 @@ export async function POST(req: NextRequest) {
         .eq('phone', normalizedPhone)
         .single()
 
-      if (!otpRecord) return NextResponse.json({ error: 'Kod bulunamadi. Yeni kod isteyin.' }, { status: 400 })
+      if (!otpRecord) return NextResponse.json({ error: 'Kod bulunamadi.' }, { status: 400 })
       if (otpRecord.attempts >= 3) {
         await supabaseAdmin.from('otp_codes').delete().eq('phone', normalizedPhone)
         return NextResponse.json({ error: 'Cok fazla hatali deneme.' }, { status: 429 })
@@ -88,10 +89,11 @@ export async function POST(req: NextRequest) {
       role: existingUserDb?.role ?? 'buyer',
     }, { onConflict: 'id' })
 
-    // Oturum ac
+    // Oturum ac - anon client ile
     const anonClient = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+      { auth: { autoRefreshToken: false, persistSession: false } }
     )
     const { data: pwData, error: pwError } = await anonClient.auth.signInWithPassword({
       email: fakeEmail,
@@ -106,22 +108,32 @@ export async function POST(req: NextRequest) {
     const session = pwData.session
     const isNewUser = !existingUserDb?.full_name || existingUserDb.full_name.trim() === ''
 
-    console.log('[verify-otp] userId:', userId, 'isNewUser:', isNewUser, 'full_name:', existingUserDb?.full_name)
+    console.log('[verify-otp] success userId:', userId, 'isNewUser:', isNewUser)
 
-    // Cookie'leri set et (Supabase SSR formati)
-    const projectRef = process.env.NEXT_PUBLIC_SUPABASE_URL!
+    // Supabase SSR'in tam beklediği formatta cookie set et
+    const projectRef = process.env.NEXT_PUBLIC_SUPABASE_URL
       .replace('https://', '')
       .replace('.supabase.co', '')
 
-    const cookieName = `sb-${projectRef}-auth-token`
-    const cookieValue = JSON.stringify({
+    const sessionData = {
       access_token: session.access_token,
       token_type: 'bearer',
       expires_in: session.expires_in,
       expires_at: session.expires_at,
       refresh_token: session.refresh_token,
       user: session.user,
-    })
+    }
+
+    const cookieName = `sb-${projectRef}-auth-token`
+    const cookieValue = JSON.stringify(sessionData)
+    const cookieOptions = {
+      path: '/',
+      httpOnly: false,
+      secure: true,
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 365,
+      domain: undefined,
+    }
 
     const response = NextResponse.json({
       success: true,
@@ -131,24 +143,21 @@ export async function POST(req: NextRequest) {
       refresh_token: session.refresh_token,
     })
 
-    // Cookie chunking (Supabase SSR buyuk tokenlari bolmek icin)
+    // Chunked cookie sil, tek cookie yaz
+    response.cookies.set(`${cookieName}.0`, '', { ...cookieOptions, maxAge: 0 })
+    response.cookies.set(`${cookieName}.1`, '', { ...cookieOptions, maxAge: 0 })
+    response.cookies.set(`${cookieName}.2`, '', { ...cookieOptions, maxAge: 0 })
+
+    // Tek parça cookie yaz (3180 char altindaysa)
     const chunkSize = 3180
-    const chunks = []
-    for (let i = 0; i < cookieValue.length; i += chunkSize) {
-      chunks.push(cookieValue.slice(i, i + chunkSize))
-    }
-
-    const cookieOptions = {
-      path: '/',
-      httpOnly: false,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax' as const,
-      maxAge: 60 * 60 * 24 * 365,
-    }
-
-    if (chunks.length === 1) {
-      response.cookies.set(cookieName, chunks[0], cookieOptions)
+    if (cookieValue.length <= chunkSize) {
+      response.cookies.set(cookieName, cookieValue, cookieOptions)
     } else {
+      // Chunked yaz
+      const chunks = []
+      for (let i = 0; i < cookieValue.length; i += chunkSize) {
+        chunks.push(cookieValue.slice(i, i + chunkSize))
+      }
       chunks.forEach((chunk, i) => {
         response.cookies.set(`${cookieName}.${i}`, chunk, cookieOptions)
       })
