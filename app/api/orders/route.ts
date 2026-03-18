@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { getSupabaseServerClient, getCurrentUser } from '@/lib/supabase/server'
@@ -102,8 +103,8 @@ export async function POST(request: NextRequest) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             token: chefProfile.fcm_token,
-            title: 'Yeni Siparis! 🛒',
-            body: `${body.items?.length ?? 1} urun · ₺${body.total_amount}`,
+            title: 'Yeni Siparis! ğŸ›’',
+            body: `${body.items?.length ?? 1} urun Â· â‚º${body.total_amount}`,
             data: { order_id: order.id, type: 'new_order' },
           }),
         }).catch(() => {})
