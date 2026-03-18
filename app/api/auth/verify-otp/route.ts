@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { createServerClient } from '@supabase/ssr'
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -88,77 +89,60 @@ export async function POST(req: NextRequest) {
       role: existingUserDb?.role ?? 'buyer',
     }, { onConflict: 'id' })
 
-    // Oturum ac - persistSession: true ile
-    const anonClient = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-    )
-    const { data: pwData, error: pwError } = await anonClient.auth.signInWithPassword({
-      email: fakeEmail,
-      password: fakePassword,
-    })
-
-    if (pwError || !pwData.session) {
-      console.error('[verify-otp] signIn error:', pwError)
-      return NextResponse.json({ error: 'Oturum acilamadi: ' + pwError?.message }, { status: 500 })
-    }
-
-    const session = pwData.session
     const isNewUser = !existingUserDb?.full_name || existingUserDb.full_name.trim() === ''
 
-    console.log('[verify-otp] success userId:', userId, 'isNewUser:', isNewUser)
-
-    const projectRef = process.env.NEXT_PUBLIC_SUPABASE_URL
-      .replace('https://', '')
-      .replace('.supabase.co', '')
-
-    const sessionData = {
-      access_token: session.access_token,
-      token_type: 'bearer',
-      expires_in: session.expires_in,
-      expires_at: session.expires_at,
-      refresh_token: session.refresh_token,
-      user: session.user,
-    }
-
-    const cookieName = `sb-${projectRef}-auth-token`
-    const cookieValue = JSON.stringify(sessionData)
-    const cookieOptions = {
-      path: '/',
-      httpOnly: false,
-      secure: true,
-      sameSite: 'lax' as const,
-      maxAge: 60 * 60 * 24 * 365,
-    }
-
+    // SSR client ile signInWithPassword — cookie otomatik set edilsin
     const response = NextResponse.json({
       success: true,
       isNewUser,
       role: existingUserDb?.role ?? 'buyer',
-      access_token: session.access_token,
-      refresh_token: session.refresh_token,
+      access_token: '',
+      refresh_token: '',
     })
 
-    // Eski chunk cookie'leri temizle
-    response.cookies.set(`${cookieName}.0`, '', { ...cookieOptions, maxAge: 0 })
-    response.cookies.set(`${cookieName}.1`, '', { ...cookieOptions, maxAge: 0 })
-    response.cookies.set(`${cookieName}.2`, '', { ...cookieOptions, maxAge: 0 })
-
-    // Tek parca cookie yaz
-    const chunkSize = 3180
-    if (cookieValue.length <= chunkSize) {
-      response.cookies.set(cookieName, cookieValue, cookieOptions)
-    } else {
-      const chunks = []
-      for (let i = 0; i < cookieValue.length; i += chunkSize) {
-        chunks.push(cookieValue.slice(i, i + chunkSize))
+    const supabaseSSR = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() { return req.cookies.getAll() },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value, options }) => {
+              response.cookies.set(name, value, {
+                ...options,
+                httpOnly: false,
+                secure: true,
+                sameSite: 'lax',
+                path: '/',
+              })
+            })
+          },
+        },
       }
-      chunks.forEach((chunk, i) => {
-        response.cookies.set(`${cookieName}.${i}`, chunk, cookieOptions)
-      })
+    )
+
+    const { data: signInData, error: signInError } = await supabaseSSR.auth.signInWithPassword({
+      email: fakeEmail,
+      password: fakePassword,
+    })
+
+    if (signInError || !signInData.session) {
+      console.error('[verify-otp] signIn error:', signInError)
+      return NextResponse.json({ error: 'Oturum acilamadi: ' + signInError?.message }, { status: 500 })
     }
 
-    return response
+    console.log('[verify-otp] success userId:', userId, 'isNewUser:', isNewUser)
+
+    // Response'u access_token ile guncelle
+    return NextResponse.json({
+      success: true,
+      isNewUser,
+      role: existingUserDb?.role ?? 'buyer',
+      access_token: signInData.session.access_token,
+      refresh_token: signInData.session.refresh_token,
+    }, {
+      headers: response.headers,
+    })
 
   } catch (err: any) {
     console.error('[verify-otp] unexpected error:', err)
