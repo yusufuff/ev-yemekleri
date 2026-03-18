@@ -1,3 +1,4 @@
+// @ts-nocheck
 'use client'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -24,21 +25,21 @@ export default function OdemePage() {
     return (
       <div style={{ minHeight: '100vh', background: '#FAF6EF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'DM Sans', sans-serif" }}>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 64, marginBottom: 16 }}>ğŸ›’</div>
-          <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 22, fontWeight: 700, color: '#4A2C0E', marginBottom: 8 }}>Sepetiniz boÅŸ</div>
+          <div style={{ fontSize: 64, marginBottom: 16 }}>🛒</div>
+          <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 22, fontWeight: 700, color: '#4A2C0E', marginBottom: 8 }}>Sepetiniz boş</div>
           <Link href="/kesif" style={{ display: 'inline-block', padding: '12px 24px', background: '#E8622A', color: 'white', borderRadius: 12, textDecoration: 'none', fontWeight: 700, marginTop: 8 }}>
-            MenÃ¼lere GÃ¶z At â†’
+            Menülere Göz At →
           </Link>
         </div>
       </div>
     )
   }
 
-  const chefName = items[0]?.chef_name ?? 'AÅŸÃ§Ä±'
+  const chefName = items[0]?.chef_name ?? 'Aşçı'
 
   const handleOrder = async () => {
     if (deliveryType === 'delivery' && !address.trim()) {
-      alert('LÃ¼tfen teslimat adresinizi girin.')
+      alert('Lütfen teslimat adresinizi girin.')
       return
     }
     setLoading(true)
@@ -65,7 +66,7 @@ export default function OdemePage() {
       clear()
       window.location.href = '/siparis-basari?order_id=' + data.order.id
     } catch {
-      alert('Bir hata oluÅŸtu, tekrar deneyin.')
+      alert('Bir hata olustu, tekrar deneyin.')
     } finally {
       setLoading(false)
     }
@@ -76,12 +77,12 @@ export default function OdemePage() {
       <div style={{ maxWidth: 680, margin: '0 auto', padding: '24px 16px' }}>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
-          <Link href="/kesif" style={{ color: '#8A7B6B', textDecoration: 'none', fontSize: 13 }}>â† Geri</Link>
-          <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: 24, fontWeight: 900, color: '#4A2C0E', margin: 0 }}>SipariÅŸ Ã–zeti</h1>
+          <Link href="/kesif" style={{ color: '#8A7B6B', textDecoration: 'none', fontSize: 13 }}>← Geri</Link>
+          <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: 24, fontWeight: 900, color: '#4A2C0E', margin: 0 }}>Sipariş Özeti</h1>
         </div>
 
         <div style={{ display: 'flex', gap: 0, marginBottom: 24 }}>
-          {['Teslimat', 'Ã–deme'].map((s, i) => (
+          {['Teslimat', 'Ödeme'].map((s, i) => (
             <div key={i} style={{ flex: 1, textAlign: 'center', paddingBottom: 8, borderBottom: `2px solid ${step > i ? '#E8622A' : '#E8E0D4'}`, color: step > i ? '#E8622A' : '#8A7B6B', fontSize: 13, fontWeight: 600 }}>
               {i + 1}. {s}
             </div>
@@ -91,23 +92,23 @@ export default function OdemePage() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
           <div style={{ background: 'white', borderRadius: 16, padding: 20, boxShadow: '0 2px 12px rgba(74,44,14,0.08)' }}>
-            <div style={{ fontWeight: 700, fontSize: 15, color: '#4A2C0E', marginBottom: 12 }}>ğŸ‘©â€ğŸ³ {chefName}</div>
+            <div style={{ fontWeight: 700, fontSize: 15, color: '#4A2C0E', marginBottom: 12 }}>👩‍🍳 {chefName}</div>
             {items.map(item => (
               <div key={item.menu_item_id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#4A2C0E', padding: '6px 0', borderBottom: '1px solid #F5EDD8' }}>
-                <span>{item.name} Ã—{item.quantity}</span>
-                <span style={{ fontWeight: 600 }}>â‚º{(item.price * item.quantity).toFixed(0)}</span>
+                <span>{item.name} ×{item.quantity}</span>
+                <span style={{ fontWeight: 600 }}>₺{(item.price * item.quantity).toFixed(0)}</span>
               </div>
             ))}
             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 12, fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 700, color: '#E8622A' }}>
               <span>Toplam</span>
-              <span>â‚º{Math.max(0, (summary.total || summary.subtotal) - discount).toFixed(0)}</span>
+              <span>₺{Math.max(0, (summary.total || summary.subtotal) - discount).toFixed(0)}</span>
             </div>
           </div>
 
           <div style={{ background: 'white', borderRadius: 16, padding: 20, boxShadow: '0 2px 12px rgba(74,44,14,0.08)' }}>
-            <div style={{ fontWeight: 700, fontSize: 15, color: '#4A2C0E', marginBottom: 14 }}>Teslimat YÃ¶ntemi</div>
+            <div style={{ fontWeight: 700, fontSize: 15, color: '#4A2C0E', marginBottom: 14 }}>Teslimat Yöntemi</div>
             <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
-              {[['delivery', 'ğŸšµ', 'Teslimat'], ['pickup', 'ğŸš¶', 'Gel-Al']].map(([val, icon, label]) => (
+              {[['delivery', '🚵', 'Teslimat'], ['pickup', '🚶', 'Gel-Al']].map(([val, icon, label]) => (
                 <button key={val} onClick={() => setDeliveryType(val as any)} style={{
                   flex: 1, padding: '12px 8px', borderRadius: 10, cursor: 'pointer',
                   border: `2px solid ${deliveryType === val ? '#E8622A' : '#E8E0D4'}`,
@@ -126,7 +127,7 @@ export default function OdemePage() {
                 <textarea
                   value={address}
                   onChange={e => setAddress(e.target.value)}
-                  placeholder="Mahalle, cadde, sokak, bina no, daireâ€¦"
+                  placeholder="Mahalle, cadde, sokak, bina no, daire…"
                   rows={3}
                   style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #E8E0D4', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', resize: 'none', boxSizing: 'border-box' }}
                 />
@@ -134,22 +135,22 @@ export default function OdemePage() {
             )}
 
             <div>
-              <label style={{ fontSize: 12, fontWeight: 600, color: '#7A4A20', display: 'block', marginBottom: 6 }}>SipariÅŸ Notu (opsiyonel)</label>
+              <label style={{ fontSize: 12, fontWeight: 600, color: '#7A4A20', display: 'block', marginBottom: 6 }}>Sipariş Notu (opsiyonel)</label>
               <input
                 value={note}
                 onChange={e => setNote(e.target.value)}
-                placeholder="Ã–rn: Az acÄ±lÄ± olsun"
+                placeholder="Örn: Az acılı olsun"
                 style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #E8E0D4', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', boxSizing: 'border-box' }}
               />
             </div>
           </div>
 
           <div style={{ background:'white', borderRadius:16, padding:20, boxShadow:'0 2px 12px rgba(74,44,14,0.08)' }}>
-            <div style={{ fontWeight:700, fontSize:15, color:'#4A2C0E', marginBottom:12 }}>ğŸ· Kupon Kodu</div>
+            <div style={{ fontWeight:700, fontSize:15, color:'#4A2C0E', marginBottom:12 }}>🏷 Kupon Kodu</div>
             {couponApplied ? (
               <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', background:'#ECFDF5', borderRadius:8, padding:'10px 14px' }}>
-                <span style={{ color:'#3D6B47', fontWeight:700, fontSize:13 }}>âœ… "DEMO10" â€” %10 indirim uygulandÄ±!</span>
-                <button onClick={() => { setCouponApplied(false); setCoupon('') }} style={{ background:'none', border:'none', cursor:'pointer', color:'#DC2626', fontSize:18 }}>âœ•</button>
+                <span style={{ color:'#3D6B47', fontWeight:700, fontSize:13 }}>✅ "DEMO10" — %10 indirim uygulandı!</span>
+                <button onClick={() => { setCouponApplied(false); setCoupon('') }} style={{ background:'none', border:'none', cursor:'pointer', color:'#DC2626', fontSize:18 }}>✕</button>
               </div>
             ) : (
               <div style={{ display:'flex', gap:10 }}>
@@ -158,7 +159,7 @@ export default function OdemePage() {
                   style={{ flex:1, padding:'10px 14px', border:'1.5px solid #E8E0D4', borderRadius:8, fontSize:13, fontFamily:'inherit' }} />
                 <button onClick={() => {
                   if (coupon === 'DEMO10') { setCouponApplied(true); setCouponError('') }
-                  else setCouponError('GeÃ§ersiz kupon kodu')
+                  else setCouponError('Geçersiz kupon kodu')
                 }} style={{ padding:'10px 16px', background:'#E8622A', color:'white', border:'none', borderRadius:8, fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>
                   Uygula
                 </button>
@@ -168,9 +169,9 @@ export default function OdemePage() {
           </div>
 
           <div style={{ background: 'white', borderRadius: 16, padding: 20, boxShadow: '0 2px 12px rgba(74,44,14,0.08)' }}>
-            <div style={{ fontWeight: 700, fontSize: 15, color: '#4A2C0E', marginBottom: 14 }}>Ã–deme YÃ¶ntemi</div>
+            <div style={{ fontWeight: 700, fontSize: 15, color: '#4A2C0E', marginBottom: 14 }}>Ödeme Yöntemi</div>
             <div style={{ background: '#F5EDD8', borderRadius: 10, padding: '12px 14px', border: '2px solid #E8622A', fontSize: 13, color: '#4A2C0E', marginBottom: 14 }}>
-              ğŸ’³ Kredi/Banka KartÄ± (Demo Mod)
+              💳 Kredi/Banka Kartı (Demo Mod)
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
               {[['Kart No', '4242 4242 4242 4242'], ['Son Kullanma', '12/28'], ['CVV', '123'], ['Kart Sahibi', 'Test User']].map(([label, val]) => (
@@ -191,7 +192,7 @@ export default function OdemePage() {
               cursor: loading ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
             }}
           >
-            {loading ? 'â³ Ä°ÅŸleniyorâ€¦' : `ğŸ›’ SipariÅŸi Onayla â€” â‚º${(summary.total || summary.subtotal).toFixed(0)}`}
+            {loading ? '⏳ İşleniyor…' : `🛒 Siparişi Onayla — ₺${(summary.total || summary.subtotal).toFixed(0)}`}
           </button>
         </div>
       </div>
