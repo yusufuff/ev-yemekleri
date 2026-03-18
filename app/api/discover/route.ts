@@ -11,29 +11,18 @@ export async function GET(req: NextRequest) {
   try {
     const { data, error } = await supabase
       .from('chef_profiles')
-      .select(`
-        id,
-        user_id,
-        bio,
-        location_approx,
-        delivery_radius_km,
-        delivery_types,
-        min_order_amount,
-        is_open,
-        avg_rating,
-        total_reviews,
-        total_orders,
-        badge,
-        verification_status,
-        users!inner(id, full_name, avatar_url)
-      `)
+      .select('*')
       .eq('verification_status', 'approved')
-      .eq('is_open', true)
-      .order('avg_rating', { ascending: false })
 
     if (error) throw error
 
     const chefs = await Promise.all((data ?? []).map(async (chef: any) => {
+      const { data: userData } = await supabase
+        .from('users')
+        .select('id, full_name, avatar_url')
+        .eq('id', chef.user_id)
+        .single()
+
       const { data: items } = await supabase
         .from('menu_items')
         .select('id, name, price, category, remaining_stock')
@@ -44,8 +33,8 @@ export async function GET(req: NextRequest) {
       return {
         chef_id: chef.id,
         user_id: chef.user_id,
-        full_name: chef.users?.full_name ?? 'Asci',
-        avatar_url: chef.users?.avatar_url ?? null,
+        full_name: userData?.full_name ?? 'Aşçı',
+        avatar_url: userData?.avatar_url ?? null,
         bio: chef.bio,
         location_approx: chef.location_approx,
         delivery_types: chef.delivery_types,
