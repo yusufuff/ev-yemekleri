@@ -5,29 +5,27 @@ import { getSupabaseBrowserClient } from '@/lib/supabase/client'
 
 export default function GirisPage() {
   const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [sent, setSent] = useState(false)
 
-  const handleMagicLink = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!email.trim() || loading) return
+    if (!email.trim() || !password || loading) return
     setError('')
     setLoading(true)
     try {
       const supabase = getSupabaseBrowserClient()
-      const { error: signInError } = await supabase.auth.signInWithOtp({
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({
         email: email.trim(),
-        options: {
-          emailRedirectTo: 'https://www.anneelim.com/auth/callback',
-          shouldCreateUser: true,
-        },
+        password,
       })
       if (signInError) {
-        setError('Link gonderilemedi: ' + signInError.message)
+        setError('E-posta veya sifre hatali.')
         return
       }
-      setSent(true)
+      const role = data.user?.user_metadata?.role
+      window.location.href = role === 'chef' ? '/dashboard' : role === 'admin' ? '/admin' : '/'
     } catch {
       setError('Baglanti hatasi.')
     } finally {
@@ -46,58 +44,51 @@ export default function GirisPage() {
           <div style={{ fontSize:13, color:'#8A7B6B', marginTop:6 }}>Hesabiniza giris yapin</div>
         </div>
 
-        {sent ? (
-          <div style={{ textAlign:'center', padding:'20px 0' }}>
-            <div style={{ fontSize:48, marginBottom:16 }}>📧</div>
-            <div style={{ fontFamily:"'Playfair Display',serif", fontSize:20, fontWeight:700, color:'#4A2C0E', marginBottom:10 }}>
-              Mail kutunuzu kontrol edin
-            </div>
-            <div style={{ fontSize:13, color:'#8A7B6B', lineHeight:1.6, marginBottom:20 }}>
-              <strong>{email}</strong> adresine giris linki gonderdik. Linke tiklayarak giris yapabilirsiniz.
-            </div>
-            <button onClick={() => { setSent(false); setEmail('') }} style={{
-              background:'none', border:'1.5px solid #E8E0D4', borderRadius:10,
-              padding:'10px 20px', fontSize:13, color:'#8A7B6B', cursor:'pointer', fontFamily:'inherit',
-            }}>
-              Farkli mail ile dene
-            </button>
+        <form onSubmit={handleSubmit}>
+          <div style={{ marginBottom:14 }}>
+            <label style={{ fontSize:12, fontWeight:600, color:'#7A4A20', display:'block', marginBottom:6 }}>E-posta</label>
+            <input
+              type="email"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              placeholder="ornek@mail.com"
+              style={{ width:'100%', padding:'12px 14px', border:'1.5px solid #E8E0D4', borderRadius:10, fontSize:14, fontFamily:'inherit', boxSizing:'border-box' }}
+              autoFocus
+            />
           </div>
-        ) : (
-          <form onSubmit={handleMagicLink}>
-            <div style={{ background:'#F5EDD8', borderRadius:10, padding:'12px 14px', marginBottom:20, fontSize:13, color:'#7A4A20', lineHeight:1.6 }}>
-              E-posta adresinizi girin, size giris linki gondeRelim. Sifre gerekmez.
+
+          <div style={{ marginBottom:20 }}>
+            <label style={{ fontSize:12, fontWeight:600, color:'#7A4A20', display:'block', marginBottom:6 }}>Sifre</label>
+            <input
+              type="password"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              placeholder="••••••••"
+              style={{ width:'100%', padding:'12px 14px', border:'1.5px solid #E8E0D4', borderRadius:10, fontSize:14, fontFamily:'inherit', boxSizing:'border-box' }}
+            />
+          </div>
+
+          {error && (
+            <div style={{ background:'#FEE2E2', color:'#DC2626', fontSize:13, padding:'10px 14px', borderRadius:8, marginBottom:16 }}>
+              {error}
             </div>
+          )}
 
-            <div style={{ marginBottom:16 }}>
-              <label style={{ fontSize:12, fontWeight:600, color:'#7A4A20', display:'block', marginBottom:6 }}>E-posta Adresi</label>
-              <input
-                type="email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                placeholder="ornek@mail.com"
-                style={{ width:'100%', padding:'12px 14px', border:'1.5px solid #E8E0D4', borderRadius:10, fontSize:14, fontFamily:'inherit', boxSizing:'border-box' }}
-                autoFocus
-              />
-            </div>
+          <button type="submit" disabled={loading || !email.trim() || !password} style={{
+            width:'100%', padding:'13px 0',
+            background: loading || !email.trim() || !password ? '#E8E0D4' : '#E8622A',
+            color: loading || !email.trim() || !password ? '#8A7B6B' : 'white',
+            border:'none', borderRadius:10, fontSize:14, fontWeight:700,
+            cursor: loading || !email.trim() || !password ? 'not-allowed' : 'pointer',
+            fontFamily:'inherit', marginBottom:10,
+          }}>
+            {loading ? 'Giris yapiliyor...' : 'Giris Yap'}
+          </button>
 
-            {error && (
-              <div style={{ background:'#FEE2E2', color:'#DC2626', fontSize:13, padding:'10px 14px', borderRadius:8, marginBottom:16 }}>
-                {error}
-              </div>
-            )}
-
-            <button type="submit" disabled={loading || !email.trim()} style={{
-              width:'100%', padding:'13px 0',
-              background: loading || !email.trim() ? '#E8E0D4' : '#E8622A',
-              color: loading || !email.trim() ? '#8A7B6B' : 'white',
-              border:'none', borderRadius:10, fontSize:14, fontWeight:700,
-              cursor: loading || !email.trim() ? 'not-allowed' : 'pointer',
-              fontFamily:'inherit',
-            }}>
-              {loading ? 'Gonderiliyor...' : 'Giris Linki Gonder'}
-            </button>
-          </form>
-        )}
+          <div style={{ textAlign:'right' }}>
+            <Link href="/giris/sifre-sifirla" style={{ fontSize:12, color:'#E8622A', textDecoration:'none' }}>Sifremi Unuttum</Link>
+          </div>
+        </form>
 
         <div style={{ marginTop:24, paddingTop:20, borderTop:'1px solid #E8E0D4', textAlign:'center', fontSize:13, color:'#8A7B6B' }}>
           Hesabiniz yok mu?{' '}
