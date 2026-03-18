@@ -46,8 +46,15 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     const rating_dist: Record<number, number> = { 5:0, 4:0, 3:0, 2:0, 1:0 }
     reviewsRaw?.forEach(r => { rating_dist[r.rating] = (rating_dist[r.rating] ?? 0) + 1 })
 
+    const usersData = userData ?? {
+      id: cp.user_id,
+      full_name: 'Aşçı',
+      avatar_url: null,
+      created_at: cp.created_at,
+    }
+
     return NextResponse.json({
-      profile: { ...cp, users: userData },
+      profile: { ...cp, users: usersData },
       menu_items: menu_items ?? [],
       reviews: (reviewsRaw ?? []).map(r => ({ ...r, users: r.users })),
       review_count: count ?? 0,
