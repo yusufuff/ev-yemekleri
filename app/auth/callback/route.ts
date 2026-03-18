@@ -3,61 +3,108 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url)
-  const code = searchParams.get('code')
-  const next = searchParams.get('next') ?? '/'
+  const requestUrl = new URL(request.url)
+  const code = requestUrl.searchParams.get('code')
+  const token_hash = requestUrl.searchParams.get('token_hash')
+  const type = requestUrl.searchParams.get('type')
 
-  if (!code) {
-    return NextResponse.redirect(new URL('/giris?error=no_code', request.url))
-  }
+  if (token_hash && type) {
+    const response = NextResponse.redirect(new URL('/', request.url))
 
-  const response = NextResponse.redirect(new URL(next, request.url))
-
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() { return request.cookies.getAll() },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            response.cookies.set(name, value, {
-              ...options,
-              httpOnly: false,
-              secure: true,
-              sameSite: 'lax',
-              path: '/',
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() { return request.cookies.getAll() },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value, options }) => {
+              response.cookies.set(name, value, {
+                ...options,
+                httpOnly: false,
+                secure: true,
+                sameSite: 'lax',
+                path: '/',
+              })
             })
-          })
+          },
         },
-      },
+      }
+    )
+
+    const { data, error } = await supabase.auth.verifyOtp({ token_hash, type })
+
+    if (error || !data.session) {
+      console.error('[auth/callback] verifyOtp error:', error)
+      return NextResponse.redirect(new URL('/giris?error=auth_failed', request.url))
     }
-  )
 
-  const { data, error } = await supabase.auth.exchangeCodeForSession(code)
+    const user = data.session.user
+    const { data: profile } = await supabase
+      .from('users')
+      .select('id, full_name, role')
+      .eq('id', user.id)
+      .single()
 
-  if (error || !data.session) {
-    console.error('[auth/callback] error:', error)
-    return NextResponse.redirect(new URL('/giris?error=auth_failed', request.url))
+    if (!profile?.full_name || profile.full_name.trim() === '') {
+      return NextResponse.redirect(new URL('/giris/profil', request.url))
+    }
+
+    if (profile.role === 'chef') {
+      return NextResponse.redirect(new URL('/dashboard', request.url))
+    }
+
+    return response
   }
 
-  const user = data.session.user
-  const role = user?.user_metadata?.role
+  if (code) {
+    const response = NextResponse.redirect(new URL('/', request.url))
 
-  // Kullanici users tablosunda var mi kontrol et
-  const { data: profile } = await supabase
-    .from('users')
-    .select('id, full_name, role')
-    .eq('id', user.id)
-    .single()
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() { return request.cookies.getAll() },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value, options }) => {
+              response.cookies.set(name, value, {
+                ...options,
+                httpOnly: false,
+                secure: true,
+                sameSite: 'lax',
+                path: '/',
+              })
+            })
+          },
+        },
+      }
+    )
 
-  if (!profile || !profile.full_name) {
-    return NextResponse.redirect(new URL('/giris/profil', request.url))
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code)
+
+    if (error || !data.session) {
+      console.error('[auth/callback] exchangeCode error:', error)
+      return NextResponse.redirect(new URL('/giris?error=auth_failed', request.url))
+    }
+
+    const user = data.session.user
+    const { data: profile } = await supabase
+      .from('users')
+      .select('id, full_name, role')
+      .eq('id', user.id)
+      .single()
+
+    if (!profile?.full_name || profile.full_name.trim() === '') {
+      return NextResponse.redirect(new URL('/giris/profil', request.url))
+    }
+
+    if (profile.role === 'chef') {
+      return NextResponse.redirect(new URL('/dashboard', request.url))
+    }
+
+    return response
   }
 
-  if (role === 'chef' || profile.role === 'chef') {
-    return NextResponse.redirect(new URL('/dashboard', request.url))
-  }
-
-  return NextResponse.redirect(new URL('/', request.url))
+  return NextResponse.redirect(new URL('/giris', request.url))
 }

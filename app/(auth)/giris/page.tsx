@@ -20,15 +20,16 @@ export default function GirisPage() {
         email: email.trim(),
         options: {
           emailRedirectTo: 'https://www.anneelim.com/auth/callback',
+          shouldCreateUser: true,
         },
       })
       if (signInError) {
-        setError('Link gÃ¶nderilemedi: ' + signInError.message)
+        setError('Link gonderilemedi: ' + signInError.message)
         return
       }
       setSent(true)
     } catch {
-      setError('BaÄŸlantÄ± hatasÄ±.')
+      setError('Baglanti hatasi.')
     } finally {
       setLoading(false)
     }
@@ -40,31 +41,31 @@ export default function GirisPage() {
 
         <div style={{ textAlign:'center', marginBottom:28 }}>
           <Link href="/" style={{ fontFamily:"'Playfair Display',serif", fontSize:22, fontWeight:900, color:'#4A2C0E', textDecoration:'none' }}>
-            EV YEMEKLERÄ°
+            EV YEMEKLERI
           </Link>
-          <div style={{ fontSize:13, color:'#8A7B6B', marginTop:6 }}>HesabÄ±nÄ±za giriÅŸ yapÄ±n</div>
+          <div style={{ fontSize:13, color:'#8A7B6B', marginTop:6 }}>Hesabiniza giris yapin</div>
         </div>
 
         {sent ? (
           <div style={{ textAlign:'center', padding:'20px 0' }}>
-            <div style={{ fontSize:48, marginBottom:16 }}>ğŸ“§</div>
+            <div style={{ fontSize:48, marginBottom:16 }}>📧</div>
             <div style={{ fontFamily:"'Playfair Display',serif", fontSize:20, fontWeight:700, color:'#4A2C0E', marginBottom:10 }}>
               Mail kutunuzu kontrol edin
             </div>
             <div style={{ fontSize:13, color:'#8A7B6B', lineHeight:1.6, marginBottom:20 }}>
-              <strong>{email}</strong> adresine giriÅŸ linki gÃ¶nderdik. Linke tÄ±klayarak giriÅŸ yapabilirsiniz.
+              <strong>{email}</strong> adresine giris linki gonderdik. Linke tiklayarak giris yapabilirsiniz.
             </div>
             <button onClick={() => { setSent(false); setEmail('') }} style={{
               background:'none', border:'1.5px solid #E8E0D4', borderRadius:10,
               padding:'10px 20px', fontSize:13, color:'#8A7B6B', cursor:'pointer', fontFamily:'inherit',
             }}>
-              FarklÄ± mail ile dene
+              Farkli mail ile dene
             </button>
           </div>
         ) : (
           <form onSubmit={handleMagicLink}>
             <div style={{ background:'#F5EDD8', borderRadius:10, padding:'12px 14px', marginBottom:20, fontSize:13, color:'#7A4A20', lineHeight:1.6 }}>
-              âœ‰ï¸ E-posta adresinizi girin, size giriÅŸ linki gÃ¶nderelim. Åifre gerekmez.
+              E-posta adresinizi girin, size giris linki gondeRelim. Sifre gerekmez.
             </div>
 
             <div style={{ marginBottom:16 }}>
@@ -81,7 +82,7 @@ export default function GirisPage() {
 
             {error && (
               <div style={{ background:'#FEE2E2', color:'#DC2626', fontSize:13, padding:'10px 14px', borderRadius:8, marginBottom:16 }}>
-                âš ï¸ {error}
+                {error}
               </div>
             )}
 
@@ -93,14 +94,14 @@ export default function GirisPage() {
               cursor: loading || !email.trim() ? 'not-allowed' : 'pointer',
               fontFamily:'inherit',
             }}>
-              {loading ? 'â³ GÃ¶nderiliyor...' : 'âœ‰ï¸ GiriÅŸ Linki GÃ¶nder'}
+              {loading ? 'Gonderiliyor...' : 'Giris Linki Gonder'}
             </button>
           </form>
         )}
 
         <div style={{ marginTop:24, paddingTop:20, borderTop:'1px solid #E8E0D4', textAlign:'center', fontSize:13, color:'#8A7B6B' }}>
-          HesabÄ±nÄ±z yok mu?{' '}
-          <Link href="/kayit" style={{ color:'#E8622A', fontWeight:700, textDecoration:'none' }}>KayÄ±t Ol</Link>
+          Hesabiniz yok mu?{' '}
+          <Link href="/kayit" style={{ color:'#E8622A', fontWeight:700, textDecoration:'none' }}>Kayit Ol</Link>
         </div>
       </div>
     </div>
