@@ -1,7 +1,6 @@
 // @ts-nocheck
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { serialize } from 'cookie'
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -89,11 +88,10 @@ export async function POST(req: NextRequest) {
       role: existingUserDb?.role ?? 'buyer',
     }, { onConflict: 'id' })
 
-    // Oturum ac - anon client ile
+    // Oturum ac - persistSession: true ile
     const anonClient = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-      { auth: { autoRefreshToken: false, persistSession: false } }
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
     )
     const { data: pwData, error: pwError } = await anonClient.auth.signInWithPassword({
       email: fakeEmail,
@@ -110,7 +108,6 @@ export async function POST(req: NextRequest) {
 
     console.log('[verify-otp] success userId:', userId, 'isNewUser:', isNewUser)
 
-    // Supabase SSR'in tam beklediği formatta cookie set et
     const projectRef = process.env.NEXT_PUBLIC_SUPABASE_URL
       .replace('https://', '')
       .replace('.supabase.co', '')
@@ -130,9 +127,8 @@ export async function POST(req: NextRequest) {
       path: '/',
       httpOnly: false,
       secure: true,
-      sameSite: 'lax',
+      sameSite: 'lax' as const,
       maxAge: 60 * 60 * 24 * 365,
-      domain: undefined,
     }
 
     const response = NextResponse.json({
@@ -143,17 +139,16 @@ export async function POST(req: NextRequest) {
       refresh_token: session.refresh_token,
     })
 
-    // Chunked cookie sil, tek cookie yaz
+    // Eski chunk cookie'leri temizle
     response.cookies.set(`${cookieName}.0`, '', { ...cookieOptions, maxAge: 0 })
     response.cookies.set(`${cookieName}.1`, '', { ...cookieOptions, maxAge: 0 })
     response.cookies.set(`${cookieName}.2`, '', { ...cookieOptions, maxAge: 0 })
 
-    // Tek parça cookie yaz (3180 char altindaysa)
+    // Tek parca cookie yaz
     const chunkSize = 3180
     if (cookieValue.length <= chunkSize) {
       response.cookies.set(cookieName, cookieValue, cookieOptions)
     } else {
-      // Chunked yaz
       const chunks = []
       for (let i = 0; i < cookieValue.length; i += chunkSize) {
         chunks.push(cookieValue.slice(i, i + chunkSize))
