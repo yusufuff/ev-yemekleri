@@ -1,9 +1,4 @@
 // @ts-nocheck
-/**
- * Supabase Browser Client
- * Client Component'larda kullanılır: 'use client' direktifi olan dosyalar.
- * Singleton pattern — her render'da yeni instance oluşturulmasını önler.
- */
 import { createBrowserClient } from '@supabase/ssr'
 import type { Database } from '@/types/database'
 
@@ -14,7 +9,12 @@ export function getSupabaseBrowserClient() {
 
   client = createBrowserClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      auth: {
+        flowType: 'implicit',
+      },
+    }
   )
 
   return client
