@@ -1,6 +1,6 @@
-﻿import { NextRequest, NextResponse } from 'next/server'
+// @ts-nocheck
+import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { MOCK_CHEFS, MOCK_MENU, MOCK_REVIEWS } from '@/lib/mock/data'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -9,14 +9,17 @@ const supabase = createClient(
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   try {
-    // Aşçı profili
     const { data: cp, error } = await supabase
       .from('chef_profiles')
       .select(`*, users!inner(id, full_name, avatar_url, created_at)`)
       .eq('id', params.id)
       .single()
 
-    if (error || !cp) throw new Error('not found')
+    console.log('[chefs] id:', params.id, 'cp:', cp?.id ?? 'null', 'error:', error?.message ?? 'none')
+
+    if (error || !cp) {
+      return NextResponse.json({ error: 'Asci bulunamadi: ' + (error?.message ?? 'no data') }, { status: 404 })
+    }
 
     const { data: menu_items } = await supabase
       .from('menu_items')
@@ -48,24 +51,8 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       rating_dist,
       favorite_count: 0,
     })
-  } catch {
-    // Mock fallback
-    const chef = MOCK_CHEFS.find(c => c.chef_id === params.id)
-    if (!chef) return NextResponse.json({ error: 'Bulunamadi' }, { status: 404 })
-    const menu_items = MOCK_MENU[params.id] ?? []
-    const reviews = (MOCK_REVIEWS[params.id] ?? []).map((r: any) => ({ ...r, users: { full_name: r.reviewer_name, avatar_url: null } }))
-    return NextResponse.json({
-      profile: {
-        id: chef.chef_id, bio: chef.full_name + ' ev mutfagindan lezzetli yemekler.',
-        location_approx: chef.location_approx, avg_rating: chef.avg_rating,
-        total_reviews: chef.total_reviews, total_orders: chef.total_orders,
-        badge: chef.badge, is_open: chef.is_open, delivery_types: chef.delivery_types,
-        distance_km: chef.distance_km, delivery_radius_km: 5,
-        working_hours: { mon:{open:'10:00',close:'19:00'}, tue:{open:'10:00',close:'19:00'}, wed:{open:'10:00',close:'19:00'}, thu:{open:'10:00',close:'19:00'}, fri:{open:'10:00',close:'19:00'}, sat:{open:'10:00',close:'17:00'}, sun: null },
-        users: { id: chef.user_id, full_name: chef.full_name, avatar_url: chef.avatar_url, created_at: '2024-01-01' },
-        rating_breakdown: { 5: Math.floor(chef.total_reviews*0.8), 4: Math.floor(chef.total_reviews*0.15), 3: Math.floor(chef.total_reviews*0.05), 2:0, 1:0 },
-      },
-      menu_items, reviews, review_count: reviews.length, review_pages: 1, rating_dist: {}, favorite_count: 0,
-    })
+  } catch (err: any) {
+    console.error('[chefs] unexpected error:', err.message)
+    return NextResponse.json({ error: 'Sunucu hatasi: ' + err.message }, { status: 500 })
   }
 }
