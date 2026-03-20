@@ -143,7 +143,7 @@ function MenuItemCard({ item, chefId, chefName }: { item: MenuItem; chefId: stri
       </div>
 
       <div className="mic-body">
-        <div className="mic-name">{item.name}</div>
+        <Link href={`/yemek/${item.id}`} className="mic-name" style={{ textDecoration: 'none', color: 'inherit' }}>{item.name}</Link>
 
         {item.description && (
           <div className="mic-desc">{item.description}</div>
