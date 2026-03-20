@@ -11,32 +11,32 @@ import {
 import { CATEGORY_META, ALLERGEN_META, type MenuItem, type MenuCategory } from '@/types/menu'
 import { useCart } from '@/hooks/useCart'
 
-// Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬ YÃÂ±ldÃÂ±z render Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬
+// ─── Yıldız render ────────────────────────────────────────────────────────────
 
 function Stars({ rating, size = 14 }: { rating: number; size?: number }) {
   return (
-    <span className="stars-wrap" aria-label={`${rating} yÃÂ±ldÃÂ±z`}>
+    <span className="stars-wrap" aria-label={`${rating} yıldız`}>
       {[1, 2, 3, 4, 5].map(i => (
-        <span key={i} style={{ color: i <= Math.round(rating) ? '#F59E0B' : '#E8E0D4', fontSize: size }}>Ã¢Ëâ¦</span>
+        <span key={i} style={{ color: i <= Math.round(rating) ? '#F59E0B' : '#E8E0D4', fontSize: size }}>★</span>
       ))}
     </span>
   )
 }
 
-// Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬ Puan ÃÂ§ubuÃÅ¸u Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬
+// ─── Puan çubuğu ──────────────────────────────────────────────────────────────
 
 function RatingBar({ star, count, total }: { star: number; count: number; total: number }) {
   const pct = total > 0 ? Math.round((count / total) * 100) : 0
   return (
     <div className="rb-row">
-      <span className="rb-star">{star}Ã¢Ëâ¦</span>
+      <span className="rb-star">{star}★</span>
       <div className="rb-track"><div className="rb-fill" style={{ width: `${pct}%` }} /></div>
       <span className="rb-count">{count}</span>
     </div>
   )
 }
 
-// Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬ FotoÃÅ¸raf galerisi Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬
+// ─── Fotoğraf galerisi ────────────────────────────────────────────────────────
 
 function PhotoGallery({ photos, chefName }: { photos: string[]; chefName: string }) {
   const [activeIdx, setActiveIdx] = useState(0)
@@ -45,7 +45,7 @@ function PhotoGallery({ photos, chefName }: { photos: string[]; chefName: string
   if (photos.length === 0) {
     return (
       <div className="pg-empty">
-        <span style={{ fontSize: 64 }}>ÄÅ¸âÂ©Ã¢â¬ÂÄÅ¸ÂÂ³</span>
+        <span style={{ fontSize: 64 }}>👩‍🍳</span>
       </div>
     )
   }
@@ -55,11 +55,11 @@ function PhotoGallery({ photos, chefName }: { photos: string[]; chefName: string
   return (
     <>
       <div className="pg-grid">
-        {/* Ana gÃÂ¶rsel */}
+        {/* Ana görsel */}
         <div className="pg-main" onClick={() => { setActiveIdx(0); setLightbox(true) }}>
           <img src={grid[0]} alt={chefName} className="pg-img" />
         </div>
-        {/* KÃÂ¼ÃÂ§ÃÂ¼k gÃÂ¶rseller */}
+        {/* Küçük görseller */}
         <div className="pg-thumbs">
           {grid.slice(1).map((url, i) => (
             <div
@@ -80,12 +80,12 @@ function PhotoGallery({ photos, chefName }: { photos: string[]; chefName: string
       {/* Lightbox */}
       {lightbox && (
         <div className="pg-lightbox" onClick={() => setLightbox(false)}>
-          <button className="pg-lb-close" onClick={() => setLightbox(false)} aria-label="Kapat">Ãâ</button>
+          <button className="pg-lb-close" onClick={() => setLightbox(false)} aria-label="Kapat">×</button>
           <button
             className="pg-lb-prev"
             onClick={e => { e.stopPropagation(); setActiveIdx(i => (i - 1 + photos.length) % photos.length) }}
-            aria-label="Ãânceki"
-          >Ã¢â¬Â¹</button>
+            aria-label="Önceki"
+          >‹</button>
           <img
             src={photos[activeIdx]}
             alt={`${chefName} ${activeIdx + 1}`}
@@ -96,7 +96,7 @@ function PhotoGallery({ photos, chefName }: { photos: string[]; chefName: string
             className="pg-lb-next"
             onClick={e => { e.stopPropagation(); setActiveIdx(i => (i + 1) % photos.length) }}
             aria-label="Sonraki"
-          >Ã¢â¬Âº</button>
+          >›</button>
           <div className="pg-lb-counter">{activeIdx + 1} / {photos.length}</div>
         </div>
       )}
@@ -104,7 +104,7 @@ function PhotoGallery({ photos, chefName }: { photos: string[]; chefName: string
   )
 }
 
-// Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬ MenÃÂ¼ kartÃÂ± (profil gÃÂ¶rÃÂ¼nÃÂ¼mÃÂ¼) Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬
+// ─── Menü kartı (profil görünümü) ─────────────────────────────────────────────
 
 function MenuItemCard({ item, chefId, chefName }: { item: MenuItem; chefId: string; chefName: string }) {
   const { addItem, items: cartItems } = useCart()
@@ -133,13 +133,13 @@ function MenuItemCard({ item, chefId, chefName }: { item: MenuItem; chefId: stri
 
   return (
     <div className={`mic-card ${isOutOfStock ? 'mic-card--out' : ''}`}>
-      {/* GÃÂ¶rsel */}
+      {/* Görsel */}
       <div className="mic-img">
         {cover
           ? <img src={cover} alt={item.name} className="mic-photo" />
-          : <span className="mic-emoji">{cat?.emoji ?? 'ÄÅ¸ÂÂ½Ã¯Â¸Â'}</span>
+          : <span className="mic-emoji">{cat?.emoji ?? '🍽️'}</span>
         }
-        {isOutOfStock && <div className="mic-out-badge">TÃÂ¼kendi</div>}
+        {isOutOfStock && <div className="mic-out-badge">Tükendi</div>}
       </div>
 
       <div className="mic-body">
@@ -162,9 +162,9 @@ function MenuItemCard({ item, chefId, chefName }: { item: MenuItem; chefId: stri
 
         <div className="mic-footer">
           <div className="mic-meta">
-            <div className="mic-price">Ã¢âÂº{item.price.toFixed(0)}</div>
+            <div className="mic-price">₺{item.price.toFixed(0)}</div>
             {item.prep_time_min && (
-              <div className="mic-prep">Ã¢ÂÂ±Ã¯Â¸Â {item.prep_time_min} dk</div>
+              <div className="mic-prep">⏱️ {item.prep_time_min} dk</div>
             )}
           </div>
 
@@ -176,7 +176,7 @@ function MenuItemCard({ item, chefId, chefName }: { item: MenuItem; chefId: stri
               type="button"
               aria-label={`${item.name} sepete ekle`}
             >
-              {added ? 'Ã¢Åâ Eklendi' : inCart ? `ÄÅ¸âºâ ${inCart.quantity}` : '+ Ekle'}
+              {added ? '✓ Eklendi' : inCart ? `🛒 ${inCart.quantity}` : '+ Ekle'}
             </button>
           )}
         </div>
@@ -184,7 +184,7 @@ function MenuItemCard({ item, chefId, chefName }: { item: MenuItem; chefId: stri
         {/* Stok durumu */}
         {!isOutOfStock && (item.remaining_stock ?? 0) <= 3 && (
           <div className="mic-stock-warn">
-            Ã¢Å¡Â¡ Son {item.remaining_stock} porsiyon!
+            ⚡ Son {item.remaining_stock} porsiyon!
           </div>
         )}
       </div>
@@ -192,7 +192,7 @@ function MenuItemCard({ item, chefId, chefName }: { item: MenuItem; chefId: stri
   )
 }
 
-// Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬ Yorum kartÃÂ± Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬
+// ─── Yorum kartı ──────────────────────────────────────────────────────────────
 
 function ReviewCard({ review }: { review: any }) {
   const [showReply, setShowReply] = useState(false)
@@ -222,10 +222,10 @@ function ReviewCard({ review }: { review: any }) {
         <p className="rc-comment">"{review.comment}"</p>
       )}
 
-      {/* AÃÅ¸ÃÂ§ÃÂ± yanÃÂ±tÃÂ± */}
+      {/* Aşçı yanıtı */}
       {review.chef_reply && (
         <div className="rc-reply">
-          <div className="rc-reply-label">ÄÅ¸âÂ©Ã¢â¬ÂÄÅ¸ÂÂ³ AÃÅ¸ÃÂ§ÃÂ±nÃÂ±n YanÃÂ±tÃÂ±</div>
+          <div className="rc-reply-label">👩‍🍳 Aşçının Yanıtı</div>
           <p className="rc-reply-text">{review.chef_reply}</p>
         </div>
       )}
@@ -233,7 +233,7 @@ function ReviewCard({ review }: { review: any }) {
   )
 }
 
-// Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬ Ana sayfa Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬
+// ─── Ana sayfa ────────────────────────────────────────────────────────────────
 
 export default function AsciProfilPage({ params }: { params: { id: string } }) {
   const {
@@ -247,15 +247,15 @@ export default function AsciProfilPage({ params }: { params: { id: string } }) {
   if (loading) return (
     <div className="ap-loading">
       <div className="ap-spinner" />
-      <span>Profil yÃÂ¼kleniyorÃ¢â¬Â¦</span>
+      <span>Profil yükleniyor…</span>
     </div>
   )
 
   if (error || !data) return (
     <div className="ap-error">
-      <div style={{ fontSize: 48 }}>ÄÅ¸Ëâ</div>
-      <div>{error ?? 'AÃÅ¸ÃÂ§ÃÂ± bulunamadÃÂ±.'}</div>
-      <Link href="/kesif" className="ap-back-btn">Ã¢â Â KeÃÅ¸fete DÃÂ¶n</Link>
+      <div style={{ fontSize: 48 }}>😔</div>
+      <div>{error ?? 'Aşçı bulunamadı.'}</div>
+      <Link href="/kesif" className="ap-back-btn">← Keşfete Dön</Link>
     </div>
   )
 
@@ -266,7 +266,7 @@ export default function AsciProfilPage({ params }: { params: { id: string } }) {
   const workingHrs  = formatWorkingHours(profile.working_hours)
   const totalReviews = Object.values(rating_dist).reduce((a, b) => a + b, 0)
 
-  // FotoÃÅ¸raflar Ã¢â¬â menÃÂ¼ ÃÂ¶ÃÅ¸elerinden topla
+  // Fotoğraflar — menü öğelerinden topla
   const allPhotos = menu_items.flatMap(m => m.photos ?? []).slice(0, 8)
 
   // Kategoriler
@@ -278,39 +278,23 @@ export default function AsciProfilPage({ params }: { params: { id: string } }) {
   return (
     <div className="ap-page">
 
-      {/* Ã¢ââ¬Ã¢ââ¬ ÃÅst ÃÂ§ubuk (geri + aksiyonlar) Ã¢ââ¬Ã¢ââ¬ */}
+      {/* ── Üst çubuk (geri + aksiyonlar) ── */}
       <div className="ap-topbar">
-        <Link href="/kesif" className="ap-back">Ã¢â Â Geri</Link>
-        <div className="ap-topbar-actions" style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <Link href="/kesif" className="ap-back">← Geri</Link>
+        <div className="ap-topbar-actions">
           <button
             className={`ap-fav-btn ${isFavorited ? 'ap-fav-btn--active' : ''}`}
             onClick={toggleFavorite}
             disabled={favLoading}
             type="button"
-            aria-label={isFavorited ? 'Favorilerden ÃÂ§ÃÂ±kar' : 'Favorilere ekle'}
+            aria-label={isFavorited ? 'Favorilerden çıkar' : 'Favorilere ekle'}
           >
-            {isFavorited ? 'Ã¢ÂÂ¤Ã¯Â¸Â' : 'ÄÅ¸Â¤Â'} {isFavorited ? 'Takipte' : 'Takip Et'}
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              const url = `https://www.anneelim.com/asci/${data.profile.id}`
-              const text = `ğ½ï¸ ${user.full_name}'in ev yemeklerini denediniz mi?\n\n${data.profile.bio ?? 'Taze, sicak ev yemekleri!'}\nğ ${data.profile.location_approx}\n\nSiparis icin: ${url}\n\n#anneelim #evyemekleri #evyapimi`
-              if (navigator.share) {
-                navigator.share({ title: user.full_name + " - Anneelim", text, url })
-              } else {
-                navigator.clipboard.writeText(text)
-                alert('Metin kopyalandi! Sosyal medyada paylasabilirsiniz.')
-              }
-            }}
-            style={{ padding: '8px 16px', background: 'white', border: '1.5px solid #E8E0D4', borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', color: '#4A2C0E' }}
-          >
-            ğ¤ PaylaÅ
+            {isFavorited ? '❤️' : '🤍'} {isFavorited ? 'Takipte' : 'Takip Et'}
           </button>
         </div>
       </div>
 
-      {/* Ã¢ââ¬Ã¢ââ¬ FotoÃÅ¸raf galerisi Ã¢ââ¬Ã¢ââ¬ */}
+      {/* ── Fotoğraf galerisi ── */}
       <div className="ap-gallery">
         <PhotoGallery photos={allPhotos} chefName={user.full_name} />
       </div>
@@ -318,7 +302,7 @@ export default function AsciProfilPage({ params }: { params: { id: string } }) {
       <div className="ap-body">
         <div className="ap-left">
 
-          {/* Ã¢ââ¬Ã¢ââ¬ Profil baÃÅ¸lÃÂ±k kartÃÂ± Ã¢ââ¬Ã¢ââ¬ */}
+          {/* ── Profil başlık kartı ── */}
           <div className="ap-card ap-profile-card">
             <div className="ap-profile-top">
               {/* Avatar */}
@@ -344,7 +328,7 @@ export default function AsciProfilPage({ params }: { params: { id: string } }) {
                 {/* Puan */}
                 <div className="ap-rating-row">
                   <Stars rating={profile.avg_rating ?? 0} size={16} />
-                  <span className="ap-rating-num">{profile.avg_rating?.toFixed(1) ?? 'Ã¢â¬â'}</span>
+                  <span className="ap-rating-num">{profile.avg_rating?.toFixed(1) ?? '—'}</span>
                   <span className="ap-rating-count">({review_count} yorum)</span>
                 </div>
               </div>
@@ -352,7 +336,7 @@ export default function AsciProfilPage({ params }: { params: { id: string } }) {
               {/* Durum */}
               <div className={`ap-status ${isOpen ? 'ap-status--open' : 'ap-status--closed'}`}>
                 <span className="ap-status-dot" />
-                {isOpen ? 'ÃÂu an aÃÂ§ÃÂ±k' : 'ÃÂu an kapalÃÂ±'}
+                {isOpen ? 'Şu an açık' : 'Şu an kapalı'}
               </div>
             </div>
 
@@ -366,14 +350,14 @@ export default function AsciProfilPage({ params }: { params: { id: string } }) {
             {/* Meta bilgiler */}
             <div className="ap-meta-grid">
               <div className="ap-meta-item">
-                <span className="ap-meta-icon">ÄÅ¸âÂ</span>
+                <span className="ap-meta-icon">📍</span>
                 <div>
                   <div className="ap-meta-label">Konum</div>
-                  <div className="ap-meta-value">{profile.location_approx ?? 'BelirtilmemiÃÅ¸'}</div>
+                  <div className="ap-meta-value">{profile.location_approx ?? 'Belirtilmemiş'}</div>
                 </div>
               </div>
               <div className="ap-meta-item">
-                <span className="ap-meta-icon">ÄÅ¸âºÂµ</span>
+                <span className="ap-meta-icon">🛵</span>
                 <div>
                   <div className="ap-meta-label">Teslimat</div>
                   <div className="ap-meta-value">
@@ -384,53 +368,53 @@ export default function AsciProfilPage({ params }: { params: { id: string } }) {
                 </div>
               </div>
               <div className="ap-meta-item">
-                <span className="ap-meta-icon">Ã¢ÂÂ°</span>
+                <span className="ap-meta-icon">⏰</span>
                 <div>
-                  <div className="ap-meta-label">Ãâ¡alÃÂ±ÃÅ¸ma Saati</div>
+                  <div className="ap-meta-label">Çalışma Saati</div>
                   <div className="ap-meta-value">{workingHrs}</div>
                 </div>
               </div>
               <div className="ap-meta-item">
-                <span className="ap-meta-icon">ÄÅ¸âÂ¦</span>
+                <span className="ap-meta-icon">📦</span>
                 <div>
-                  <div className="ap-meta-label">Toplam SipariÃÅ¸</div>
+                  <div className="ap-meta-label">Toplam Sipariş</div>
                   <div className="ap-meta-value">{profile.total_orders.toLocaleString('tr-TR')}</div>
                 </div>
               </div>
               <div className="ap-meta-item">
-                <span className="ap-meta-icon">Ã¢ÂÂ¤Ã¯Â¸Â</span>
+                <span className="ap-meta-icon">❤️</span>
                 <div>
-                  <div className="ap-meta-label">TakipÃÂ§i</div>
+                  <div className="ap-meta-label">Takipçi</div>
                   <div className="ap-meta-value">{favorite_count}</div>
                 </div>
               </div>
               <div className="ap-meta-item">
-                <span className="ap-meta-icon">ÄÅ¸âÂ</span>
+                <span className="ap-meta-icon">📏</span>
                 <div>
-                  <div className="ap-meta-label">Teslimat YarÃÂ±ÃÂ§apÃÂ±</div>
+                  <div className="ap-meta-label">Teslimat Yarıçapı</div>
                   <div className="ap-meta-value">{profile.delivery_radius_km} km</div>
                 </div>
               </div>
             </div>
 
-            {/* YaklaÃÅ¸ÃÂ±k konum (harita placeholder) */}
+            {/* Yaklaşık konum (harita placeholder) */}
             <div className="ap-map-placeholder">
               <div className="ap-map-inner">
-                ÄÅ¸âÂºÃ¯Â¸Â
-                <div className="ap-map-label">YaklaÃÅ¸ÃÂ±k Konum (Kesin Adres Gizlidir)</div>
+                🗺️
+                <div className="ap-map-label">Yaklaşık Konum (Kesin Adres Gizlidir)</div>
               </div>
             </div>
           </div>
 
-          {/* Ã¢ââ¬Ã¢ââ¬ Puan daÃÅ¸ÃÂ±lÃÂ±mÃÂ± Ã¢ââ¬Ã¢ââ¬ */}
+          {/* ── Puan dağılımı ── */}
           {totalReviews > 0 && (
             <div className="ap-card">
-              <div className="ap-card-title">Puan DaÃÅ¸ÃÂ±lÃÂ±mÃÂ±</div>
+              <div className="ap-card-title">Puan Dağılımı</div>
               <div className="ap-rating-summary">
                 <div className="ap-rating-big">
-                  <div className="ap-rating-num-big">{profile.avg_rating?.toFixed(1) ?? 'Ã¢â¬â'}</div>
+                  <div className="ap-rating-num-big">{profile.avg_rating?.toFixed(1) ?? '—'}</div>
                   <Stars rating={profile.avg_rating ?? 0} size={20} />
-                  <div className="ap-rating-total">{totalReviews} deÃÅ¸erlendirme</div>
+                  <div className="ap-rating-total">{totalReviews} değerlendirme</div>
                 </div>
                 <div className="ap-rating-bars">
                   {[5, 4, 3, 2, 1].map(s => (
@@ -444,10 +428,10 @@ export default function AsciProfilPage({ params }: { params: { id: string } }) {
 
         <div className="ap-right">
 
-          {/* Ã¢ââ¬Ã¢ââ¬ MenÃÂ¼ Ã¢ââ¬Ã¢ââ¬ */}
+          {/* ── Menü ── */}
           <div className="ap-card" id="menu">
             <div className="ap-card-title">
-              BugÃÂ¼nkÃÂ¼ MenÃÂ¼
+              Bugünkü Menü
               <span className="ap-menu-count">{menu_items.length} yemek</span>
             </div>
 
@@ -459,7 +443,7 @@ export default function AsciProfilPage({ params }: { params: { id: string } }) {
                   onClick={() => setActiveCategory('all')}
                   type="button"
                 >
-                  TÃÂ¼mÃÂ¼
+                  Tümü
                 </button>
                 {cats.map(key => {
                   const meta = CATEGORY_META[key]
@@ -479,7 +463,7 @@ export default function AsciProfilPage({ params }: { params: { id: string } }) {
 
             {filteredMenu.length === 0 ? (
               <div className="ap-menu-empty">
-                <div style={{ fontSize: 32, marginBottom: 8 }}>ÄÅ¸ÂÂ½Ã¯Â¸Â</div>
+                <div style={{ fontSize: 32, marginBottom: 8 }}>🍽️</div>
                 <div>Bu kategoride yemek yok.</div>
               </div>
             ) : (
@@ -491,16 +475,16 @@ export default function AsciProfilPage({ params }: { params: { id: string } }) {
             )}
           </div>
 
-          {/* Ã¢ââ¬Ã¢ââ¬ Yorumlar Ã¢ââ¬Ã¢ââ¬ */}
+          {/* ── Yorumlar ── */}
           <div className="ap-card">
             <div className="ap-card-title">
-              MÃÂ¼ÃÅ¸teri YorumlarÃÂ±
+              Müşteri Yorumları
               <span className="ap-menu-count">{review_count} yorum</span>
             </div>
 
             {reviews.length === 0 ? (
               <div className="ap-reviews-empty">
-                HenÃÂ¼z yorum yok. ÃÂ°lk sipariÃÅ¸i veren siz olun!
+                Henüz yorum yok. İlk siparişi veren siz olun!
               </div>
             ) : (
               <>
@@ -519,7 +503,7 @@ export default function AsciProfilPage({ params }: { params: { id: string } }) {
                       disabled={reviewPage === 1}
                       type="button"
                     >
-                      Ã¢â¬Â¹ Ãânceki
+                      ‹ Önceki
                     </button>
                     <span className="ap-page-info">
                       {reviewPage} / {review_pages}
@@ -530,7 +514,7 @@ export default function AsciProfilPage({ params }: { params: { id: string } }) {
                       disabled={reviewPage === review_pages}
                       type="button"
                     >
-                      Sonraki Ã¢â¬Âº
+                      Sonraki ›
                     </button>
                   </div>
                 )}
@@ -540,28 +524,28 @@ export default function AsciProfilPage({ params }: { params: { id: string } }) {
         </div>
       </div>
 
-      {/* Ã¢ââ¬Ã¢ââ¬ Sticky sipariÃÅ¸ butonu (mobil) Ã¢ââ¬Ã¢ââ¬ */}
+      {/* ── Sticky sipariş butonu (mobil) ── */}
       <div className="ap-sticky-order">
         <div className="ap-sticky-info">
           <div className="ap-sticky-name">{user.full_name}</div>
           <div className="ap-sticky-sub">
-            {isOpen ? 'ÄÅ¸Å¸Â¢ AÃÂ§ÃÂ±k' : 'ÄÅ¸âÂ´ KapalÃÂ±'} ÃÂ· {menu_items.length} yemek
+            {isOpen ? '🟢 Açık' : '🔴 Kapalı'} · {menu_items.length} yemek
           </div>
         </div>
         <a href="#menu" className="ap-sticky-btn">
-          SipariÃÅ¸ Ver Ã¢â â
+          Sipariş Ver →
         </a>
       </div>
 
       <style>{`
-        /* Ã¢ââ¬Ã¢ââ¬ Sayfa Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬ */
+        /* ── Sayfa ─────────────────────────── */
         .ap-page {
           max-width: 1100px;
           margin: 0 auto;
           padding-bottom: 80px;
         }
 
-        /* Ã¢ââ¬Ã¢ââ¬ YÃÂ¼kleniyor / Hata Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬ */
+        /* ── Yükleniyor / Hata ─────────────── */
         .ap-loading, .ap-error {
           display: flex; flex-direction: column;
           align-items: center; justify-content: center;
@@ -586,7 +570,7 @@ export default function AsciProfilPage({ params }: { params: { id: string } }) {
           font-size: 13px;
         }
 
-        /* Ã¢ââ¬Ã¢ââ¬ ÃÅst ÃÂ§ubuk Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬ */
+        /* ── Üst çubuk ─────────────────────── */
         .ap-topbar {
           display: flex; align-items: center;
           justify-content: space-between;
@@ -622,7 +606,7 @@ export default function AsciProfilPage({ params }: { params: { id: string } }) {
         .ap-fav-btn:hover:not(:disabled) { border-color: #E11D48; }
         .ap-fav-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
-        /* Ã¢ââ¬Ã¢ââ¬ Galeri Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬ */
+        /* ── Galeri ────────────────────────── */
         .ap-gallery { padding: 0 24px 20px; }
 
         .pg-empty {
@@ -699,7 +683,7 @@ export default function AsciProfilPage({ params }: { params: { id: string } }) {
           color: rgba(255,255,255,0.7); font-size: 13px;
         }
 
-        /* Ã¢ââ¬Ã¢ââ¬ ÃÂ°ki sÃÂ¼tunlu gÃÂ¶vde Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬ */
+        /* ── İki sütunlu gövde ─────────────── */
         .ap-body {
           display: grid;
           grid-template-columns: 340px 1fr;
@@ -717,7 +701,7 @@ export default function AsciProfilPage({ params }: { params: { id: string } }) {
           display: flex; flex-direction: column; gap: 16px;
         }
 
-        /* Ã¢ââ¬Ã¢ââ¬ Kart Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬ */
+        /* ── Kart ──────────────────────────── */
         .ap-card {
           background: var(--white);
           border-radius: 16px; padding: 20px;
@@ -737,7 +721,7 @@ export default function AsciProfilPage({ params }: { params: { id: string } }) {
           font-size: 12px; color: var(--gray); font-weight: 600;
         }
 
-        /* Ã¢ââ¬Ã¢ââ¬ Profil kartÃÂ± Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬ */
+        /* ── Profil kartı ──────────────────── */
         .ap-profile-top {
           display: flex; gap: 16px; align-items: flex-start;
           margin-bottom: 14px; flex-wrap: wrap;
@@ -824,7 +808,7 @@ export default function AsciProfilPage({ params }: { params: { id: string } }) {
         .ap-map-inner > :first-child { font-size: 36px; display: block; margin-bottom: 6px; }
         .ap-map-label { font-size: 10px; color: var(--green); font-weight: 700; }
 
-        /* Ã¢ââ¬Ã¢ââ¬ Puan daÃÅ¸ÃÂ±lÃÂ±mÃÂ± Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬ */
+        /* ── Puan dağılımı ─────────────────── */
         .ap-rating-summary {
           display: flex; gap: 20px; align-items: center;
         }
@@ -851,7 +835,7 @@ export default function AsciProfilPage({ params }: { params: { id: string } }) {
         .rb-fill { height: 100%; background: #F59E0B; border-radius: 3px; transition: width 0.5s; }
         .rb-count { font-size: 11px; color: var(--gray); width: 20px; }
 
-        /* Ã¢ââ¬Ã¢ââ¬ Kategori filtresi Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬ */
+        /* ── Kategori filtresi ──────────────── */
         .ap-cat-filter {
           display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px;
         }
@@ -868,7 +852,7 @@ export default function AsciProfilPage({ params }: { params: { id: string } }) {
         .ap-cat-chip:hover { border-color: var(--orange); color: var(--orange); }
         .ap-cat-chip--active { background: var(--orange); color: white; border-color: var(--orange); }
 
-        /* Ã¢ââ¬Ã¢ââ¬ MenÃÂ¼ grid Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬ */
+        /* ── Menü grid ─────────────────────── */
         .ap-menu-grid {
           display: grid;
           grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
@@ -884,7 +868,7 @@ export default function AsciProfilPage({ params }: { params: { id: string } }) {
           font-size: 13px; color: var(--gray);
         }
 
-        /* Ã¢ââ¬Ã¢ââ¬ MenÃÂ¼ ÃÂ¶ÃÅ¸e kartÃÂ± Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬ */
+        /* ── Menü öğe kartı ────────────────── */
         .mic-card {
           background: var(--white);
           border-radius: 12px; overflow: hidden;
@@ -957,7 +941,7 @@ export default function AsciProfilPage({ params }: { params: { id: string } }) {
           font-size: 10.5px; color: var(--orange); font-weight: 700;
         }
 
-        /* Ã¢ââ¬Ã¢ââ¬ Yorum kartÃÂ± Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬ */
+        /* ── Yorum kartı ───────────────────── */
         .ap-reviews-list { display: flex; flex-direction: column; gap: 12px; }
 
         .rc-card {
@@ -1001,7 +985,7 @@ export default function AsciProfilPage({ params }: { params: { id: string } }) {
         .rc-reply-label { font-size: 11px; font-weight: 700; color: var(--orange); margin-bottom: 4px; }
         .rc-reply-text  { font-size: 12.5px; color: var(--brown); line-height: 1.6; }
 
-        /* Ã¢ââ¬Ã¢ââ¬ Sayfalama Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬ */
+        /* ── Sayfalama ──────────────────────── */
         .ap-pagination {
           display: flex; align-items: center; justify-content: center;
           gap: 12px; margin-top: 16px; padding-top: 16px;
@@ -1022,7 +1006,7 @@ export default function AsciProfilPage({ params }: { params: { id: string } }) {
 
         .ap-page-info { font-size: 13px; color: var(--gray); font-weight: 600; }
 
-        /* Ã¢ââ¬Ã¢ââ¬ Sticky order bar (mobil) Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬Ã¢ââ¬ */
+        /* ── Sticky order bar (mobil) ───────── */
         .ap-sticky-order {
           display: none;
           position: fixed;
