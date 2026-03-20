@@ -53,7 +53,7 @@ export default function YemekDetayPage() {
     for (let i = 0; i < quantity; i++) {
       addItem({
         menu_item_id: item.id,
-        chef_id: chef?.id,
+        chef_id: chef?.chef_profile_id,
         chef_name: chef?.full_name ?? 'Asci',
         name: item.name,
         price: item.price,
