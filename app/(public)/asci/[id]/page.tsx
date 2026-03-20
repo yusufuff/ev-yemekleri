@@ -291,6 +291,22 @@ export default function AsciProfilPage({ params }: { params: { id: string } }) {
           >
             {isFavorited ? '❤️' : '🤍'} {isFavorited ? 'Takipte' : 'Takip Et'}
           </button>
+          <button
+  type="button"
+  onClick={() => {
+    const url = `https://www.anneelim.com/asci/${params.id}`
+    const text = `${user.full_name} ev yemekleri! Siparis icin: ${url} #anneelim #evyemekleri`
+    if (navigator.share) {
+      navigator.share({ title: user.full_name + ' - Anneelim', text, url })
+    } else {
+      navigator.clipboard.writeText(url)
+      alert('Link kopyalandi!')
+    }
+  }}
+  style={{ padding: '8px 16px', background: 'white', border: '1.5px solid #E8E0D4', borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', color: '#4A2C0E' }}
+>
+  Paylas
+</button>
         </div>
       </div>
 
