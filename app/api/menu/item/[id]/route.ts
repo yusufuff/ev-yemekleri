@@ -17,7 +17,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 
   const { data: chefProfile } = await supabase
     .from('chef_profiles')
-    .select('id, location_approx, avg_rating, badge')
+    .select('id, user_id, location_approx, avg_rating, badge')
     .eq('id', item.chef_id)
     .single()
 
@@ -30,7 +30,8 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   return NextResponse.json({
     item,
     chef: chefProfile ? {
-      ...chefUser,
+      full_name: chefUser?.full_name ?? 'Asci',
+      avatar_url: chefUser?.avatar_url ?? null,
       chef_profile_id: chefProfile.id,
       location_approx: chefProfile.location_approx,
       avg_rating: chefProfile.avg_rating,
