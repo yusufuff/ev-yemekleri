@@ -84,13 +84,12 @@ export default function KayitPage() {
           <div style={{ marginBottom:20 }}>
             <label style={{ fontSize:12, fontWeight:600, color:'#7A4A20', display:'block', marginBottom:8 }}>Hesap Turu *</label>
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
-              {[['buyer','ğŸ›’','Alici','Siparis ver'],['chef','ğŸ‘©â€ğŸ³','Asci','Satis yap']].map(([r,icon,title,desc]) => (
+              {[['buyer','Alici','Siparis ver'],['chef','Asci','Satis yap']].map(([r,title,desc]) => (
                 <button key={r} type="button" onClick={() => setForm(p => ({...p, role: r}))} style={{
                   padding:'14px 12px', borderRadius:12, border: `2px solid ${form.role === r ? '#E8622A' : '#E8E0D4'}`,
                   background: form.role === r ? '#FEF3EC' : 'white',
                   cursor:'pointer', textAlign:'center', fontFamily:'inherit',
                 }}>
-                  <div style={{ fontSize:24, marginBottom:4 }}>{icon}</div>
                   <div style={{ fontWeight:700, fontSize:13, color:'#4A2C0E' }}>{title}</div>
                   <div style={{ fontSize:11, color:'#8A7B6B' }}>{desc}</div>
                 </button>
