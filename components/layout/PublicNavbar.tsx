@@ -25,6 +25,7 @@ export function PublicNavbar() {
   const pathname = usePathname()
   const hidden = HIDDEN_PATHS.some(p => pathname?.startsWith(p))
   const [user, setUser] = useState<{full_name?: string; role?: string} | null>(null)
+  const [unreadCount, setUnreadCount] = useState(0)
 
   useEffect(() => {
     if (hidden) return
@@ -33,6 +34,17 @@ export function PublicNavbar() {
       if (data?.user) {
         const meta = data.user.user_metadata
         setUser({ full_name: meta?.full_name || data.user.email?.split('@')[0], role: meta?.role })
+
+        // Okunmamis bildirim sayisini cek
+        supabase
+          .from('notifications')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', data.user.id)
+          .eq('is_read', false)
+          .then(({ count }) => {
+            setUnreadCount(count ?? 0)
+          })
+          .catch(() => {})
       }
     })
   }, [hidden])
@@ -49,7 +61,7 @@ export function PublicNavbar() {
     <nav style={{ background:'white', borderBottom:'1px solid #E8E0D4', position:'sticky', top:0, zIndex:50 }}>
       <div style={{ maxWidth:1152, margin:'0 auto', padding:'0 24px', height:56, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
         <Link href="/" style={{ fontFamily:"'Playfair Display',serif", fontWeight:900, fontSize:20, color:'#4A2C0E', textDecoration:'none' }}>
-          EV YEMEKLERİ
+          EV YEMEKLERI
         </Link>
 
         <div style={{ display:'flex', alignItems:'center', gap:20 }}>
@@ -68,6 +80,25 @@ export function PublicNavbar() {
 
         <div style={{ display:'flex', alignItems:'center', gap:10 }}>
           <CartButton />
+
+          {/* Bildirim zili */}
+          {user && (
+            <Link href="/bildirimler" style={{ position:'relative', display:'flex', alignItems:'center', justifyContent:'center', width:34, height:34, borderRadius:'50%', background:'#F5EDD8', textDecoration:'none' }}>
+              <span style={{ fontSize:16 }}>🔔</span>
+              {unreadCount > 0 && (
+                <span style={{
+                  position:'absolute', top:-2, right:-2,
+                  background:'#E8622A', color:'white',
+                  fontSize:9, fontWeight:700,
+                  width:16, height:16, borderRadius:'50%',
+                  display:'flex', alignItems:'center', justifyContent:'center',
+                }}>
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
+            </Link>
+          )}
+
           {user ? (
             <div style={{ display:'flex', alignItems:'center', gap:10 }}>
               <div style={{ width:34, height:34, borderRadius:'50%', background:'#E8622A', display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontSize:14, fontWeight:700 }}>
@@ -77,16 +108,16 @@ export function PublicNavbar() {
                 {user.full_name}
               </span>
               <button onClick={handleLogout} style={{ padding:'6px 12px', fontSize:12, fontWeight:600, color:'#8A7B6B', border:'1.5px solid #E8E0D4', borderRadius:8, background:'white', cursor:'pointer', fontFamily:'inherit' }}>
-                Çıkış
+                Cikis
               </button>
             </div>
           ) : (
             <>
               <Link href="/giris" style={{ padding:'7px 14px', fontSize:12, fontWeight:600, color:'#4A2C0E', border:'1.5px solid #E8E0D4', borderRadius:8, textDecoration:'none' }}>
-                Giriş Yap
+                Giris Yap
               </Link>
               <Link href="/kayit" style={{ padding:'7px 14px', fontSize:12, fontWeight:700, color:'white', background:'#E8622A', borderRadius:8, textDecoration:'none' }}>
-                ✨ Kayıt Ol
+                Kayit Ol
               </Link>
             </>
           )}
