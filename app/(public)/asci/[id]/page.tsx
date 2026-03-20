@@ -294,7 +294,7 @@ export default function AsciProfilPage({ params }: { params: { id: string } }) {
           <button
             type="button"
             onClick={() => {
-              const url = `https://www.anneelim.com/asci/${data.profile.id}`
+              const url = `https://www.anneelim.com/asci/${params.id}`
               const text = `ğ½ï¸ ${user.full_name}'in ev yemeklerini denediniz mi?\n\n${data.profile.bio ?? 'Taze, sicak ev yemekleri!'}\nğ ${data.profile.location_approx}\n\nSiparis icin: ${url}\n\n#anneelim #evyemekleri #evyapimi`
               if (navigator.share) {
                 navigator.share({ title: user.full_name + " - Anneelim", text, url })
