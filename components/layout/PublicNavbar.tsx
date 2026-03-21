@@ -13,6 +13,7 @@ const CartButton = dynamic(
 const NAV_LINKS = [
   { href: '/kesif',        label: 'Keşfet'       },
   { href: '/ara',          label: 'Yemek Ara'    },
+  { href: '/asci-ol',      label: 'Aşçı Ol 🍳'  },
   { href: '/siparislerim', label: 'Siparişlerim' },
   { href: '/mesajlar',     label: 'Mesajlar'     },
   { href: '/favorilerim',  label: 'Favoriler'    },
