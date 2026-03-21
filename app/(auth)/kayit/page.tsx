@@ -37,9 +37,21 @@ export default function KayitPage() {
           phone: data.user.id.slice(0, 10),
           role: form.role,
         }, { onConflict: 'id' })
+
+        if (form.role === 'chef') {
+          await supabase.from('chef_profiles').upsert({
+            user_id: data.user.id,
+            verification_status: 'pending',
+            pending_approval: true,
+            total_orders: 0,
+            avg_rating: 0,
+            delivery_radius_km: 5,
+            delivery_types: ['delivery'],
+          }, { onConflict: 'user_id' })
+        }
       }
 
-      window.location.href = form.role === 'chef' ? '/dashboard' : '/'
+      window.location.href = form.role === 'chef' ? '/giris/onboarding' : '/'
     } catch {
       setError('Baglanti hatasi.')
     } finally {
@@ -84,9 +96,10 @@ export default function KayitPage() {
           <div style={{ marginBottom:20 }}>
             <label style={{ fontSize:12, fontWeight:600, color:'#7A4A20', display:'block', marginBottom:8 }}>Hesap Turu *</label>
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
-              {[['buyer','Alici','Siparis ver'],['chef','Asci','Satis yap']].map(([r,title,desc]) => (
+              {[['buyer','🛒 Alıcı','Siparis ver'],['chef','👩‍🍳 Aşçı','Satis yap']].map(([r,title,desc]) => (
                 <button key={r} type="button" onClick={() => setForm(p => ({...p, role: r}))} style={{
-                  padding:'14px 12px', borderRadius:12, border: `2px solid ${form.role === r ? '#E8622A' : '#E8E0D4'}`,
+                  padding:'14px 12px', borderRadius:12,
+                  border: `2px solid ${form.role === r ? '#E8622A' : '#E8E0D4'}`,
                   background: form.role === r ? '#FEF3EC' : 'white',
                   cursor:'pointer', textAlign:'center', fontFamily:'inherit',
                 }}>
