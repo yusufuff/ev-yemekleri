@@ -10,7 +10,8 @@ import type { User } from '@/types/database'
 
 const NAV_PUBLIC = [
   { href: '/',             icon: '🏠', label: 'Ana Sayfa' },
-  { href: '/kesif',        icon: '🔍', label: 'Keşfet' },
+  { href: '/kesif',        icon: '🗺️', label: 'Keşfet' },
+  { href: '/ara',          icon: '🔍', label: 'Yemek Ara' },
   { href: '/blog',         icon: '🍽️', label: 'Blog & Tarifler' },
   { href: '/kurumsal',     icon: '🏢', label: 'Kurumsal' },
   { href: '/indir',        icon: '📱', label: 'Uygulamayı İndir' },

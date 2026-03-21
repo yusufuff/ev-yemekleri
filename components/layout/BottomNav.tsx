@@ -3,11 +3,11 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
 const NAV_ITEMS = [
-  { href: '/',           icon: '🏠', label: 'Ana Sayfa' },
-  { href: '/kesif',      icon: '🔍', label: 'Keşfet' },
+  { href: '/',             icon: '🏠', label: 'Ana Sayfa' },
+  { href: '/kesif',        icon: '🗺️', label: 'Keşfet' },
+  { href: '/ara',          icon: '🔍', label: 'Ara' },
   { href: '/siparislerim', icon: '📦', label: 'Siparişler' },
-  { href: '/mesajlar',   icon: '💬', label: 'Mesajlar' },
-  { href: '/profil',     icon: '👤', label: 'Profil' },
+  { href: '/profil',       icon: '👤', label: 'Profil' },
 ]
 
 export function BottomNav() {
