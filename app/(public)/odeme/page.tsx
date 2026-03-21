@@ -38,7 +38,7 @@ export default function OdemePage() {
   const chefName = items[0]?.chef_name ?? 'Aşçı'
 
   const handleOrder = async () => {
-    git add . ; git commit -m "fix: debug log kaldirildi" ; git push
+    
     if (deliveryType === 'delivery' && !address.trim()) {
       alert('Lütfen teslimat adresinizi girin.')
       return
