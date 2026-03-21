@@ -55,20 +55,17 @@ export async function middleware(request: NextRequest) {
   const isChefOnly = CHEF_ONLY_ROUTES.some(route => pathname.startsWith(route))
   const isAuthRoute = AUTH_ROUTES.some(route => pathname.startsWith(route))
 
-  // Giris yapmamis kullanici korunan sayfaya girmeye calisirsa
   if (isProtected && !user) {
     const redirectUrl = new URL('/giris', request.url)
     redirectUrl.searchParams.set('redirect', pathname)
     return NextResponse.redirect(redirectUrl)
   }
 
-  // Giris yapmis kullanici giris/kayit sayfasına girmeye calisirsa
   if (isAuthRoute && user) {
     const role = user.user_metadata?.role
     return NextResponse.redirect(new URL(role === 'chef' ? '/dashboard' : '/', request.url))
   }
 
-  // Asci olmayan kullanici asci sayfasina girmeye calisirsa
   if (isChefOnly && user) {
     const role = user.user_metadata?.role
     if (role !== 'chef') {
