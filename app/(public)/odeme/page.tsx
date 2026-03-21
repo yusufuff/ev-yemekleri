@@ -51,7 +51,7 @@ export default function OdemePage() {
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          chef_id: items[0]?.chef_id,
+          chef_id: items[0]?.chef_id ?? cartChefId,
           chef_name: chefName,
           delivery_type: deliveryType,
           address,
