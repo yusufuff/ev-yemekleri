@@ -2,6 +2,10 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
+interface BottomNavProps {
+  role?: 'buyer' | 'chef' | 'admin' | null
+}
+
 const NAV_ITEMS = [
   { href: '/',             icon: '🏠', label: 'Ana Sayfa' },
   { href: '/kesif',        icon: '🗺️', label: 'Keşfet' },
@@ -10,7 +14,7 @@ const NAV_ITEMS = [
   { href: '/profil',       icon: '👤', label: 'Profil' },
 ]
 
-export function BottomNav() {
+export function BottomNav({ role }: BottomNavProps) {
   const pathname = usePathname()
 
   const hidden = ['/giris', '/kayit', '/admin', '/dashboard', '/menu'].some(p => pathname?.startsWith(p))
