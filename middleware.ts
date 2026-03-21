@@ -1,7 +1,31 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
+const PROTECTED_ROUTES = [
+  '/siparislerim',
+  '/favorilerim',
+  '/adreslerim',
+  '/profil',
+  '/odeme',
+  '/bildirimler',
+  '/mesajlar',
+  '/dashboard',
+  '/kazanc',
+]
+
+const CHEF_ONLY_ROUTES = [
+  '/dashboard',
+  '/kazanc',
+]
+
+const AUTH_ROUTES = [
+  '/giris',
+  '/kayit',
+]
+
 export async function middleware(request: NextRequest) {
+  const pathname = request.nextUrl.pathname
+
   let supabaseResponse = NextResponse.next({ request })
 
   const supabase = createServerClient(
@@ -25,8 +49,29 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  // Session refresh - bu satir olmadan server-side getUser() calismaz
-  await supabase.auth.getUser()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  const isProtected = PROTECTED_ROUTES.some(route => pathname.startsWith(route))
+  const isChefOnly = CHEF_ONLY_ROUTES.some(route => pathname.startsWith(route))
+  const isAuthRoute = AUTH_ROUTES.some(route => pathname.startsWith(route))
+
+  if (isProtected && !user) {
+    const redirectUrl = new URL('/giris', request.url)
+    redirectUrl.searchParams.set('redirect', pathname)
+    return NextResponse.redirect(redirectUrl)
+  }
+
+  if (isAuthRoute && user) {
+    const role = user.user_metadata?.role
+    return NextResponse.redirect(new URL(role === 'chef' ? '/dashboard' : '/', request.url))
+  }
+
+  if (isChefOnly && user) {
+    const role = user.user_metadata?.role
+    if (role !== 'chef') {
+      return NextResponse.redirect(new URL('/', request.url))
+    }
+  }
 
   return supabaseResponse
 }
