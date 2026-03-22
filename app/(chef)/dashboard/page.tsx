@@ -25,14 +25,13 @@ export default function DashboardPage() {
   }, [])
 
   const updateOrderStatus = async (orderId: string, status: string) => {
-    if (orderId.startsWith('ord-p')) return // Mock veri - işlem yapma
+    if (orderId.startsWith('ord-p')) return
     try {
       await fetch(`/api/chef/orders/${orderId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status }),
       })
-      // Veriyi yenile
       const res = await fetch('/api/chef/dashboard')
       const d = await res.json()
       setData(d)
@@ -59,7 +58,7 @@ export default function DashboardPage() {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
           <div>
             <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: 26, fontWeight: 900, color: '#4A2C0E', margin: 0 }}>Aşçı Paneli</h1>
-            <p style={{ color: '#8A7B6B', fontSize: 13, margin: '4px 0 0' }}>Merhaba, Fatma Hanım 👋</p>
+            <p style={{ color: '#8A7B6B', fontSize: 13, margin: '4px 0 0' }}>Merhaba 👋</p>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <span style={{ fontSize: 13, fontWeight: 600, color: isOpen ? '#3D6B47' : '#8A7B6B' }}>
@@ -79,11 +78,12 @@ export default function DashboardPage() {
         </div>
 
         {/* Stats */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16, marginBottom: 24 }}>
           <StatCard label="Bekleyen Sipariş" value={String(data?.pending_orders?.length ?? 0)} icon="🛒" color="#E8622A" />
           <StatCard label="Bugünkü Kazanç" value={`₺${stats.today_earnings ?? 0}`} icon="💰" color="#3D6B47" />
           <StatCard label="Tamamlanan" value={String(stats.today_orders ?? 0)} icon="🍳" color="#4A2C0E" />
           <StatCard label="Puan Ortalaması" value={String(stats.avg_rating ?? '—')} icon="⭐" color="#3B82F6" />
+          <StatCard label="Profil Görüntülenme" value={String(stats.profile_views ?? 0)} icon="👁️" color="#8B5CF6" />
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
@@ -98,7 +98,7 @@ export default function DashboardPage() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: 8 }}>
                   <div>
                     <div style={{ fontSize: 11, color: '#8A7B6B' }}>#{order.id}</div>
-                    <div style={{ fontWeight: 700, fontSize: 14, color: '#4A2C0E' }}>{order.buyer_name} · {order.distance_km} km</div>
+                    <div style={{ fontWeight: 700, fontSize: 14, color: '#4A2C0E' }}>{order.buyer_name}</div>
                     <div style={{ fontSize: 12, color: '#8A7B6B', marginTop: 2 }}>
                       {order.items.map((i: any) => `${i.name} ×${i.quantity}`).join(', ')}
                     </div>
@@ -113,7 +113,6 @@ export default function DashboardPage() {
               </div>
             ))}
 
-            {/* Aktif Siparişler */}
             {(data?.active_orders ?? []).length > 0 && (
               <>
                 <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 700, color: '#4A2C0E', margin: '20px 0 14px' }}>Aktif Siparişler</h2>
@@ -135,7 +134,7 @@ export default function DashboardPage() {
             )}
           </div>
 
-          {/* Stok + Hızlı Linkler */}
+          {/* Stok + Grafik */}
           <div>
             <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 700, color: '#4A2C0E', marginBottom: 14 }}>Stok Durumu</h2>
             <div style={{ background: 'white', borderRadius: 14, padding: 20, boxShadow: '0 2px 12px rgba(74,44,14,0.08)', marginBottom: 20 }}>
@@ -159,7 +158,6 @@ export default function DashboardPage() {
               </Link>
             </div>
 
-            {/* Haftalık Kazanç Grafiği */}
             <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 700, color: '#4A2C0E', marginBottom: 14 }}>Haftalık Kazanç</h2>
             <div style={{ background: 'white', borderRadius: 14, padding: 20, boxShadow: '0 2px 12px rgba(74,44,14,0.08)' }}>
               <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, height: 120, marginBottom: 8 }}>
