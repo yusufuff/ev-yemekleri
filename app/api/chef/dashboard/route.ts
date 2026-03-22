@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
     // Chef profile bul
     const { data: cp } = await supabase
       .from('chef_profiles')
-      .select('id, is_open, avg_rating, total_orders')
+      .select('id, is_open, avg_rating, total_orders, profile_views')
       .eq('user_id', user.id)
       .single()
 
