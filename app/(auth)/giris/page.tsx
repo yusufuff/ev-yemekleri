@@ -24,7 +24,20 @@ export default function GirisPage() {
         setError('E-posta veya sifre hatali.')
         return
       }
-      const role = data.user?.user_metadata?.role
+
+      // Önce user_metadata'dan rol al
+      let role = data.user?.user_metadata?.role
+
+      // Yoksa DB'den çek
+      if (!role) {
+        const { data: profile } = await supabase
+          .from('users')
+          .select('role')
+          .eq('id', data.user.id)
+          .single()
+        role = profile?.role
+      }
+
       window.location.href = role === 'chef' ? '/dashboard' : role === 'admin' ? '/admin' : '/'
     } catch {
       setError('Baglanti hatasi.')
