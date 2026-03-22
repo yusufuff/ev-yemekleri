@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { getSupabaseBrowserClient } from '@/lib/supabase/client'
+import { DeliveryMap } from '@/components/orders/DeliveryMap'
 
 const STATUS_META: Record<string, { label: string; color: string; bg: string; step: number }> = {
   pending:    { label: 'Onay Bekleniyor', color: '#E8622A', bg: '#FEF3EC', step: 0 },
@@ -167,6 +168,15 @@ export default function SiparislerimPage() {
                         <span style={{ fontSize:12, color:'#8A7B6B' }}>{order.delivery_type === 'delivery' ? '🛵 Teslimat' : '🚶 Gel-Al'}</span>
                         <span style={{ fontFamily:"'Playfair Display',serif", fontSize:18, fontWeight:700, color:'#E8622A' }}>₺{order.total_amount}</span>
                       </div>
+                      {/* Canlı teslimat haritası */}
+{order.status === 'on_way' && (
+  <DeliveryMap
+    etaMin={15}
+    etaMax={25}
+    deliveryAddress={order.delivery_address ?? undefined}
+    chefName={order.chef_name ?? undefined}
+  />
+)}
                       {isActive && order.status !== 'cancelled' && (
                         <div style={{ marginTop:14 }}>
                           <div style={{ display:'flex', justifyContent:'space-between', marginBottom:6 }}>
