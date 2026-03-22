@@ -35,7 +35,7 @@ export default function GirisPage() {
           .select('role')
           .eq('id', data.user.id)
           .single()
-        role = profile?.role
+        role = profile?.role ?? undefined
       }
 
       window.location.href = role === 'chef' ? '/dashboard' : role === 'admin' ? '/admin' : '/'
