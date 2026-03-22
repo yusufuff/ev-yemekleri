@@ -174,7 +174,7 @@ export default function SiparislerimPage() {
     etaMin={15}
     etaMax={25}
     deliveryAddress={order.delivery_address ?? undefined}
-    chefName={order.chef_name ?? undefined}
+    chefLocation={order.chef_name ?? undefined}
   />
 )}
                       {isActive && order.status !== 'cancelled' && (
