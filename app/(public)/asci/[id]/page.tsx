@@ -1,6 +1,6 @@
 'use client'
 
-import { use, useState } from 'react'
+import { use, useState, useEffect } from 'react'
 import Link from 'next/link'
 import {
   useChefProfile,
@@ -236,6 +236,11 @@ function ReviewCard({ review }: { review: any }) {
 // ─── Ana sayfa ────────────────────────────────────────────────────────────────
 
 export default function AsciProfilPage({ params }: { params: { id: string } }) {
+  // Profil görüntülenme sayacı
+  useEffect(() => {
+    fetch(`/api/chefs/${params.id}/view`, { method: 'POST' }).catch(() => {})
+  }, [params.id])
+
   const {
     data, loading, error,
     reviewPage, setReviewPage,
