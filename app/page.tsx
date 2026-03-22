@@ -143,7 +143,7 @@ export default async function HomePage() {
         <div style={{ maxWidth: '1152px', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
           <div style={{ fontFamily: "'Playfair Display', serif", fontWeight: 900, fontSize: '18px', color: 'white' }}>EV YEMEKLERİ</div>
           <div style={{ display: 'flex', gap: '24px' }}>
-            {[['Keşfet', '/kesif'], ['Yemek Ara', '/ara'], ['Aşçı Ol', '/asci-ol'], ['Hakkımızda', '/hakkimizda'], ['SSS', '/sss'], ['KVKK', '/kvkk'], ['Kullanım Koşulları', '/kullanim-kosullari']].map(([label, href]) => (
+            {[['Keşfet', '/kesif'], ['Yemek Ara', '/ara'], ['Blog', '/blog'], ['Aşçı Ol', '/asci-ol'], ['Hakkımızda', '/hakkimizda'], ['SSS', '/sss'], ['KVKK', '/kvkk'], ['Kullanım Koşulları', '/kullanim-kosullari']].map(([label, href]) => (
               <Link key={href} href={href} style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px', textDecoration: 'none' }}>{label}</Link>
             ))}
           </div>
