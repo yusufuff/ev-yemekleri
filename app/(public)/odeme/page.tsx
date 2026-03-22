@@ -12,14 +12,17 @@ export default function OdemePage() {
   const summary = rawSummary ?? { subtotal: 0, delivery_fee: 0, discount: 0, total: 0 }
 
   const [deliveryType, setDeliveryType] = useState<'delivery' | 'pickup'>('delivery')
-  const [address, setAddress] = useState('')
-  const [note, setNote] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [coupon, setCoupon] = useState('')
+  const [address, setAddress]           = useState('')
+  const [note, setNote]                 = useState('')
+  const [loading, setLoading]           = useState(false)
+  const [coupon, setCoupon]             = useState('')
   const [couponApplied, setCouponApplied] = useState(false)
-  const [couponError, setCouponError] = useState('')
-  const discount = couponApplied ? Math.floor((summary.total || summary.subtotal) * 0.1) : 0
-  const [step, setStep] = useState<1 | 2>(1)
+  const [couponError, setCouponError]   = useState('')
+  const [couponLoading, setCouponLoading] = useState(false)
+  const [appliedCoupon, setAppliedCoupon] = useState<any>(null)
+  const [step, setStep]                 = useState<1 | 2>(1)
+
+  const discount = couponApplied && appliedCoupon ? appliedCoupon.discount_amount ?? 0 : 0
 
   if (items.length === 0) {
     return (
@@ -38,7 +41,6 @@ export default function OdemePage() {
   const chefName = items[0]?.chef_name ?? 'Aşçı'
 
   const handleOrder = async () => {
-    
     if (deliveryType === 'delivery' && !address.trim()) {
       alert('Lütfen teslimat adresinizi girin.')
       return
@@ -50,26 +52,49 @@ export default function OdemePage() {
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          chef_id: items[0]?.chef_id ?? cartChefId,
-          chef_name: chefName,
-          delivery_type: deliveryType,
+          chef_id:         items[0]?.chef_id,
+          chef_name:       chefName,
+          delivery_type:   deliveryType,
           address,
           note,
-          total_amount: summary.total || summary.subtotal,
-          items: items.map(i => ({ name: i.name, quantity: i.quantity, price: i.price })),
+          total_amount:    Math.max(0, (summary.total || summary.subtotal) - discount),
+          discount_amount: discount,
+          coupon_code:     appliedCoupon?.code,
+          items:           items.map(i => ({ name: i.name, quantity: i.quantity, price: i.price })),
         }),
       })
       const data = await res.json()
-      if (!res.ok) {
-        alert(data.error ?? 'Bir hata olustu.')
-        return
-      }
+      if (!res.ok) { alert(data.error ?? 'Bir hata olustu.'); return }
       clear()
       window.location.href = '/siparis-basari?order_id=' + data.order.id
     } catch {
       alert('Bir hata olustu, tekrar deneyin.')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleCoupon = async () => {
+    if (!coupon.trim()) return
+    setCouponLoading(true)
+    setCouponError('')
+    try {
+      const res = await fetch('/api/orders/coupon', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: coupon.trim(), subtotal: summary.subtotal }),
+      })
+      const data = await res.json()
+      if (data.valid) {
+        setAppliedCoupon({ ...data, code: coupon.trim() })
+        setCouponApplied(true)
+      } else {
+        setCouponError(data.error ?? 'Geçersiz kupon kodu')
+      }
+    } catch {
+      setCouponError('Bağlantı hatası')
+    } finally {
+      setCouponLoading(false)
     }
   }
 
@@ -92,6 +117,7 @@ export default function OdemePage() {
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
+          {/* Sipariş özeti */}
           <div style={{ background: 'white', borderRadius: 16, padding: 20, boxShadow: '0 2px 12px rgba(74,44,14,0.08)' }}>
             <div style={{ fontWeight: 700, fontSize: 15, color: '#4A2C0E', marginBottom: 12 }}>👩‍🍳 {chefName}</div>
             {items.map(item => (
@@ -100,16 +126,23 @@ export default function OdemePage() {
                 <span style={{ fontWeight: 600 }}>₺{(item.price * item.quantity).toFixed(0)}</span>
               </div>
             ))}
+            {discount > 0 && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#3D6B47', padding: '6px 0', fontWeight: 600 }}>
+                <span>🏷 Kupon indirimi</span>
+                <span>-₺{discount.toFixed(0)}</span>
+              </div>
+            )}
             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 12, fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 700, color: '#E8622A' }}>
               <span>Toplam</span>
               <span>₺{Math.max(0, (summary.total || summary.subtotal) - discount).toFixed(0)}</span>
             </div>
           </div>
 
+          {/* Teslimat */}
           <div style={{ background: 'white', borderRadius: 16, padding: 20, boxShadow: '0 2px 12px rgba(74,44,14,0.08)' }}>
             <div style={{ fontWeight: 700, fontSize: 15, color: '#4A2C0E', marginBottom: 14 }}>Teslimat Yöntemi</div>
             <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
-              {[['delivery', '🚵', 'Teslimat'], ['pickup', '🚶', 'Gel-Al']].map(([val, icon, label]) => (
+              {[['delivery', '🛵', 'Teslimat'], ['pickup', '🚶', 'Gel-Al']].map(([val, icon, label]) => (
                 <button key={val} onClick={() => setDeliveryType(val as any)} style={{
                   flex: 1, padding: '12px 8px', borderRadius: 10, cursor: 'pointer',
                   border: `2px solid ${deliveryType === val ? '#E8622A' : '#E8E0D4'}`,
@@ -121,54 +154,47 @@ export default function OdemePage() {
                 </button>
               ))}
             </div>
-
             {deliveryType === 'delivery' && (
               <div style={{ marginBottom: 12 }}>
                 <label style={{ fontSize: 12, fontWeight: 600, color: '#7A4A20', display: 'block', marginBottom: 6 }}>Teslimat Adresi *</label>
-                <textarea
-                  value={address}
-                  onChange={e => setAddress(e.target.value)}
-                  placeholder="Mahalle, cadde, sokak, bina no, daire…"
-                  rows={3}
-                  style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #E8E0D4', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', resize: 'none', boxSizing: 'border-box' }}
-                />
+                <textarea value={address} onChange={e => setAddress(e.target.value)}
+                  placeholder="Mahalle, cadde, sokak, bina no, daire…" rows={3}
+                  style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #E8E0D4', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', resize: 'none', boxSizing: 'border-box' }} />
               </div>
             )}
-
             <div>
               <label style={{ fontSize: 12, fontWeight: 600, color: '#7A4A20', display: 'block', marginBottom: 6 }}>Sipariş Notu (opsiyonel)</label>
-              <input
-                value={note}
-                onChange={e => setNote(e.target.value)}
-                placeholder="Örn: Az acılı olsun"
-                style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #E8E0D4', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', boxSizing: 'border-box' }}
-              />
+              <input value={note} onChange={e => setNote(e.target.value)} placeholder="Örn: Az acılı olsun"
+                style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #E8E0D4', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', boxSizing: 'border-box' }} />
             </div>
           </div>
 
-          <div style={{ background:'white', borderRadius:16, padding:20, boxShadow:'0 2px 12px rgba(74,44,14,0.08)' }}>
-            <div style={{ fontWeight:700, fontSize:15, color:'#4A2C0E', marginBottom:12 }}>🏷 Kupon Kodu</div>
+          {/* Kupon */}
+          <div style={{ background: 'white', borderRadius: 16, padding: 20, boxShadow: '0 2px 12px rgba(74,44,14,0.08)' }}>
+            <div style={{ fontWeight: 700, fontSize: 15, color: '#4A2C0E', marginBottom: 12 }}>🏷 Kupon Kodu</div>
             {couponApplied ? (
-              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', background:'#ECFDF5', borderRadius:8, padding:'10px 14px' }}>
-                <span style={{ color:'#3D6B47', fontWeight:700, fontSize:13 }}>✅ "DEMO10" — %10 indirim uygulandı!</span>
-                <button onClick={() => { setCouponApplied(false); setCoupon('') }} style={{ background:'none', border:'none', cursor:'pointer', color:'#DC2626', fontSize:18 }}>✕</button>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#ECFDF5', borderRadius: 8, padding: '10px 14px' }}>
+                <span style={{ color: '#3D6B47', fontWeight: 700, fontSize: 13 }}>
+                  ✅ "{appliedCoupon.code}" — {appliedCoupon.discount_type === 'percentage' ? `%${appliedCoupon.discount_value}` : `₺${appliedCoupon.discount_value}`} indirim uygulandı! (-₺{discount.toFixed(0)})
+                </span>
+                <button onClick={() => { setCouponApplied(false); setAppliedCoupon(null); setCoupon(''); setCouponError('') }}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#DC2626', fontSize: 18 }}>✕</button>
               </div>
             ) : (
-              <div style={{ display:'flex', gap:10 }}>
+              <div style={{ display: 'flex', gap: 10 }}>
                 <input value={coupon} onChange={e => { setCoupon(e.target.value.toUpperCase()); setCouponError('') }}
                   placeholder="Kupon kodunuzu girin"
-                  style={{ flex:1, padding:'10px 14px', border:'1.5px solid #E8E0D4', borderRadius:8, fontSize:13, fontFamily:'inherit' }} />
-                <button onClick={() => {
-                  if (coupon === 'DEMO10') { setCouponApplied(true); setCouponError('') }
-                  else setCouponError('Geçersiz kupon kodu')
-                }} style={{ padding:'10px 16px', background:'#E8622A', color:'white', border:'none', borderRadius:8, fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>
-                  Uygula
+                  style={{ flex: 1, padding: '10px 14px', border: '1.5px solid #E8E0D4', borderRadius: 8, fontSize: 13, fontFamily: 'inherit' }} />
+                <button onClick={handleCoupon} disabled={couponLoading}
+                  style={{ padding: '10px 16px', background: couponLoading ? '#F28B5E' : '#E8622A', color: 'white', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: couponLoading ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}>
+                  {couponLoading ? '⏳' : 'Uygula'}
                 </button>
               </div>
             )}
-            {couponError && <div style={{ fontSize:12, color:'#DC2626', marginTop:6 }}>{couponError}</div>}
+            {couponError && <div style={{ fontSize: 12, color: '#DC2626', marginTop: 6 }}>{couponError}</div>}
           </div>
 
+          {/* Ödeme */}
           <div style={{ background: 'white', borderRadius: 16, padding: 20, boxShadow: '0 2px 12px rgba(74,44,14,0.08)' }}>
             <div style={{ fontWeight: 700, fontSize: 15, color: '#4A2C0E', marginBottom: 14 }}>Ödeme Yöntemi</div>
             <div style={{ background: '#F5EDD8', borderRadius: 10, padding: '12px 14px', border: '2px solid #E8622A', fontSize: 13, color: '#4A2C0E', marginBottom: 14 }}>
@@ -184,17 +210,14 @@ export default function OdemePage() {
             </div>
           </div>
 
-          <button
-            onClick={handleOrder}
-            disabled={loading}
-            style={{
-              width: '100%', padding: '16px 0', background: loading ? '#F28B5E' : '#E8622A',
-              color: 'white', border: 'none', borderRadius: 14, fontSize: 16, fontWeight: 700,
-              cursor: loading ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
-            }}
-          >
-            {loading ? '⏳ İşleniyor…' : `🛒 Siparişi Onayla — ₺${(summary.total || summary.subtotal).toFixed(0)}`}
+          <button onClick={handleOrder} disabled={loading} style={{
+            width: '100%', padding: '16px 0', background: loading ? '#F28B5E' : '#E8622A',
+            color: 'white', border: 'none', borderRadius: 14, fontSize: 16, fontWeight: 700,
+            cursor: loading ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
+          }}>
+            {loading ? '⏳ İşleniyor…' : `🛒 Siparişi Onayla — ₺${Math.max(0, (summary.total || summary.subtotal) - discount).toFixed(0)}`}
           </button>
+
         </div>
       </div>
     </div>

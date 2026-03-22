@@ -50,10 +50,13 @@ export async function POST(request: NextRequest) {
       chef_id: body.chef_id,
       status: 'pending',
       delivery_type: body.delivery_type ?? 'delivery',
-      subtotal: body.total_amount,
+      subtotal: body.total_amount + (body.discount_amount || 0),
+      delivery_fee: 0, // assuming no delivery fee for now
+      discount_amount: body.discount_amount || 0,
       total_amount: body.total_amount,
       platform_fee: Math.round(body.total_amount * 0.10),
       chef_earning: Math.round(body.total_amount * 0.90),
+      coupon_code: body.coupon_code,
       delivery_address: body.address ? { full_address: body.address } : null,
       notes: body.note,
     })
