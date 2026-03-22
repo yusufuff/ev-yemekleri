@@ -20,7 +20,7 @@ const PUBLIC_LINKS = [
 ]
 
 // Sadece giriş yapınca
-const AUTH_LINKS = [
+const AUTH_LINKS = [{ href: '/davet', label: '🎁 Davet Et', roles: ['buyer','chef','admin'] },
   { href: '/siparislerim', label: 'Siparişlerim', roles: ['buyer','chef','admin'] },
   { href: '/mesajlar',     label: 'Mesajlar',     roles: ['buyer','chef','admin'] },
   { href: '/favorilerim',  label: 'Favoriler',    roles: ['buyer','admin']        },
