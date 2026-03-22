@@ -10,23 +10,20 @@ const CartButton = dynamic(
   { ssr: false }
 )
 
-const NAV_LINKS = [
-  { href: '/kesif',        label: 'Keşfet'       },
-  { href: '/ara',          label: 'Yemek Ara'    },
-  { href: '/asci-ol',      label: 'Aşçı Ol 🍳'  },
-  { href: '/siparislerim', label: 'Siparişlerim' },
-  { href: '/mesajlar',     label: 'Mesajlar'     },
-  { href: '/favorilerim',  label: 'Favoriler'    },
-  { href: '/dashboard',    label: 'Panel'        },
-  { href: '/profil',       label: 'Profil'       },
+// Herkese açık
+const PUBLIC_LINKS = [
+  { href: '/kesif',   label: 'Keşfet'      },
+  { href: '/ara',     label: 'Yemek Ara'   },
+  { href: '/asci-ol', label: 'Aşçı Ol 🍳' },
 ]
 
-const MOBILE_NAV = [
-  { href: '/',             icon: '🏠', label: 'Ana Sayfa'  },
-  { href: '/kesif',        icon: '🗺️', label: 'Keşfet'    },
-  { href: '/ara',          icon: '🔍', label: 'Ara'        },
-  { href: '/siparislerim', icon: '📦', label: 'Siparişler' },
-  { href: '/profil',       icon: '👤', label: 'Profil'     },
+// Sadece giriş yapınca
+const AUTH_LINKS = [
+  { href: '/siparislerim', label: 'Siparişlerim', roles: ['buyer','chef','admin'] },
+  { href: '/mesajlar',     label: 'Mesajlar',     roles: ['buyer','chef','admin'] },
+  { href: '/favorilerim',  label: 'Favoriler',    roles: ['buyer','admin']        },
+  { href: '/dashboard',    label: 'Panel',        roles: ['chef','admin']         },
+  { href: '/profil',       label: 'Profil',       roles: ['buyer','chef','admin'] },
 ]
 
 const HIDDEN_PATHS = ['/giris', '/kayit', '/admin']
@@ -35,14 +32,24 @@ export function PublicNavbar() {
   const pathname = usePathname()
   const hidden = HIDDEN_PATHS.some(p => pathname?.startsWith(p))
   const [user, setUser] = useState<{full_name?: string; role?: string} | null>(null)
+  const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
-    if (hidden) return
+    if (hidden) { setLoaded(true); return }
     const supabase = getSupabaseBrowserClient()
     supabase.auth.getUser().then(({ data }) => {
       if (data?.user) {
         const meta = data.user.user_metadata
-        setUser({ full_name: meta?.full_name || data.user.email?.split('@')[0], role: meta?.role })
+        // DB'den rol al
+        supabase.from('users').select('role').eq('id', data.user.id).single().then(({ data: profile }) => {
+          setUser({
+            full_name: meta?.full_name || data.user.email?.split('@')[0],
+            role: profile?.role ?? meta?.role,
+          })
+          setLoaded(true)
+        })
+      } else {
+        setLoaded(true)
       }
     })
   }, [hidden])
@@ -55,6 +62,32 @@ export function PublicNavbar() {
 
   if (hidden) return null
 
+  // Gösterilecek desktop linkleri
+  const visibleLinks = [
+    ...PUBLIC_LINKS,
+    ...(user
+      ? AUTH_LINKS.filter(l => l.roles.includes(user.role ?? 'buyer'))
+      : []
+    ),
+  ]
+
+  // Mobil alt nav
+  const mobileNav = [
+    { href: '/',             icon: '🏠', label: 'Ana Sayfa', auth: false },
+    { href: '/kesif',        icon: '🗺️', label: 'Keşfet',   auth: false },
+    { href: '/ara',          icon: '🔍', label: 'Ara',       auth: false },
+    ...(user
+      ? [
+          { href: '/siparislerim', icon: '📦', label: 'Siparişler', auth: true },
+          { href: '/profil',       icon: '👤', label: 'Profil',     auth: true },
+        ]
+      : [
+          { href: '/giris',  icon: '🔑', label: 'Giriş',  auth: false },
+          { href: '/kayit',  icon: '✨', label: 'Kayıt',  auth: false },
+        ]
+    ),
+  ]
+
   return (
     <>
       {/* ── Üst navbar (desktop) ── */}
@@ -66,7 +99,7 @@ export function PublicNavbar() {
 
           {/* Desktop linkler */}
           <div style={{ display:'flex', alignItems:'center', gap:20 }} className="hidden-mobile">
-            {NAV_LINKS.map(item => {
+            {visibleLinks.map(item => {
               const active = pathname?.startsWith(item.href)
               return (
                 <Link key={item.href} href={item.href} style={{
@@ -88,7 +121,8 @@ export function PublicNavbar() {
             }}>🔍</Link>
 
             <CartButton />
-            {user ? (
+
+            {loaded && (user ? (
               <div style={{ display:'flex', alignItems:'center', gap:10 }}>
                 <div style={{ width:34, height:34, borderRadius:'50%', background:'#E8622A', display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontSize:14, fontWeight:700 }}>
                   {user.full_name?.charAt(0).toUpperCase() ?? '?'}
@@ -109,7 +143,7 @@ export function PublicNavbar() {
                   ✨ Kayıt Ol
                 </Link>
               </>
-            )}
+            ))}
           </div>
         </div>
       </nav>
@@ -121,7 +155,7 @@ export function PublicNavbar() {
         display:'flex', alignItems:'center',
         paddingBottom:'env(safe-area-inset-bottom, 0px)',
       }} className="mobile-bottom-nav">
-        {MOBILE_NAV.map(item => {
+        {mobileNav.map(item => {
           const isActive = item.href === '/' ? pathname === '/' : pathname?.startsWith(item.href)
           return (
             <Link key={item.href} href={item.href} style={{
