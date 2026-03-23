@@ -153,9 +153,17 @@ export default function DashboardPage() {
                   </div>
                 )
               })}
-              <Link href="/menu" style={{ display: 'block', textAlign: 'center', marginTop: 14, padding: '8px 0', background: '#F5EDD8', color: '#4A2C0E', borderRadius: 8, textDecoration: 'none', fontSize: 12, fontWeight: 600, border: '1.5px solid #E8E0D4' }}>
-                📦 Stok Güncelle
-              </Link>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 14 }}>
+                <Link href="/menu" style={{ display: 'block', textAlign: 'center', padding: '8px 0', background: '#F5EDD8', color: '#4A2C0E', borderRadius: 8, textDecoration: 'none', fontSize: 12, fontWeight: 600, border: '1.5px solid #E8E0D4' }}>
+                  📦 Stok Güncelle
+                </Link>
+                <Link href="/asci-ayarlar" style={{ display: 'block', textAlign: 'center', padding: '8px 0', background: '#F5EDD8', color: '#4A2C0E', borderRadius: 8, textDecoration: 'none', fontSize: 12, fontWeight: 600, border: '1.5px solid #E8E0D4' }}>
+                  ⚙️ Profil Ayarları
+                </Link>
+                <Link href="/kazanc" style={{ display: 'block', textAlign: 'center', padding: '8px 0', background: '#F5EDD8', color: '#4A2C0E', borderRadius: 8, textDecoration: 'none', fontSize: 12, fontWeight: 600, border: '1.5px solid #E8E0D4' }}>
+                  💰 Kazanç & Ödeme
+                </Link>
+              </div>
             </div>
 
             <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 700, color: '#4A2C0E', marginBottom: 14 }}>Haftalık Kazanç</h2>
