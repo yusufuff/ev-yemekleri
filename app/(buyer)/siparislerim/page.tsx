@@ -1,8 +1,10 @@
 'use client'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { getSupabaseBrowserClient } from '@/lib/supabase/client'
 import { DeliveryMap } from '@/components/orders/DeliveryMap'
+import { useCart } from '@/hooks/useCart'
 
 const STATUS_META: Record<string, { label: string; color: string; bg: string; step: number }> = {
   pending:    { label: 'Onay Bekleniyor', color: '#E8622A', bg: '#FEF3EC', step: 0 },
@@ -73,6 +75,8 @@ function ReviewModal({ orderId, chefName, onClose }: { orderId: string; chefName
 }
 
 export default function SiparislerimPage() {
+  const router = useRouter()
+  const { addItem, clear: clearCart } = useCart()
   const [orders, setOrders] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState<'active' | 'past'>('active')
@@ -88,16 +92,31 @@ export default function SiparislerimPage() {
     }
   }
 
+  const handleReorder = (order: any) => {
+    clearCart()
+    order.items?.forEach((item: any) => {
+      addItem({
+        menu_item_id:    item.menu_item_id ?? item.id ?? String(Math.random()),
+        chef_id:         order.chef_id,
+        chef_name:       order.chef_name,
+        name:            item.name,
+        price:           item.price ?? item.unit_price ?? 0,
+        category:        item.category ?? 'main',
+        remaining_stock: null,
+        quantity:        item.quantity ?? 1,
+        photo:           undefined,
+      })
+    })
+    router.push('/odeme')
+  }
+
   const loadOrders = () => {
     fetch('/api/orders').then(r => r.json()).then(d => { setOrders(d.orders ?? []); setLoading(false) }).catch(() => setLoading(false))
   }
 
   useEffect(() => {
     loadOrders()
-    // 30sn polling fallback
     const interval = setInterval(loadOrders, 30000)
-
-    // Supabase Realtime
     const supabase = getSupabaseBrowserClient()
     const channel = supabase
       .channel('orders-changes')
@@ -105,7 +124,6 @@ export default function SiparislerimPage() {
         loadOrders()
       })
       .subscribe()
-
     return () => {
       clearInterval(interval)
       supabase.removeChannel(channel)
@@ -168,15 +186,16 @@ export default function SiparislerimPage() {
                         <span style={{ fontSize:12, color:'#8A7B6B' }}>{order.delivery_type === 'delivery' ? '🛵 Teslimat' : '🚶 Gel-Al'}</span>
                         <span style={{ fontFamily:"'Playfair Display',serif", fontSize:18, fontWeight:700, color:'#E8622A' }}>₺{order.total_amount}</span>
                       </div>
-                      {/* Canlı teslimat haritası */}
-{order.status === 'on_way' && (
-  <DeliveryMap
-    etaMin={15}
-    etaMax={25}
-    deliveryAddress={order.delivery_address ?? undefined}
-    chefLocation={order.chef_name ?? undefined}
-  />
-)}
+
+                      {order.status === 'on_way' && (
+                        <DeliveryMap
+                          etaMin={15}
+                          etaMax={25}
+                          deliveryAddress={order.delivery_address ?? undefined}
+                          chefLocation={order.chef_name ?? undefined}
+                        />
+                      )}
+
                       {isActive && order.status !== 'cancelled' && (
                         <div style={{ marginTop:14 }}>
                           <div style={{ display:'flex', justifyContent:'space-between', marginBottom:6 }}>
@@ -204,11 +223,13 @@ export default function SiparislerimPage() {
                           </div>
                         </div>
                       )}
+
                       {order.status === 'delivered' && (
                         <div style={{ display:'flex', gap:8, marginTop:10 }}>
-                          <Link href={'/asci/' + order.chef_id} style={{ flex:1, padding:'8px 0', background:'#E8622A', color:'white', borderRadius:8, fontSize:12, fontWeight:700, textAlign:'center', textDecoration:'none' }}>
-                            Tekrar Siparis
-                          </Link>
+                          <button onClick={() => handleReorder(order)}
+                            style={{ flex:1, padding:'8px 0', background:'#E8622A', color:'white', borderRadius:8, fontSize:12, fontWeight:700, border:'none', cursor:'pointer', fontFamily:'inherit' }}>
+                            🔄 Tekrar Siparis
+                          </button>
                           <button onClick={() => setReviewOrder({id: order.id, chef: order.chef_name})}
                             style={{ padding:'8px 14px', background:'#FEF3C7', border:'none', borderRadius:8, fontSize:12, fontWeight:600, cursor:'pointer', color:'#D97706' }}>
                             ⭐ Degerlendir
