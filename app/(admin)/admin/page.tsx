@@ -32,7 +32,14 @@ export default function AdminPage() {
       <nav style={{ background:'#4A2C0E', padding:'0 24px', height:56, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
         <div style={{ fontFamily:"'Playfair Display',serif", fontWeight:900, color:'white', fontSize:18 }}>EV YEMEKLERİ · Admin</div>
         <div style={{ display:'flex', gap:20 }}>
-          {[['Dashboard', '/admin'], ['Aşçılar', '/admin/asciler'], ['Kullanıcılar', '/admin/kullanicilar'], ['Siparişler', '/admin/siparisler'], ['Ödemeler', '/admin/odemeler']].map(([l, h]) => (
+          {[
+            ['Dashboard', '/admin'],
+            ['Aşçılar', '/admin/asciler'],
+            ['Kullanıcılar', '/admin/kullanicilar'],
+            ['Siparişler', '/admin/siparisler'],
+            ['Ödemeler', '/admin/odemeler'],
+            ['Üyelikler', '/admin/uyelikler'],
+          ].map(([l, h]) => (
             <Link key={h} href={h} style={{ color:'rgba(255,255,255,0.7)', fontSize:13, textDecoration:'none', fontWeight:500 }}>{l}</Link>
           ))}
         </div>
@@ -68,12 +75,13 @@ export default function AdminPage() {
           <div style={{ background:'white', borderRadius:16, padding:24, boxShadow:'0 2px 12px rgba(74,44,14,0.08)', display:'flex', flexDirection:'column', gap:12 }}>
             <div style={{ fontFamily:"'Playfair Display',serif", fontSize:17, fontWeight:700, color:'#4A2C0E', marginBottom:4 }}>Hızlı Erişim</div>
             {[
-              ['👩‍🍳', 'Aşçıları Yönet', '/admin/asciler', '#FEF3EC', '#E8622A'],
-              ['👥', 'Kullanıcılar', '/admin/kullanicilar', '#EFF6FF', '#3B82F6'],
-              ['📦', 'Siparişler', '/admin/siparisler', '#ECFDF5', '#3D6B47'],
-              ['💸', 'Ödemeler', '/admin/odemeler', '#FFFBEB', '#F59E0B'],
+              ['👩‍🍳', 'Aşçıları Yönet',  '/admin/asciler',    '#FEF3EC', '#E8622A'],
+              ['👥', 'Kullanıcılar',       '/admin/kullanicilar','#EFF6FF', '#3B82F6'],
+              ['📦', 'Siparişler',         '/admin/siparisler', '#ECFDF5', '#3D6B47'],
+              ['💸', 'Ödemeler',           '/admin/odemeler',   '#FFFBEB', '#F59E0B'],
+              ['🏷️', 'Üyelik Yönetimi',   '/admin/uyelikler',  '#F5F3FF', '#8B5CF6'],
             ].map(([icon, label, href, bg, color]) => (
-              <Link key={href} href={href} style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 14px', background: bg, borderRadius:10, textDecoration:'none', transition:'opacity 0.15s' }}>
+              <Link key={href} href={href} style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 14px', background: bg, borderRadius:10, textDecoration:'none' }}>
                 <span style={{ fontSize:20 }}>{icon}</span>
                 <span style={{ fontWeight:600, fontSize:13, color:'#4A2C0E' }}>{label}</span>
                 <span style={{ marginLeft:'auto', color, fontWeight:700, fontSize:13 }}>→</span>
