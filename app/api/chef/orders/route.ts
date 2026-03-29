@@ -3,12 +3,13 @@ import { createServerClient } from '@supabase/ssr'
 import { createClient } from '@supabase/supabase-js'
 
 const VALID_TRANSITIONS: Record<string, string[]> = {
-  pending:    ['confirmed', 'cancelled'],
-  confirmed:  ['preparing', 'cancelled'],
-  preparing:  ['on_way', 'cancelled'],
-  on_way:     ['delivered'],
-  delivered:  [],
-  cancelled:  [],
+  pending:           ['confirmed', 'cancelled'],
+  confirmed:         ['preparing', 'cancelled'],
+  preparing:         ['on_way', 'cancelled'],
+  on_way:            ['delivered_pending', 'delivered'],
+  delivered_pending: ['delivered'],
+  delivered:         [],
+  cancelled:         [],
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
@@ -25,7 +26,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   )
 
   const { data: { user } } = await supabase.auth.getUser()
-  const { status } = await req.json()
+  const body = await req.json()
+  const { status } = body
 
   const supabaseAdmin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -33,7 +35,6 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     { auth: { autoRefreshToken: false, persistSession: false } }
   )
 
-  // Siparişi bul
   const { data: order } = await supabaseAdmin
     .from('orders')
     .select('id, status, chef_id')
@@ -42,16 +43,19 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
   if (!order) return NextResponse.json({ error: 'Sipariş bulunamadı.' }, { status: 404 })
 
-  // Geçiş geçerli mi kontrol et
   const allowed = VALID_TRANSITIONS[order.status] ?? []
   if (!allowed.includes(status)) {
     return NextResponse.json({ error: `${order.status} → ${status} geçişi yapılamaz.` }, { status: 400 })
   }
 
-  // Güncelle
+  const updateData: any = { status, updated_at: new Date().toISOString() }
+  if (status === 'delivered_pending') {
+    updateData.delivered_at = new Date().toISOString()
+  }
+
   const { error } = await supabaseAdmin
     .from('orders')
-    .update({ status, updated_at: new Date().toISOString() })
+    .update(updateData)
     .eq('id', params.id)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
