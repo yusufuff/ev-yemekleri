@@ -19,6 +19,8 @@ export default function UyeliklerPage() {
   const [yukleniyor, setYukleniyor] = useState(true)
   const [kaydedilen, setKaydedilen] = useState<string | null>(null)
   const [duzenlenen, setDuzenlenen] = useState<any>(null)
+  const [topluForm, setTopluForm] = useState({ plan: 'basic', monthly_fee: '299', discount_pct: '0', discount_reason: '' })
+  const [topluKaydediliyor, setTopluKaydediliyor] = useState(false)
 
   useEffect(() => { verileriYukle() }, [])
 
@@ -101,6 +103,39 @@ export default function UyeliklerPage() {
     }
   }
 
+  const topluKaydet = async () => {
+    if (!confirm(`Tüm ${asciler.length} aşçıya %${topluForm.discount_pct} indirim uygulanacak. Emin misin?`)) return
+    setTopluKaydediliyor(true)
+    try {
+      for (const asci of asciler) {
+        if (asci.abonelik) {
+          await supabase.from('chef_subscriptions').update({
+            monthly_fee: parseFloat(topluForm.monthly_fee),
+            discount_pct: parseInt(topluForm.discount_pct),
+            discount_reason: topluForm.discount_reason,
+            plan: topluForm.plan,
+            updated_at: new Date().toISOString(),
+          }).eq('chef_id', asci.id)
+        } else {
+          await supabase.from('chef_subscriptions').insert({
+            chef_id: asci.id,
+            monthly_fee: parseFloat(topluForm.monthly_fee),
+            discount_pct: parseInt(topluForm.discount_pct),
+            discount_reason: topluForm.discount_reason,
+            plan: topluForm.plan,
+            is_active: true,
+          })
+        }
+      }
+      alert('✅ Tüm aşçılara uygulandı!')
+      verileriYukle()
+    } catch(e) {
+      alert('Hata oluştu!')
+    } finally {
+      setTopluKaydediliyor(false)
+    }
+  }
+
   const BADGE_RENK: Record<string, string> = {
     new: '#6B7280', trusted: '#059669', master: '#D97706', chef: '#B45309'
   }
@@ -134,6 +169,50 @@ export default function UyeliklerPage() {
             Aşçılar sosyal medyada paylaşım yaptığında bu sayfadan indirim tanımlayın.
           </div>
         </div>
+
+        {/* Toplu Uygulama */}
+        <div style={{ background:'white', borderRadius:16, padding:24, boxShadow:'0 2px 8px rgba(74,44,14,0.06)', marginBottom:20, border:'2px solid #E8622A' }}>
+          <div style={{ fontFamily:"'Playfair Display',serif", fontSize:17, fontWeight:700, color:'#4A2C0E', marginBottom:4 }}>⚡ Tüm Aşçılara Toplu Uygula</div>
+          <div style={{ fontSize:13, color:'#8A7B6B', marginBottom:16 }}>Belirlediğin ayarlar tüm aşçılara tek seferde uygulanır.</div>
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(4, 1fr)', gap:12, marginBottom:16 }}>
+            <div>
+              <label style={{ fontSize:12, fontWeight:700, color:'#8A7B6B', display:'block', marginBottom:6 }}>Plan</label>
+              <select value={topluForm.plan} onChange={e => setTopluForm({...topluForm, plan: e.target.value})}
+                style={{ width:'100%', padding:'10px 12px', borderRadius:10, border:'1.5px solid #E8E0D4', fontSize:13, color:'#4A2C0E', background:'#FAF6EF' }}>
+                <option value="basic">🌱 Basic</option>
+                <option value="premium">⭐ Premium</option>
+              </select>
+            </div>
+            <div>
+              <label style={{ fontSize:12, fontWeight:700, color:'#8A7B6B', display:'block', marginBottom:6 }}>Aylık Ücret (₺)</label>
+              <input type="number" value={topluForm.monthly_fee} onChange={e => setTopluForm({...topluForm, monthly_fee: e.target.value})}
+                style={{ width:'100%', padding:'10px 12px', borderRadius:10, border:'1.5px solid #E8E0D4', fontSize:13, color:'#4A2C0E', background:'#FAF6EF', boxSizing:'border-box' }} />
+            </div>
+            <div>
+              <label style={{ fontSize:12, fontWeight:700, color:'#8A7B6B', display:'block', marginBottom:6 }}>İndirim Oranı (%0-100)</label>
+              <input type="number" min="0" max="100" value={topluForm.discount_pct} onChange={e => setTopluForm({...topluForm, discount_pct: e.target.value})}
+                style={{ width:'100%', padding:'10px 12px', borderRadius:10, border:'1.5px solid #E8E0D4', fontSize:13, color:'#4A2C0E', background:'#FAF6EF', boxSizing:'border-box' }} />
+            </div>
+            <div>
+              <label style={{ fontSize:12, fontWeight:700, color:'#8A7B6B', display:'block', marginBottom:6 }}>İndirim Sebebi</label>
+              <input type="text" value={topluForm.discount_reason} onChange={e => setTopluForm({...topluForm, discount_reason: e.target.value})}
+                placeholder="örn: Açılış kampanyası"
+                style={{ width:'100%', padding:'10px 12px', borderRadius:10, border:'1.5px solid #E8E0D4', fontSize:13, color:'#4A2C0E', background:'#FAF6EF', boxSizing:'border-box' }} />
+            </div>
+          </div>
+          <div style={{ background:'#FEF3EC', borderRadius:10, padding:12, marginBottom:16, fontSize:13, color:'#E8622A', fontWeight:600 }}>
+            💡 {asciler.length} aşçı aylık <strong>₺{parseInt(topluForm.discount_pct) > 0 ? Math.round(parseFloat(topluForm.monthly_fee) * (1 - parseInt(topluForm.discount_pct)/100)) : topluForm.monthly_fee}</strong> ödeyecek
+            {parseInt(topluForm.discount_pct) > 0 && ` (%${topluForm.discount_pct} indirimli)`}
+            {parseInt(topluForm.discount_pct) === 100 && ' → HEPSİ ÜCRETSİZ 🎉'}
+          </div>
+          <button onClick={topluKaydet} disabled={topluKaydediliyor}
+            style={{ padding:'12px 28px', borderRadius:10, border:'none', background:'#E8622A', color:'white', fontWeight:700, fontSize:14, cursor:'pointer', opacity: topluKaydediliyor ? 0.7 : 1 }}>
+            {topluKaydediliyor ? '⏳ Uygulanıyor...' : `⚡ Tüm Aşçılara Uygula (${asciler.length} aşçı)`}
+          </button>
+        </div>
+
+        {/* Bireysel Aşçılar */}
+        <div style={{ fontFamily:"'Playfair Display',serif", fontSize:16, fontWeight:700, color:'#4A2C0E', marginBottom:12 }}>👩‍🍳 Bireysel Düzenleme</div>
 
         {yukleniyor ? (
           <div style={{ textAlign:'center', padding:60, color:'#8A7B6B' }}>Yükleniyor...</div>
