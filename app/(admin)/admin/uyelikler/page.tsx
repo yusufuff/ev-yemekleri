@@ -28,8 +28,8 @@ export default function UyeliklerPage() {
       // Tüm aşçıları çek
       const { data: chefData } = await supabase
         .from('chef_profiles')
-        .select('id, display_name, is_approved, badge')
-        .order('display_name')
+        .select('id, badge, user_id, users(full_name)')
+        .order('created_at')
 
       // Üyelikleri çek
       const { data: aboneData } = await supabase
@@ -152,7 +152,7 @@ export default function UyeliklerPage() {
                     <div style={{ display:'flex', alignItems:'center', gap:14 }}>
                       <div style={{ width:44, height:44, borderRadius:22, background:'#FEF3EC', display:'flex', alignItems:'center', justifyContent:'center', fontSize:22 }}>👩‍🍳</div>
                       <div>
-                        <div style={{ fontWeight:700, fontSize:15, color:'#4A2C0E' }}>{asci.display_name ?? 'İsimsiz Aşçı'}</div>
+                        <div style={{ fontWeight:700, fontSize:15, color:'#4A2C0E' }}>{(asci.users as any)?.full_name ?? 'İsimsiz Aşçı'}</div>
                         <div style={{ display:'flex', gap:8, marginTop:4 }}>
                           <span style={{ fontSize:11, fontWeight:700, color: BADGE_RENK[asci.badge] ?? '#6B7280', background: BADGE_RENK[asci.badge] + '15', borderRadius:6, padding:'2px 8px' }}>
                             {asci.badge === 'new' ? '🌱 Yeni' : asci.badge === 'trusted' ? '⭐ Güvenilir' : asci.badge === 'master' ? '🏅 Usta' : '👑 Şef'}
