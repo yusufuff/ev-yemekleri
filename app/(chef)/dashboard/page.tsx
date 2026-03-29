@@ -163,6 +163,9 @@ export default function DashboardPage() {
                 <Link href="/kazanc" style={{ display: 'block', textAlign: 'center', padding: '8px 0', background: '#F5EDD8', color: '#4A2C0E', borderRadius: 8, textDecoration: 'none', fontSize: 12, fontWeight: 600, border: '1.5px solid #E8E0D4' }}>
                   💰 Kazanç & Ödeme
                 </Link>
+                <Link href="/paylasim" style={{ display: 'block', textAlign: 'center', padding: '8px 0', background: '#FEF3EC', color: '#E8622A', borderRadius: 8, textDecoration: 'none', fontSize: 12, fontWeight: 700, border: '1.5px solid #E8622A' }}>
+                  📲 Paylaşım & Kampanya
+                </Link>
               </div>
             </div>
 
