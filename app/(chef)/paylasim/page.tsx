@@ -75,6 +75,14 @@ export default function PaylasimPage() {
     const link = `https://www.anneelim.com/asci/${chefId}`
     const mesaj = encodeURIComponent(`🍽️ ${chefAd} - Anneelim'de ev yemekleri yapıyorum! Sipariş vermek için: ${link}`)
 
+    if (platform === 'instagram') {
+      navigator.clipboard.writeText(link)
+      alert('📸 Link kopyalandı! Instagram'ı aç, hikaye veya gönderi oluştur, linki yapıştır.')
+      supabase.from('share_logs').insert({ chef_id: chefId, share_type: 'chef_profile', platform: 'instagram' })
+      setPaylasimSayisi(prev => prev + 1)
+      return
+    }
+
     const urls: Record<string, string> = {
       whatsapp: `https://wa.me/?text=${mesaj}`,
       twitter: `https://twitter.com/intent/tweet?text=${mesaj}`,
@@ -228,16 +236,17 @@ export default function PaylasimPage() {
           </div>
 
           {/* Platform butonları */}
-          <div style={{ display:'flex', gap:12 }}>
+          <div style={{ display:'flex', gap:12, flexWrap:'wrap' }}>
             {[
               { id:'whatsapp', label:'WhatsApp', emoji:'💬', renk:'#25D366' },
               { id:'twitter', label:'Twitter/X', emoji:'🐦', renk:'#1DA1F2' },
               { id:'facebook', label:'Facebook', emoji:'👥', renk:'#1877F2' },
+              { id:'instagram', label:'Instagram', emoji:'📸', renk:'#E1306C' },
             ].map(p => (
               <button
                 key={p.id}
                 onClick={() => paylasimYap(p.id)}
-                style={{ flex:1, padding:'12px 0', borderRadius:12, border:`1.5px solid ${p.renk}40`, background:`${p.renk}10`, color:p.renk, fontWeight:700, fontSize:13, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}
+                style={{ flex:1, minWidth:'45%', padding:'12px 0', borderRadius:12, border:`1.5px solid ${p.renk}40`, background:`${p.renk}10`, color:p.renk, fontWeight:700, fontSize:13, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}
               >
                 <span style={{ fontSize:18 }}>{p.emoji}</span> {p.label}
               </button>
