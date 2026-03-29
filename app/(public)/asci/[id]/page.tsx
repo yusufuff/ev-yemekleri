@@ -246,7 +246,7 @@ export default function AsciProfilPage({ params }: { params: { id: string } }) {
     reviewPage, setReviewPage,
     isFavorited, favLoading, toggleFavorite,
   } = useChefProfile(params.id)
-
+const [shareModalAcik, setShareModalAcik] = useState(false)
   const [activeCategory, setActiveCategory] = useState<MenuCategory | 'all'>('all')
 
   if (loading) return (
@@ -282,6 +282,46 @@ export default function AsciProfilPage({ params }: { params: { id: string } }) {
 
   return (
     <div className="ap-page">
+      {/* Paylaşım Modalı */}
+{shareModalAcik && (
+  <div onClick={() => setShareModalAcik(false)} style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.5)', zIndex:999, display:'flex', alignItems:'center', justifyContent:'center' }}>
+    <div onClick={e => e.stopPropagation()} style={{ background:'white', borderRadius:20, padding:28, width:360, boxShadow:'0 20px 60px rgba(0,0,0,0.2)' }}>
+      <div style={{ fontFamily:"'Playfair Display',serif", fontSize:18, fontWeight:700, color:'#4A2C0E', marginBottom:6 }}>📤 Profili Paylaş</div>
+      <div style={{ fontSize:13, color:'#8A7B6B', marginBottom:20 }}>{user.full_name} profilini arkadaşlarınla paylaş!</div>
+      
+      {/* Link kutusu */}
+      <div style={{ display:'flex', gap:8, marginBottom:20 }}>
+        <div style={{ flex:1, background:'#FAF6EF', borderRadius:10, padding:'10px 14px', fontSize:12, color:'#8A7B6B', border:'1.5px solid #E8E0D4', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+          anneelim.com/asci/{params.id.slice(0,8)}...
+        </div>
+        <button onClick={() => { navigator.clipboard.writeText(`https://www.anneelim.com/asci/${params.id}`); alert('Link kopyalandı!') }}
+          style={{ padding:'10px 14px', borderRadius:10, border:'none', background:'#E8622A', color:'white', fontWeight:700, fontSize:12, cursor:'pointer' }}>
+          Kopyala
+        </button>
+      </div>
+
+      {/* Platform butonları */}
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+        {[
+          { label:'WhatsApp', emoji:'💬', renk:'#25D366', action: () => window.open(`https://wa.me/?text=${encodeURIComponent(`🍽️ ${user.full_name} - Anneelim'de ev yemekleri! https://www.anneelim.com/asci/${params.id}`)}`, '_blank') },
+          { label:'Twitter/X', emoji:'🐦', renk:'#1DA1F2', action: () => window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(`🍽️ ${user.full_name} - Anneelim'de ev yemekleri! https://www.anneelim.com/asci/${params.id} #anneelim`)}`, '_blank') },
+          { label:'Facebook', emoji:'👥', renk:'#1877F2', action: () => window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(`https://www.anneelim.com/asci/${params.id}`)}`, '_blank') },
+          { label:'Instagram', emoji:'📸', renk:'#E1306C', action: () => { navigator.clipboard.writeText(`https://www.anneelim.com/asci/${params.id}`); alert('Link kopyalandı! Instagram uygulamasını aç ve yapıştır.') } },
+        ].map(p => (
+          <button key={p.label} onClick={p.action}
+            style={{ padding:'12px', borderRadius:12, border:`1.5px solid ${p.renk}30`, background:`${p.renk}10`, color:p.renk, fontWeight:700, fontSize:13, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}>
+            <span style={{ fontSize:18 }}>{p.emoji}</span> {p.label}
+          </button>
+        ))}
+      </div>
+
+      <button onClick={() => setShareModalAcik(false)}
+        style={{ width:'100%', marginTop:16, padding:'12px', borderRadius:12, border:'1.5px solid #E8E0D4', background:'white', color:'#8A7B6B', fontWeight:700, fontSize:14, cursor:'pointer' }}>
+        Kapat
+      </button>
+    </div>
+  </div>
+)}
 
       {/* ── Üst çubuk (geri + aksiyonlar) ── */}
       <div className="ap-topbar">
@@ -296,22 +336,15 @@ export default function AsciProfilPage({ params }: { params: { id: string } }) {
           >
             {isFavorited ? '❤️' : '🤍'} {isFavorited ? 'Takipte' : 'Takip Et'}
           </button>
-          <button
-  type="button"
-  onClick={() => {
-    const url = `https://www.anneelim.com/asci/${params.id}`
-    const text = `${user.full_name} ev yemekleri! Siparis icin: ${url} #anneelim #evyemekleri`
-    if (navigator.share) {
-      navigator.share({ title: user.full_name + ' - Anneelim', text, url })
-    } else {
-      navigator.clipboard.writeText(url)
-      alert('Link kopyalandi!')
-    }
-  }}
-  style={{ padding: '8px 16px', background: 'white', border: '1.5px solid #E8E0D4', borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', color: '#4A2C0E' }}
->
-  Paylas
-</button>
+          <div style={{ position:'relative' }}>
+  <button
+    type="button"
+    onClick={() => setShareModalAcik(true)}
+    style={{ padding:'8px 16px', background:'white', border:'1.5px solid #E8E0D4', borderRadius:10, fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit', color:'#4A2C0E', display:'flex', alignItems:'center', gap:6 }}
+  >
+    📤 Paylaş
+  </button>
+</div>
         </div>
       </div>
 
