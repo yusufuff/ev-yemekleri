@@ -1,17 +1,13 @@
 // @ts-nocheck
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { getSupabaseServerClient, getCurrentUser } from '@/lib/supabase/server'
+import { getSupabaseServerClient, getCurrentUser, getAuthUser } from '@/lib/supabase/server'
 
 export async function GET(request: NextRequest) {
-  const user = await getCurrentUser() as any
+  const user = await getAuthUser() as any
 
   if (!user) {
-    const MOCK = [
-      { id:'ord-1', created_at: new Date(Date.now()-1200000).toISOString(), status:'preparing', delivery_type:'delivery', total_amount:110, chef_name:'Fatma Hanim', chef_id:'chef-1', items:[{name:'Kuru Fasulye & Pilav',quantity:2,price:55}], estimated_minutes:25 },
-      { id:'ord-2', created_at: new Date(Date.now()-86400000).toISOString(), status:'delivered', delivery_type:'pickup', total_amount:70, chef_name:'Fatma Hanim', chef_id:'chef-1', items:[{name:'Sutlac',quantity:2,price:35}], estimated_minutes:0 },
-    ]
-    return NextResponse.json({ orders: MOCK })
+    return NextResponse.json({ orders: [] })
   }
 
   const supabase = await getSupabaseServerClient()
