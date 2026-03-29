@@ -16,6 +16,7 @@ export default function DashboardPage() {
   const [data, setData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [isOpen, setIsOpen] = useState(true)
+  const [guncelleniyor, setGuncelleniyor] = useState<string | null>(null)
 
   useEffect(() => {
     fetch('/api/chef/dashboard')
@@ -26,17 +27,24 @@ export default function DashboardPage() {
 
   const updateOrderStatus = async (orderId: string, status: string) => {
     if (orderId.startsWith('ord-p')) return
+    setGuncelleniyor(orderId)
     try {
+      const body: any = { status }
+      if (status === 'delivered_pending') {
+        body.delivered_at = new Date().toISOString()
+      }
       await fetch(`/api/chef/orders/${orderId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status }),
+        body: JSON.stringify(body),
       })
       const res = await fetch('/api/chef/dashboard')
       const d = await res.json()
       setData(d)
     } catch (err) {
       console.error('Order update error:', err)
+    } finally {
+      setGuncelleniyor(null)
     }
   }
 
@@ -44,6 +52,21 @@ export default function DashboardPage() {
     const next = !isOpen
     setIsOpen(next)
     await fetch('/api/chef/dashboard', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ is_open: next }) })
+  }
+
+  const getSonrakiButon = (order: any) => {
+    switch (order.status) {
+      case 'confirmed':
+        return { label: '👨‍🍳 Hazırlamaya Başla', sonrakiStatus: 'preparing', renk: '#8B5CF6', bgRenk: '#F5F3FF' }
+      case 'preparing':
+        return { label: '🛵 Yola Çıktım', sonrakiStatus: 'on_way', renk: '#F97316', bgRenk: '#FFF7ED' }
+      case 'on_way':
+        return { label: '✅ Teslim Ettim', sonrakiStatus: 'delivered_pending', renk: '#22C55E', bgRenk: '#F0FDF4' }
+      case 'delivered_pending':
+        return { label: '⏳ Alıcı Onayı Bekleniyor', sonrakiStatus: null, renk: '#9CA3AF', bgRenk: '#F9FAFB' }
+      default:
+        return null
+    }
   }
 
   if (loading) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', color: '#8A7B6B' }}>Yükleniyor…</div>
@@ -54,7 +77,6 @@ export default function DashboardPage() {
     <div style={{ minHeight: '100vh', background: '#FAF6EF', fontFamily: "'DM Sans', sans-serif" }}>
       <div style={{ maxWidth: 1100, margin: '0 auto', padding: '24px 16px' }}>
 
-        {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
           <div>
             <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: 26, fontWeight: 900, color: '#4A2C0E', margin: 0 }}>Aşçı Paneli</h1>
@@ -64,20 +86,12 @@ export default function DashboardPage() {
             <span style={{ fontSize: 13, fontWeight: 600, color: isOpen ? '#3D6B47' : '#8A7B6B' }}>
               {isOpen ? '🟢 Açık' : '🔴 Kapalı'}
             </span>
-            <button onClick={toggleOpen} style={{
-              width: 48, height: 26, borderRadius: 13, border: 'none', cursor: 'pointer',
-              background: isOpen ? '#3D6B47' : '#E8E0D4', position: 'relative', transition: 'background 0.2s',
-            }}>
-              <div style={{
-                width: 20, height: 20, borderRadius: '50%', background: 'white',
-                position: 'absolute', top: 3, left: isOpen ? 25 : 3, transition: 'left 0.2s',
-                boxShadow: '0 1px 4px rgba(0,0,0,0.2)',
-              }} />
+            <button onClick={toggleOpen} style={{ width: 48, height: 26, borderRadius: 13, border: 'none', cursor: 'pointer', background: isOpen ? '#3D6B47' : '#E8E0D4', position: 'relative', transition: 'background 0.2s' }}>
+              <div style={{ width: 20, height: 20, borderRadius: '50%', background: 'white', position: 'absolute', top: 3, left: isOpen ? 25 : 3, transition: 'left 0.2s', boxShadow: '0 1px 4px rgba(0,0,0,0.2)' }} />
             </button>
           </div>
         </div>
 
-        {/* Stats */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16, marginBottom: 24 }}>
           <StatCard label="Bekleyen Sipariş" value={String(data?.pending_orders?.length ?? 0)} icon="🛒" color="#E8622A" />
           <StatCard label="Bugünkü Kazanç" value={`₺${stats.today_earnings ?? 0}`} icon="💰" color="#3D6B47" />
@@ -87,8 +101,6 @@ export default function DashboardPage() {
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-
-          {/* Bekleyen Siparişler */}
           <div>
             <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 700, color: '#4A2C0E', marginBottom: 14 }}>Bekleyen Siparişler</h2>
             {(data?.pending_orders ?? []).length === 0 ? (
@@ -97,7 +109,7 @@ export default function DashboardPage() {
               <div key={order.id} style={{ background: 'white', borderRadius: 14, padding: 16, boxShadow: '0 2px 12px rgba(74,44,14,0.08)', borderLeft: '4px solid #E8622A', marginBottom: 12 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: 8 }}>
                   <div>
-                    <div style={{ fontSize: 11, color: '#8A7B6B' }}>#{order.id}</div>
+                    <div style={{ fontSize: 11, color: '#8A7B6B' }}>#{order.order_number ?? order.id}</div>
                     <div style={{ fontWeight: 700, fontSize: 14, color: '#4A2C0E' }}>{order.buyer_name}</div>
                     <div style={{ fontSize: 12, color: '#8A7B6B', marginTop: 2 }}>
                       {order.items.map((i: any) => `${i.name} ×${i.quantity}`).join(', ')}
@@ -116,25 +128,57 @@ export default function DashboardPage() {
             {(data?.active_orders ?? []).length > 0 && (
               <>
                 <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 700, color: '#4A2C0E', margin: '20px 0 14px' }}>Aktif Siparişler</h2>
-                {data.active_orders.map((order: any) => (
-                  <div key={order.id} style={{ background: 'white', borderRadius: 14, padding: 16, boxShadow: '0 2px 12px rgba(74,44,14,0.08)', borderLeft: '4px solid #3D6B47', marginBottom: 12 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                      <div>
-                        <div style={{ fontWeight: 700, fontSize: 14, color: '#4A2C0E' }}>{order.buyer_name}</div>
-                        <div style={{ fontSize: 12, color: '#8A7B6B' }}>{order.items.map((i: any) => `${i.name} ×${i.quantity}`).join(', ')}</div>
+                {data.active_orders.map((order: any) => {
+                  const buton = getSonrakiButon(order)
+                  return (
+                    <div key={order.id} style={{ background: 'white', borderRadius: 14, padding: 16, boxShadow: '0 2px 12px rgba(74,44,14,0.08)', borderLeft: `4px solid ${buton?.renk ?? '#3D6B47'}`, marginBottom: 12 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                        <div>
+                          <div style={{ fontSize: 11, color: '#8A7B6B' }}>#{order.order_number ?? order.id}</div>
+                          <div style={{ fontWeight: 700, fontSize: 14, color: '#4A2C0E' }}>{order.buyer_name}</div>
+                          <div style={{ fontSize: 12, color: '#8A7B6B' }}>{order.items.map((i: any) => `${i.name} ×${i.quantity}`).join(', ')}</div>
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                          <span style={{ background: buton?.bgRenk ?? '#FEF3EC', color: buton?.renk ?? '#E8622A', fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 20, display: 'block', marginBottom: 4 }}>
+                            {order.status === 'confirmed' ? '✅ Onaylandı'
+                              : order.status === 'preparing' ? '👨‍🍳 Hazırlanıyor'
+                              : order.status === 'on_way' ? '🛵 Yolda'
+                              : order.status === 'delivered_pending' ? '⏳ Alıcı Onayı'
+                              : order.status}
+                          </span>
+                          <span style={{ fontSize: 14, fontWeight: 700, color: '#E8622A' }}>₺{order.total_amount}</span>
+                        </div>
                       </div>
-                      <span style={{ background: '#FEF3EC', color: '#E8622A', fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 20 }}>
-                        {order.status === 'confirmed' ? '✅ Onaylandı' : order.status === 'preparing' ? '👨‍🍳 Hazırlanıyor' : order.status === 'on_way' ? '🛵 Yolda' : order.status}
-                      </span>
+
+                      {buton && (
+                        <button
+                          onClick={() => buton.sonrakiStatus && updateOrderStatus(order.id, buton.sonrakiStatus)}
+                          disabled={!buton.sonrakiStatus || guncelleniyor === order.id}
+                          style={{
+                            width: '100%', padding: '10px 0', marginTop: 8,
+                            background: buton.sonrakiStatus ? buton.renk : '#F3F4F6',
+                            color: buton.sonrakiStatus ? 'white' : '#9CA3AF',
+                            border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 700,
+                            cursor: buton.sonrakiStatus ? 'pointer' : 'not-allowed',
+                            opacity: guncelleniyor === order.id ? 0.7 : 1,
+                          }}
+                        >
+                          {guncelleniyor === order.id ? '⏳ Güncelleniyor...' : buton.label}
+                        </button>
+                      )}
+
+                      {order.status === 'delivered_pending' && (
+                        <div style={{ marginTop: 8, fontSize: 11, color: '#9CA3AF', textAlign: 'center', background: '#F9FAFB', borderRadius: 8, padding: '8px 12px' }}>
+                          Alıcı 24 saat içinde onaylamazsa otomatik teslim edildi sayılır.
+                        </div>
+                      )}
                     </div>
-                    <button style={{ width: '100%', padding: '8px 0', background: '#E8622A', color: 'white', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>🛵 Yola Çıktım</button>
-                  </div>
-                ))}
+                  )
+                })}
               </>
             )}
           </div>
 
-          {/* Stok + Grafik */}
           <div>
             <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 700, color: '#4A2C0E', marginBottom: 14 }}>Stok Durumu</h2>
             <div style={{ background: 'white', borderRadius: 14, padding: 20, boxShadow: '0 2px 12px rgba(74,44,14,0.08)', marginBottom: 20 }}>
@@ -154,18 +198,10 @@ export default function DashboardPage() {
                 )
               })}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 14 }}>
-                <Link href="/menu" style={{ display: 'block', textAlign: 'center', padding: '8px 0', background: '#F5EDD8', color: '#4A2C0E', borderRadius: 8, textDecoration: 'none', fontSize: 12, fontWeight: 600, border: '1.5px solid #E8E0D4' }}>
-                  📦 Stok Güncelle
-                </Link>
-                <Link href="/asci-ayarlar" style={{ display: 'block', textAlign: 'center', padding: '8px 0', background: '#F5EDD8', color: '#4A2C0E', borderRadius: 8, textDecoration: 'none', fontSize: 12, fontWeight: 600, border: '1.5px solid #E8E0D4' }}>
-                  ⚙️ Profil Ayarları
-                </Link>
-                <Link href="/kazanc" style={{ display: 'block', textAlign: 'center', padding: '8px 0', background: '#F5EDD8', color: '#4A2C0E', borderRadius: 8, textDecoration: 'none', fontSize: 12, fontWeight: 600, border: '1.5px solid #E8E0D4' }}>
-                  💰 Kazanç & Ödeme
-                </Link>
-                <Link href="/paylasim" style={{ display: 'block', textAlign: 'center', padding: '8px 0', background: '#FEF3EC', color: '#E8622A', borderRadius: 8, textDecoration: 'none', fontSize: 12, fontWeight: 700, border: '1.5px solid #E8622A' }}>
-                  📲 Paylaşım & Kampanya
-                </Link>
+                <Link href="/menu" style={{ display: 'block', textAlign: 'center', padding: '8px 0', background: '#F5EDD8', color: '#4A2C0E', borderRadius: 8, textDecoration: 'none', fontSize: 12, fontWeight: 600, border: '1.5px solid #E8E0D4' }}>📦 Stok Güncelle</Link>
+                <Link href="/asci-ayarlar" style={{ display: 'block', textAlign: 'center', padding: '8px 0', background: '#F5EDD8', color: '#4A2C0E', borderRadius: 8, textDecoration: 'none', fontSize: 12, fontWeight: 600, border: '1.5px solid #E8E0D4' }}>⚙️ Profil Ayarları</Link>
+                <Link href="/kazanc" style={{ display: 'block', textAlign: 'center', padding: '8px 0', background: '#F5EDD8', color: '#4A2C0E', borderRadius: 8, textDecoration: 'none', fontSize: 12, fontWeight: 600, border: '1.5px solid #E8E0D4' }}>💰 Kazanç & Ödeme</Link>
+                <Link href="/paylasim" style={{ display: 'block', textAlign: 'center', padding: '8px 0', background: '#FEF3EC', color: '#E8622A', borderRadius: 8, textDecoration: 'none', fontSize: 12, fontWeight: 700, border: '1.5px solid #E8622A' }}>📲 Paylaşım & Kampanya</Link>
               </div>
             </div>
 
