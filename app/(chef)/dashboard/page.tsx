@@ -44,6 +44,21 @@ export default function DashboardPage() {
     } catch (err) {
       console.error('Order update error:', err)
     } finally {
+      // Local state direkt guncelle
+      setData((prev: any) => {
+        if (!prev) return prev
+        const guncelle = (orders: any[]) =>
+          (orders ?? []).map((o: any) => o.id === orderId ? { ...o, status } : o)
+        return {
+          ...prev,
+          pending_orders: status === 'confirmed' || status === 'cancelled'
+            ? (prev.pending_orders ?? []).filter((o: any) => o.id !== orderId)
+            : guncelle(prev.pending_orders ?? []),
+          active_orders: status === 'confirmed'
+            ? [...(prev.active_orders ?? []), ...(prev.pending_orders ?? []).filter((o: any) => o.id === orderId).map((o: any) => ({ ...o, status }))]
+            : guncelle(prev.active_orders ?? []),
+        }
+      })
       setGuncelleniyor(null)
     }
   }
