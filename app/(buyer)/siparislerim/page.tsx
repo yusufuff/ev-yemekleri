@@ -7,12 +7,14 @@ import { DeliveryMap } from '@/components/orders/DeliveryMap'
 import { useCart } from '@/hooks/useCart'
 
 const STATUS_META: Record<string, { label: string; color: string; bg: string; step: number }> = {
-  pending:    { label: 'Onay Bekleniyor', color: '#E8622A', bg: '#FEF3EC', step: 0 },
-  confirmed:  { label: 'Onaylandi',       color: '#3D6B47', bg: '#ECFDF5', step: 1 },
-  preparing:  { label: 'Hazirlaniyor',    color: '#E8622A', bg: '#FEF3EC', step: 2 },
-  on_the_way: { label: 'Yolda',           color: '#3B82F6', bg: '#EFF6FF', step: 3 },
-  delivered:  { label: 'Teslim Edildi',   color: '#3D6B47', bg: '#ECFDF5', step: 4 },
-  cancelled:  { label: 'Iptal Edildi',    color: '#DC2626', bg: '#FEE2E2', step: -1 },
+  pending:           { label: 'Onay Bekleniyor',    color: '#E8622A', bg: '#FEF3EC', step: 0 },
+  confirmed:         { label: 'Onaylandi',           color: '#3D6B47', bg: '#ECFDF5', step: 1 },
+  preparing:         { label: 'Hazirlaniyor',        color: '#8B5CF6', bg: '#F5F3FF', step: 2 },
+  on_way:            { label: 'Yolda',               color: '#3B82F6', bg: '#EFF6FF', step: 3 },
+  on_the_way:        { label: 'Yolda',               color: '#3B82F6', bg: '#EFF6FF', step: 3 },
+  delivered_pending: { label: 'Teslim Edildi ⏳',    color: '#F59E0B', bg: '#FFFBEB', step: 4 },
+  delivered:         { label: 'Teslim Edildi',       color: '#3D6B47', bg: '#ECFDF5', step: 4 },
+  cancelled:         { label: 'Iptal Edildi',        color: '#DC2626', bg: '#FEE2E2', step: -1 },
 }
 const STEPS = ['Alindi', 'Onaylandi', 'Hazirlaniyor', 'Yolda', 'Teslim']
 
@@ -81,6 +83,7 @@ export default function SiparislerimPage() {
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState<'active' | 'past'>('active')
   const [reviewOrder, setReviewOrder] = useState<{id:string;chef:string}|null>(null)
+  const [onaylaniyor, setOnaylaniyor] = useState<string | null>(null)
 
   const cancelOrder = async (orderId: string) => {
     if (!confirm('Siparişi iptal etmek istediğinize emin misiniz?')) return
@@ -89,6 +92,23 @@ export default function SiparislerimPage() {
       loadOrders()
     } catch {
       alert('İptal işlemi başarısız.')
+    }
+  }
+
+  const siparisiOnayla = async (orderId: string) => {
+    if (!confirm('Siparişi teslim aldığınızı onaylıyor musunuz?')) return
+    setOnaylaniyor(orderId)
+    try {
+      const supabase = getSupabaseBrowserClient()
+      await supabase
+        .from('orders')
+        .update({ status: 'delivered' })
+        .eq('id', orderId)
+      loadOrders()
+    } catch {
+      alert('Onay işlemi başarısız.')
+    } finally {
+      setOnaylaniyor(null)
     }
   }
 
@@ -169,8 +189,9 @@ export default function SiparislerimPage() {
               {shown.map(order => {
                 const meta = STATUS_META[order.status] ?? STATUS_META.pending
                 const isActive = !['delivered','cancelled'].includes(order.status)
+                const isDeliveredPending = order.status === 'delivered_pending'
                 return (
-                  <div key={order.id} style={{ background:'white', borderRadius:16, overflow:'hidden', boxShadow:'0 2px 12px rgba(74,44,14,0.08)', border: isActive ? '2px solid #E8622A' : '1px solid rgba(232,224,212,0.6)' }}>
+                  <div key={order.id} style={{ background:'white', borderRadius:16, overflow:'hidden', boxShadow:'0 2px 12px rgba(74,44,14,0.08)', border: isDeliveredPending ? '2px solid #F59E0B' : isActive ? '2px solid #E8622A' : '1px solid rgba(232,224,212,0.6)' }}>
                     <div style={{ padding:'14px 16px', borderBottom:'1px solid #F5EDD8', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
                       <div>
                         <div style={{ fontSize:11, color:'#8A7B6B' }}>#{order.id} · {formatDate(order.created_at)}</div>
@@ -196,7 +217,24 @@ export default function SiparislerimPage() {
                         />
                       )}
 
-                      {isActive && order.status !== 'cancelled' && (
+                      {/* Siparişi Aldım butonu — delivered_pending durumunda */}
+                      {isDeliveredPending && (
+                        <div style={{ marginTop:14 }}>
+                          <div style={{ background:'#FFFBEB', border:'1.5px solid #FDE68A', borderRadius:10, padding:'10px 14px', marginBottom:12, fontSize:13, color:'#92400E' }}>
+                            🚚 Aşçı siparişinizi teslim ettiğini bildirdi. Aldıysanız onaylayın!
+                            <div style={{ fontSize:11, color:'#B45309', marginTop:4 }}>24 saat içinde onaylamazsanız otomatik teslim edildi sayılır.</div>
+                          </div>
+                          <button
+                            onClick={() => siparisiOnayla(order.id)}
+                            disabled={onaylaniyor === order.id}
+                            style={{ width:'100%', padding:'12px 0', background:'#22C55E', color:'white', border:'none', borderRadius:10, fontSize:14, fontWeight:700, cursor:'pointer', fontFamily:'inherit', opacity: onaylaniyor === order.id ? 0.7 : 1 }}
+                          >
+                            {onaylaniyor === order.id ? '⏳ Onaylanıyor...' : '✅ Siparişi Aldım'}
+                          </button>
+                        </div>
+                      )}
+
+                      {isActive && !isDeliveredPending && order.status !== 'cancelled' && (
                         <div style={{ marginTop:14 }}>
                           <div style={{ display:'flex', justifyContent:'space-between', marginBottom:6 }}>
                             {STEPS.map((step, i) => (
