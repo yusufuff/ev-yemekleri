@@ -17,15 +17,20 @@ export async function GET(request: NextRequest) {
   const supabase = await getSupabaseServerClient()
   const { data: orders } = await supabase
     .from('orders')
-    .select(`
-      id, order_number, status, delivery_type, total_amount, subtotal,
-      created_at, delivery_address, estimated_minutes, notes,
-      chef_id,
-      chef_profiles(user_id, users(full_name)),
-      order_items(id, item_name, quantity, item_price, menu_item_id)
-    `)
+    .select('id, order_number, status, delivery_type, total_amount, subtotal, created_at, delivery_address, estimated_minutes, chef_id, order_items(id, item_name, quantity, item_price, menu_item_id)')
     .eq('buyer_id', user.id)
     .order('created_at', { ascending: false })
+
+  // Chef isimlerini ayrı çek
+  const chefIds = [...new Set((orders ?? []).map((o: any) => o.chef_id).filter(Boolean))]
+  let chefMap: Record<string, string> = {}
+  if (chefIds.length > 0) {
+    const { data: chefData } = await supabase
+      .from('chef_public_profiles')
+      .select('chef_id, full_name')
+      .in('chef_id', chefIds)
+    ;(chefData ?? []).forEach((c: any) => { chefMap[c.chef_id] = c.full_name })
+  }
 
   const formatli = (orders ?? []).map((o: any) => ({
     id: o.id,
@@ -36,7 +41,7 @@ export async function GET(request: NextRequest) {
     created_at: o.created_at,
     estimated_minutes: o.estimated_minutes ?? 0,
     chef_id: o.chef_id,
-    chef_name: o.chef_profiles?.users?.full_name ?? 'Asci',
+    chef_name: chefMap[o.chef_id] ?? 'Asci',
     delivery_address: typeof o.delivery_address === 'object'
       ? (o.delivery_address?.full_address ?? '')
       : (o.delivery_address ?? ''),
