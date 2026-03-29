@@ -77,7 +77,7 @@ export default function PaylasimPage() {
 
     if (platform === 'instagram') {
       navigator.clipboard.writeText(link)
-      alert('📸 Link kopyalandı! Instagram'ı aç, hikaye veya gönderi oluştur, linki yapıştır.')
+      alert("📸 Link kopyalandi! Instagram uygulamasini ac, hikaye veya gonderi olustur, linki yapistir.")
       supabase.from('share_logs').insert({ chef_id: chefId, share_type: 'chef_profile', platform: 'instagram' })
       setPaylasimSayisi(prev => prev + 1)
       return
