@@ -157,7 +157,7 @@ export default function SiparislerimPage() {
     } catch { alert('İptal işlemi başarısız.') }
   }
 
-  const const siparisiOnayla = async (orderId) => {
+   const siparisiOnayla = async (orderId) => {
   if (!confirm('Siparişi teslim aldığınızı onaylıyor musunuz?')) return
   setOnaylaniyor(orderId)
   try {
