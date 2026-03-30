@@ -93,12 +93,28 @@ export default function SiparislerimPage() {
 
       if (!user) { setLoading(false); return }
 
+      // Orders - nested select olmadan
       const { data: ordersData } = await supabase
         .from('orders')
-        .select('id, order_number, status, delivery_type, total_amount, subtotal, created_at, delivery_address, estimated_minutes, chef_id, order_items(id, item_name, quantity, item_price, menu_item_id)')
+        .select('id, order_number, status, delivery_type, total_amount, subtotal, created_at, delivery_address, estimated_minutes, chef_id')
         .eq('buyer_id', user.id)
         .order('created_at', { ascending: false })
 
+      // Order items ayrı çek
+      const orderIds = (ordersData ?? []).map(o => o.id)
+      let itemsMap = {}
+      if (orderIds.length > 0) {
+        const { data: itemsData } = await supabase
+          .from('order_items')
+          .select('order_id, id, item_name, quantity, item_price, menu_item_id')
+          .in('order_id', orderIds)
+        ;(itemsData ?? []).forEach(i => {
+          if (!itemsMap[i.order_id]) itemsMap[i.order_id] = []
+          itemsMap[i.order_id].push(i)
+        })
+      }
+
+      // Chef isimleri ayrı çek
       const chefIds = [...new Set((ordersData ?? []).map(o => o.chef_id).filter(Boolean))]
       let chefMap = {}
       if (chefIds.length > 0) {
@@ -120,7 +136,7 @@ export default function SiparislerimPage() {
         chef_id: o.chef_id,
         chef_name: chefMap[o.chef_id] ?? 'Asci',
         delivery_address: typeof o.delivery_address === 'object' ? (o.delivery_address?.full_address ?? '') : (o.delivery_address ?? ''),
-        items: (o.order_items ?? []).map(i => ({
+        items: (itemsMap[o.id] ?? []).map(i => ({
           id: i.id, name: i.item_name ?? i.name, quantity: i.quantity,
           price: parseFloat(i.item_price ?? 0), menu_item_id: i.menu_item_id,
         })),
