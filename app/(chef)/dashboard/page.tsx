@@ -1,7 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { createClient } from '@supabase/supabase-js'
 
 function StatCard({ label, value, icon, color }: { label: string; value: string; icon: string; color: string }) {
   return (
@@ -30,37 +29,31 @@ export default function DashboardPage() {
     if (orderId.startsWith('ord-p')) return
     setGuncelleniyor(orderId)
     try {
-      // Direkt Supabase client ile güncelle — API route'u bypass et
-      const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-      )
-      const updateData: any = { status }
-      if (status === 'delivered_pending') {
-        updateData.delivered_at = new Date().toISOString()
-      }
-      const { error } = await supabase
-        .from('orders')
-        .update(updateData)
-        .eq('id', orderId)
-
-      if (error) {
-        console.error('Supabase update error:', error)
+      const res = await fetch(`/api/chef/orders/${orderId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status }),
+      })
+      const json = await res.json()
+      if (!res.ok) {
+        console.error('API hatasi:', json)
+        alert(`Hata: ${json.error}`)
         return
       }
 
-      // Local state güncelle
       setData((prev: any) => {
         if (!prev) return prev
         const guncelle = (orders: any[]) =>
           (orders ?? []).map((o: any) => o.id === orderId ? { ...o, status } : o)
         return {
           ...prev,
-          pending_orders: status === 'confirmed' || status === 'cancelled'
+          pending_orders: (status === 'confirmed' || status === 'cancelled')
             ? (prev.pending_orders ?? []).filter((o: any) => o.id !== orderId)
             : guncelle(prev.pending_orders ?? []),
           active_orders: status === 'confirmed'
             ? [...(prev.active_orders ?? []), ...(prev.pending_orders ?? []).filter((o: any) => o.id === orderId).map((o: any) => ({ ...o, status }))]
+            : status === 'cancelled'
+            ? (prev.active_orders ?? []).filter((o: any) => o.id !== orderId)
             : guncelle(prev.active_orders ?? []),
         }
       })
@@ -141,7 +134,12 @@ export default function DashboardPage() {
                   <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 700, color: '#E8622A' }}>₺{order.total_amount}</div>
                 </div>
                 <div style={{ display: 'flex', gap: 8 }}>
-                  <button onClick={() => updateOrderStatus(order.id, 'confirmed')} style={{ flex: 1, padding: '8px 0', background: '#ECFDF5', color: '#3D6B47', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>✅ Onayla</button>
+                  <button
+                    onClick={() => updateOrderStatus(order.id, 'confirmed')}
+                    disabled={guncelleniyor === order.id}
+                    style={{ flex: 1, padding: '8px 0', background: '#ECFDF5', color: '#3D6B47', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer', opacity: guncelleniyor === order.id ? 0.7 : 1 }}>
+                    {guncelleniyor === order.id ? '⏳...' : '✅ Onayla'}
+                  </button>
                   <button onClick={() => updateOrderStatus(order.id, 'cancelled')} style={{ padding: '8px 14px', background: '#FEE2E2', color: '#DC2626', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>❌</button>
                   <button style={{ padding: '8px 14px', background: '#F5EDD8', color: '#4A2C0E', border: '1.5px solid #E8E0D4', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>💬</button>
                 </div>

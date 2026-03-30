@@ -157,7 +157,41 @@ export default function SiparislerimPage() {
     } catch { alert('İptal işlemi başarısız.') }
   }
 
-  const siparisiOnayla = async (orderId) => {
+  const const siparisiOnayla = async (orderId) => {
+  if (!confirm('Siparişi teslim aldığınızı onaylıyor musunuz?')) return
+  setOnaylaniyor(orderId)
+  try {
+    const res = await fetch(`/api/chef/orders/${orderId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'delivered' }),
+    })
+    const json = await res.json()
+    if (!res.ok) { alert(`Hata: ${json.error}`); return }
+    setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: 'delivered' } : o))
+  } catch {
+    alert('Onay işlemi başarısız.')
+  } finally {
+    setOnaylaniyor(null)
+  }
+}
+  if (!confirm('Siparişi teslim aldığınızı onaylıyor musunuz?')) return
+  setOnaylaniyor(orderId)
+  try {
+    const res = await fetch(`/api/chef/orders/${orderId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'delivered' }),
+    })
+    const json = await res.json()
+    if (!res.ok) { alert(`Hata: ${json.error}`); return }
+    setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: 'delivered' } : o))
+  } catch { 
+    alert('Onay işlemi başarısız.') 
+  } finally { 
+    setOnaylaniyor(null) 
+  }
+} = async (orderId) => {
     if (!confirm('Siparişi teslim aldığınızı onaylıyor musunuz?')) return
     setOnaylaniyor(orderId)
     try {
