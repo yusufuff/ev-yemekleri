@@ -1,7 +1,6 @@
 ﻿import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { createClient } from '@supabase/supabase-js'
-
 const VALID_TRANSITIONS: Record<string, string[]> = {
   pending:           ['confirmed', 'cancelled'],
   confirmed:         ['preparing', 'cancelled'],
@@ -11,6 +10,7 @@ const VALID_TRANSITIONS: Record<string, string[]> = {
   delivered:         [],
   cancelled:         [],
 }
+ 
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
   const response = NextResponse.next()
