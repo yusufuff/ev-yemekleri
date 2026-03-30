@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { createClient } from '@supabase/supabase-js'
 
 function StatCard({ label, value, icon, color }: { label: string; value: string; icon: string; color: string }) {
   return (
@@ -29,22 +30,26 @@ export default function DashboardPage() {
     if (orderId.startsWith('ord-p')) return
     setGuncelleniyor(orderId)
     try {
-      const body: any = { status }
+      // Direkt Supabase client ile güncelle — API route'u bypass et
+      const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      )
+      const updateData: any = { status }
       if (status === 'delivered_pending') {
-        body.delivered_at = new Date().toISOString()
+        updateData.delivered_at = new Date().toISOString()
       }
-      await fetch(`/api/chef/orders/${orderId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      })
-      const res = await fetch('/api/chef/dashboard')
-      const d = await res.json()
-      setData(d)
-    } catch (err) {
-      console.error('Order update error:', err)
-    } finally {
-      // Local state direkt guncelle
+      const { error } = await supabase
+        .from('orders')
+        .update(updateData)
+        .eq('id', orderId)
+
+      if (error) {
+        console.error('Supabase update error:', error)
+        return
+      }
+
+      // Local state güncelle
       setData((prev: any) => {
         if (!prev) return prev
         const guncelle = (orders: any[]) =>
@@ -59,6 +64,9 @@ export default function DashboardPage() {
             : guncelle(prev.active_orders ?? []),
         }
       })
+    } catch (err) {
+      console.error('Order update error:', err)
+    } finally {
       setGuncelleniyor(null)
     }
   }
