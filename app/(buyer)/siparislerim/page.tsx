@@ -93,14 +93,12 @@ export default function SiparislerimPage() {
 
       if (!user) { setLoading(false); return }
 
-      // Orders - nested select olmadan
       const { data: ordersData } = await supabase
         .from('orders')
         .select('id, order_number, status, delivery_type, total_amount, subtotal, created_at, delivery_address, chef_id')
         .eq('buyer_id', user.id)
         .order('created_at', { ascending: false })
 
-      // Order items ayrı çek
       const orderIds = (ordersData ?? []).map(o => o.id)
       let itemsMap = {}
       if (orderIds.length > 0) {
@@ -114,7 +112,6 @@ export default function SiparislerimPage() {
         })
       }
 
-      // Chef isimleri ayrı çek
       const chefIds = [...new Set((ordersData ?? []).map(o => o.chef_id).filter(Boolean))]
       let chefMap = {}
       if (chefIds.length > 0) {
@@ -157,49 +154,23 @@ export default function SiparislerimPage() {
     } catch { alert('İptal işlemi başarısız.') }
   }
 
-   const siparisiOnayla = async (orderId) => {
-  if (!confirm('Siparişi teslim aldığınızı onaylıyor musunuz?')) return
-  setOnaylaniyor(orderId)
-  try {
-    const res = await fetch(`/api/chef/orders/${orderId}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status: 'delivered' }),
-    })
-    const json = await res.json()
-    if (!res.ok) { alert(`Hata: ${json.error}`); return }
-    setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: 'delivered' } : o))
-  } catch {
-    alert('Onay işlemi başarısız.')
-  } finally {
-    setOnaylaniyor(null)
-  }
-}
-  if (!confirm('Siparişi teslim aldığınızı onaylıyor musunuz?')) return
-  setOnaylaniyor(orderId)
-  try {
-    const res = await fetch(`/api/chef/orders/${orderId}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status: 'delivered' }),
-    })
-    const json = await res.json()
-    if (!res.ok) { alert(`Hata: ${json.error}`); return }
-    setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: 'delivered' } : o))
-  } catch { 
-    alert('Onay işlemi başarısız.') 
-  } finally { 
-    setOnaylaniyor(null) 
-  }
-} = async (orderId) => {
+  const siparisiOnayla = async (orderId) => {
     if (!confirm('Siparişi teslim aldığınızı onaylıyor musunuz?')) return
     setOnaylaniyor(orderId)
     try {
-      const supabase = getSupabaseBrowserClient()
-      await supabase.from('orders').update({ status: 'delivered' }).eq('id', orderId)
-      loadOrders()
-    } catch { alert('Onay işlemi başarısız.') }
-    finally { setOnaylaniyor(null) }
+      const res = await fetch(`/api/chef/orders/${orderId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'delivered' }),
+      })
+      const json = await res.json()
+      if (!res.ok) { alert(`Hata: ${json.error}`); return }
+      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: 'delivered' } : o))
+    } catch {
+      alert('Onay işlemi başarısız.')
+    } finally {
+      setOnaylaniyor(null)
+    }
   }
 
   const handleReorder = (order) => {
