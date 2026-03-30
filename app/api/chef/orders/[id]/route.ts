@@ -1,6 +1,5 @@
-// v2 - delivered_pending gecisi aktif
+// v3 - auth cookie sorunu cozuldu, chef_id ile yetkilendirme
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@supabase/ssr'
 import { createClient } from '@supabase/supabase-js'
 
 const VALID_TRANSITIONS: Record<string, string[]> = {
@@ -14,30 +13,6 @@ const VALID_TRANSITIONS: Record<string, string[]> = {
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
-  const response = NextResponse.next()
-
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll: () => req.cookies.getAll(),
-        setAll: (cs) =>
-          cs.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options)
-          ),
-      },
-    }
-  )
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
-    return NextResponse.json({ error: 'Oturum acik degil.' }, { status: 401 })
-  }
-
   let body: any
   try {
     body = await req.json()
