@@ -96,7 +96,7 @@ export default function SiparislerimPage() {
       // Orders - nested select olmadan
       const { data: ordersData } = await supabase
         .from('orders')
-        .select('id, order_number, status, delivery_type, total_amount, subtotal, created_at, delivery_address, estimated_minutes, chef_id')
+        .select('id, order_number, status, delivery_type, total_amount, subtotal, created_at, delivery_address, chef_id')
         .eq('buyer_id', user.id)
         .order('created_at', { ascending: false })
 
@@ -132,7 +132,7 @@ export default function SiparislerimPage() {
         delivery_type: o.delivery_type,
         total_amount: parseFloat(o.total_amount ?? o.subtotal ?? 0),
         created_at: o.created_at,
-        estimated_minutes: o.estimated_minutes ?? 0,
+        estimated_minutes: 0,
         chef_id: o.chef_id,
         chef_name: chefMap[o.chef_id] ?? 'Asci',
         delivery_address: typeof o.delivery_address === 'object' ? (o.delivery_address?.full_address ?? '') : (o.delivery_address ?? ''),
