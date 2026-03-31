@@ -45,7 +45,8 @@ export default function ProfilPage() {
   }
 
   useEffect(() => {
-    sessionYukle().finally(() => setLoading(false))
+    router.refresh()
+sessionYukle().finally(() => setLoading(false))
   }, [])
 
   const save = async () => {
