@@ -95,7 +95,6 @@ function MesajlarIcerigi() {
       const role = profile?.role ?? 'buyer'
       setUserRole(role)
 
-      // Sipariş listesini çek
       let ordersQuery = supabase
         .from('orders')
         .select('id, order_number, chef_id, buyer_id, status')
@@ -115,7 +114,6 @@ function MesajlarIcerigi() {
 
       const { data: orders } = await ordersQuery
 
-      // Her sipariş için karşı taraf ismini çek
       const convList = await Promise.all((orders ?? []).map(async (order) => {
         let karsiAd = 'Kullanıcı'
         if (role === 'buyer') {
@@ -134,7 +132,6 @@ function MesajlarIcerigi() {
           karsiAd = buyer?.full_name ?? 'Alıcı'
         }
 
-        // Son mesajı çek
         const { data: lastMsg } = await supabase
           .from('messages')
           .select('content, created_at')
@@ -147,6 +144,8 @@ function MesajlarIcerigi() {
           order_id: order.id,
           order_number: order.order_number,
           karsi_ad: karsiAd,
+          chef_id: order.chef_id,
+          buyer_id: order.buyer_id,
           last_message: lastMsg?.content ?? 'Henüz mesaj yok',
           last_time: lastMsg?.created_at ? new Date(lastMsg.created_at).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) : '',
           status: order.status,
@@ -174,7 +173,6 @@ function MesajlarIcerigi() {
     }
     yukle()
 
-    // Realtime
     const channel = supabase
       .channel('messages-' + activeOrderId)
       .on('postgres_changes', {
@@ -197,9 +195,28 @@ function MesajlarIcerigi() {
   const sendMessage = async (text) => {
     if (!text?.trim() || !user || !activeOrderId) return
     const supabase = getSupabaseBrowserClient()
+
+    const conv = conversations.find(c => c.order_id === activeOrderId)
+    if (!conv) return
+
+    let recipientId
+    if (userRole === 'buyer') {
+      const { data: cp } = await supabase
+        .from('chef_profiles')
+        .select('user_id')
+        .eq('id', conv.chef_id)
+        .single()
+      recipientId = cp?.user_id
+    } else {
+      recipientId = conv.buyer_id
+    }
+
+    if (!recipientId) return
+
     await supabase.from('messages').insert({
       order_id: activeOrderId,
       sender_id: user.id,
+      recipient_id: recipientId,
       content: text.trim(),
       is_read: false,
     })
@@ -222,7 +239,6 @@ function MesajlarIcerigi() {
 
         <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: 16, height: 'calc(100vh - 160px)', minHeight: 500 }}>
 
-          {/* Konuşma listesi */}
           <div style={{ background: 'white', borderRadius: 16, overflow: 'hidden', boxShadow: '0 2px 12px rgba(74,44,14,0.08)', display: 'flex', flexDirection: 'column' }}>
             <div style={{ padding: '14px 16px', borderBottom: '1px solid #F5EDD8', fontWeight: 700, fontSize: 14, color: '#4A2C0E' }}>
               Konuşmalar
@@ -248,7 +264,6 @@ function MesajlarIcerigi() {
             ))}
           </div>
 
-          {/* Mesaj alanı */}
           <div style={{ background: 'white', borderRadius: 16, boxShadow: '0 2px 12px rgba(74,44,14,0.08)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
             {active ? (
               <>
@@ -265,7 +280,7 @@ function MesajlarIcerigi() {
                 <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
                   {messages.length === 0 && (
                     <div style={{ textAlign: 'center', color: '#8A7B6B', fontSize: 13, marginTop: 40 }}>
-                      Henüz mesaj yok. Şablon kullanarak mesaj gönderin.
+                      Henüz mesaj yok. Şablon seçerek mesaj gönderin.
                     </div>
                   )}
                   {messages.map(msg => {
@@ -290,10 +305,8 @@ function MesajlarIcerigi() {
                   <div ref={bottomRef} />
                 </div>
 
-                {/* Şablon seçici */}
                 {sablonAcik && (
                   <div style={{ borderTop: '1px solid #F5EDD8', background: '#FAFAFA', maxHeight: 280, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-                    {/* Grup sekmeleri */}
                     <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid #F5EDD8', overflowX: 'auto' }}>
                       {sablonlar.map((grup, i) => (
                         <button key={i} onClick={() => setAktifGrup(i)} style={{
@@ -307,17 +320,13 @@ function MesajlarIcerigi() {
                         </button>
                       ))}
                     </div>
-                    {/* Mesaj şablonları */}
                     <div style={{ overflowY: 'auto', padding: '8px 12px', display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                       {sablonlar[aktifGrup]?.mesajlar.map((sablon, i) => (
                         <button key={i} onClick={() => sendMessage(sablon)} style={{
                           padding: '8px 12px', background: 'white', border: '1.5px solid #E8E0D4',
                           borderRadius: 20, fontSize: 12, cursor: 'pointer', fontFamily: 'inherit',
-                          color: '#4A2C0E', transition: 'all 0.15s',
-                        }}
-                          onMouseEnter={e => { e.target.style.background = '#FEF3EC'; e.target.style.borderColor = '#E8622A' }}
-                          onMouseLeave={e => { e.target.style.background = 'white'; e.target.style.borderColor = '#E8E0D4' }}
-                        >
+                          color: '#4A2C0E',
+                        }}>
                           {sablon}
                         </button>
                       ))}
@@ -325,7 +334,6 @@ function MesajlarIcerigi() {
                   </div>
                 )}
 
-                {/* Alt bar */}
                 <div style={{ padding: '12px 16px', borderTop: '1px solid #F5EDD8', display: 'flex', gap: 10, alignItems: 'center' }}>
                   <button onClick={() => setSablonAcik(p => !p)} style={{
                     padding: '10px 14px', background: sablonAcik ? '#FEF3EC' : 'white',
