@@ -24,7 +24,14 @@ export default function SifreForm() {
     try {
       const supabase = getSupabaseBrowserClient()
       const { error } = await supabase.auth.updateUser({ password: sifreForm.yeni })
-      if (error) { setHata('Hata: ' + error.message); return }
+      if (error) {
+  if (error.message.includes('different from the old password')) {
+    setHata('Yeni şifre eski şifreden farklı olmalı')
+  } else {
+    setHata('Hata: ' + error.message)
+  }
+  return
+}
       setSaved(true)
       setSifreForm({ yeni: '', tekrar: '' })
       setTimeout(() => setSaved(false), 2000)
