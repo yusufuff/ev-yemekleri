@@ -79,6 +79,11 @@ function MesajlarIcerigi() {
   const [sablonAcik, setSablonAcik] = useState(false)
   const [aktifGrup, setAktifGrup] = useState(0)
   const bottomRef = useRef(null)
+  const activeOrderIdRef = useRef(activeOrderId)
+
+  useEffect(() => {
+    activeOrderIdRef.current = activeOrderId
+  }, [activeOrderId])
 
   useEffect(() => {
     const yukle = async () => {
@@ -153,17 +158,18 @@ function MesajlarIcerigi() {
       }))
 
       setConversations(convList)
-      if (!activeOrderId && convList.length > 0) setActiveOrderId(convList[0].order_id)
+      if (!activeOrderIdRef.current && convList.length > 0) setActiveOrderId(convList[0].order_id)
       setLoading(false)
     }
     yukle()
   }, [])
 
+  // Mesajlari yukle ve 5 saniyede bir yenile
   useEffect(() => {
     if (!activeOrderId || !user) return
     const supabase = getSupabaseBrowserClient()
 
-    const yukle = async () => {
+    const mesajlariYukle = async () => {
       const { data } = await supabase
         .from('messages')
         .select('id, content, sender_id, created_at')
@@ -171,21 +177,13 @@ function MesajlarIcerigi() {
         .order('created_at', { ascending: true })
       setMessages(data ?? [])
     }
-    yukle()
 
-    const channel = supabase
-      .channel('messages-' + activeOrderId)
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'messages',
-        filter: `order_id=eq.${activeOrderId}`,
-      }, payload => {
-        setMessages(prev => [...prev, payload.new])
-      })
-      .subscribe()
+    mesajlariYukle()
 
-    return () => supabase.removeChannel(channel)
+    // 5 saniyede bir yenile
+    const interval = setInterval(mesajlariYukle, 5000)
+
+    return () => clearInterval(interval)
   }, [activeOrderId, user])
 
   useEffect(() => {
@@ -213,6 +211,14 @@ function MesajlarIcerigi() {
 
     if (!recipientId) return
 
+    // Aninda local state'e ekle
+    setMessages(prev => [...prev, {
+      id: Date.now().toString(),
+      content: text.trim(),
+      sender_id: user.id,
+      created_at: new Date().toISOString(),
+    }])
+
     await supabase.from('messages').insert({
       order_id: activeOrderId,
       sender_id: user.id,
@@ -220,13 +226,7 @@ function MesajlarIcerigi() {
       content: text.trim(),
       is_read: false,
     })
-    // Local state'e aninda ekle
-setMessages(prev => [...prev, {
-  id: Date.now().toString(),
-  content: text.trim(),
-  sender_id: user.id,
-  created_at: new Date().toISOString(),
-}])
+
     setSablonAcik(false)
   }
 
@@ -314,7 +314,7 @@ setMessages(prev => [...prev, {
 
                 {sablonAcik && (
                   <div style={{ borderTop: '1px solid #F5EDD8', background: '#FAFAFA', maxHeight: 280, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-                    <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid #F5EDD8', overflowX: 'auto' }}>
+                    <div style={{ display: 'flex', borderBottom: '1px solid #F5EDD8', overflowX: 'auto' }}>
                       {sablonlar.map((grup, i) => (
                         <button key={i} onClick={() => setAktifGrup(i)} style={{
                           padding: '8px 14px', fontSize: 11, fontWeight: 600, cursor: 'pointer',
@@ -331,8 +331,7 @@ setMessages(prev => [...prev, {
                       {sablonlar[aktifGrup]?.mesajlar.map((sablon, i) => (
                         <button key={i} onClick={() => sendMessage(sablon)} style={{
                           padding: '8px 12px', background: 'white', border: '1.5px solid #E8E0D4',
-                          borderRadius: 20, fontSize: 12, cursor: 'pointer', fontFamily: 'inherit',
-                          color: '#4A2C0E',
+                          borderRadius: 20, fontSize: 12, cursor: 'pointer', fontFamily: 'inherit', color: '#4A2C0E',
                         }}>
                           {sablon}
                         </button>
