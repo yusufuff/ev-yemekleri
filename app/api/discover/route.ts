@@ -105,7 +105,7 @@ export async function GET(req: NextRequest) {
     }))
 
     // Yarıçap filtrele
-    let filtered = chefs.filter(c => c.distance_km <= radius)
+    let filtered = chefs
 
     // Sırala
     if (sort === 'rating') {
