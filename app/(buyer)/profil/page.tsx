@@ -2,18 +2,10 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@supabase/supabase-js'
-
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-)
 
 export default function ProfilPage() {
   const router = useRouter()
-  const [userId, setUserId] = useState(null)
   const [profile, setProfile] = useState(null)
-  const [chefProfile, setChefProfile] = useState(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -27,32 +19,18 @@ export default function ProfilPage() {
         const res = await fetch('/api/auth/session')
         const session = await res.json()
         if (!session?.user?.id) { router.push('/giris'); return }
-        const uid = session.user.id
-        setUserId(uid)
 
-        const { data: p } = await supabaseAdmin
-          .from('users')
-          .select('*')
-          .eq('id', uid)
-          .single()
+        setProfile(session.user)
+        setForm({
+          full_name: session.user.full_name ?? '',
+          phone: session.user.phone ?? '',
+          email: session.user.email ?? '',
+        })
 
-        if (p) {
-          setProfile(p)
-          setForm({
-            full_name: p.full_name ?? '',
-            phone: p.phone ?? '',
-            email: session.user.email ?? '',
-          })
-        }
-
-        if (p?.role === 'chef') {
-          const { data: cp } = await supabaseAdmin
-            .from('chef_profiles')
-            .select('*')
-            .eq('user_id', uid)
-            .single()
+        if (session.user.role === 'chef') {
+          const cpRes = await fetch('/api/chef/profile')
+          const cp = await cpRes.json()
           if (cp) {
-            setChefProfile(cp)
             setChefForm({
               bio: cp.bio ?? '',
               iban: cp.iban ?? '',
@@ -88,6 +66,7 @@ export default function ProfilPage() {
       const json = await res.json()
       if (!res.ok) { alert('Hata: ' + json.error); return }
       setSaved(true)
+      setProfile(prev => ({ ...prev, full_name: form.full_name, phone: form.phone }))
       setTimeout(() => setSaved(false), 2000)
     } catch (e) {
       alert('Bir sorun olustu')
@@ -153,22 +132,41 @@ export default function ProfilPage() {
               </div>
             </div>
 
-            {[
-              ['Ad Soyad', 'full_name', 'text'],
-              ['Telefon', 'phone', 'tel'],
-              ['E-posta', 'email', 'email'],
-            ].map(([label, key, type]) => (
-              <div key={key} style={{ marginBottom: 12 }}>
-                <label style={{ fontSize: 12, fontWeight: 600, color: '#7A4A20', display: 'block', marginBottom: 5 }}>{label}</label>
-                <input
-                  type={type}
-                  value={form[key]}
-                  onChange={e => setForm(p => ({ ...p, [key]: e.target.value }))}
-                  disabled={key === 'email'}
-                  style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #E8E0D4', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', boxSizing: 'border-box', background: key === 'email' ? '#F5F5F5' : 'white', color: '#4A2C0E' }}
-                />
-              </div>
-            ))}
+            <div style={{ marginBottom: 12 }}>
+              <label style={{ fontSize: 12, fontWeight: 600, color: '#7A4A20', display: 'block', marginBottom: 5 }}>Ad Soyad</label>
+              <input
+                type="text"
+                value={form.full_name}
+                onChange={e => setForm(p => ({ ...p, full_name: e.target.value }))}
+                style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #E8E0D4', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', boxSizing: 'border-box', color: '#4A2C0E' }}
+              />
+            </div>
+
+            <div style={{ marginBottom: 12 }}>
+              <label style={{ fontSize: 12, fontWeight: 600, color: '#7A4A20', display: 'block', marginBottom: 5 }}>Telefon</label>
+              <input
+                type="tel"
+                value={form.phone}
+                onChange={e => {
+                  const val = e.target.value.replace(/[^0-9]/g, '')
+                  if (val.length <= 11) setForm(p => ({ ...p, phone: val }))
+                }}
+                maxLength={11}
+                placeholder="05XXXXXXXXX"
+                style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #E8E0D4', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', boxSizing: 'border-box', color: '#4A2C0E' }}
+              />
+            </div>
+
+            <div style={{ marginBottom: 12 }}>
+              <label style={{ fontSize: 12, fontWeight: 600, color: '#7A4A20', display: 'block', marginBottom: 5 }}>E-posta</label>
+              <input
+                type="email"
+                value={form.email}
+                disabled
+                style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #E8E0D4', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', boxSizing: 'border-box', background: '#F5F5F5', color: '#8A7B6B' }}
+              />
+              <div style={{ fontSize: 11, color: '#8A7B6B', marginTop: 4 }}>E-posta değiştirilemez</div>
+            </div>
           </div>
 
           {isChef && (
