@@ -7,8 +7,7 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 )
 
-// Haversine formülü ile iki koordinat arası mesafe (km)
-function haversine(lat1: number, lng1: number, lat2: number, lng2: number): number {
+function haversine(lat1, lng1, lat2, lng2) {
   const R = 6371
   const dLat = (lat2 - lat1) * Math.PI / 180
   const dLng = (lng2 - lng1) * Math.PI / 180
@@ -16,14 +15,12 @@ function haversine(lat1: number, lng1: number, lat2: number, lng2: number): numb
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
 }
 
-// PostGIS geometry hex'inden lat/lng çıkar
-function parseLocation(hex: string): { lat: number; lng: number } | null {
+function parseLocation(hex) {
   try {
     if (!hex || hex.length < 50) return null
-    // WKB formatı: byte order (1) + type (4) + srid (4) + x (8) + y (8) = little endian
     const buf = Buffer.from(hex, 'hex')
-    const x = buf.readDoubleLE(9)  // longitude
-    const y = buf.readDoubleLE(17) // latitude
+    const x = buf.readDoubleLE(9)
+    const y = buf.readDoubleLE(17)
     if (isNaN(x) || isNaN(y)) return null
     return { lat: y, lng: x }
   } catch {
@@ -31,24 +28,30 @@ function parseLocation(hex: string): { lat: number; lng: number } | null {
   }
 }
 
-export async function GET(req: NextRequest) {
+export async function GET(req) {
   try {
     const { searchParams } = new URL(req.url)
     const sort = searchParams.get('sort') ?? 'distance'
     const category = searchParams.get('category') ?? null
-    const radius = Number(searchParams.get('radius') ?? 50) // km, varsayılan geniş
     const userLat = searchParams.get('lat') ? Number(searchParams.get('lat')) : null
     const userLng = searchParams.get('lng') ? Number(searchParams.get('lng')) : null
 
-    let query = supabase
+    const { data, error } = await supabase
       .from('chef_profiles')
       .select('*')
       .eq('verification_status', 'approved')
 
-    const { data, error } = await query
-    if (error) throw error
+    console.log('[discover] data count:', data?.length, 'error:', JSON.stringify(error))
 
-    const chefs = await Promise.all((data ?? []).map(async (chef: any) => {
+    if (error) {
+      return NextResponse.json({ chefs: [], total: 0, error: error.message })
+    }
+
+    if (!data || data.length === 0) {
+      return NextResponse.json({ chefs: [], total: 0, locationStr: 'Adana, Seyhan', debug: 'no data from supabase' })
+    }
+
+    const chefs = await Promise.all(data.map(async (chef) => {
       const { data: userData } = await supabase
         .from('users')
         .select('id, full_name, avatar_url')
@@ -63,17 +66,13 @@ export async function GET(req: NextRequest) {
         .limit(3)
 
       if (category) itemsQuery = itemsQuery.eq('category', category)
-
       const { data: items } = await itemsQuery
 
-      // Gerçek mesafe hesapla
-      let distanceKm = 999
+      let distanceKm = 5
       const chefCoords = parseLocation(chef.location)
-
       if (userLat && userLng && chefCoords) {
         distanceKm = haversine(userLat, userLng, chefCoords.lat, chefCoords.lng)
       } else if (chefCoords) {
-        // Varsayılan olarak Adana merkez (36.9914, 35.3308)
         distanceKm = haversine(36.9914, 35.3308, chefCoords.lat, chefCoords.lng)
       }
 
@@ -103,17 +102,12 @@ export async function GET(req: NextRequest) {
       }
     }))
 
-    // Yarıçap filtrele
-    let filtered = chefs
-
-    // Sırala
     if (sort === 'rating') {
-      filtered.sort((a, b) => (b.avg_rating ?? 0) - (a.avg_rating ?? 0))
+      chefs.sort((a, b) => (b.avg_rating ?? 0) - (a.avg_rating ?? 0))
     } else if (sort === 'price') {
-      filtered.sort((a, b) => (a.preview_items[0]?.price ?? 999) - (b.preview_items[0]?.price ?? 999))
+      chefs.sort((a, b) => (a.preview_items[0]?.price ?? 999) - (b.preview_items[0]?.price ?? 999))
     } else {
-      // distance (varsayılan)
-      filtered.sort((a, b) => {
+      chefs.sort((a, b) => {
         if (a.is_open && !b.is_open) return -1
         if (!a.is_open && b.is_open) return 1
         return a.distance_km - b.distance_km
@@ -121,10 +115,10 @@ export async function GET(req: NextRequest) {
     }
 
     const locationStr = userLat ? `${userLat.toFixed(4)}, ${userLng?.toFixed(4)}` : 'Adana, Seyhan'
+    return NextResponse.json({ chefs, total: chefs.length, locationStr })
 
-    return NextResponse.json({ chefs: filtered, total: filtered.length, locationStr })
-  } catch (err: any) {
-    console.error('[discover] error:', err.message)
-    return NextResponse.json({ chefs: [], total: 0, locationStr: 'Adana, Seyhan' })
+  } catch (err) {
+    console.error('[discover] catch error:', err)
+    return NextResponse.json({ chefs: [], total: 0, error: String(err) })
   }
 }
