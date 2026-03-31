@@ -220,6 +220,13 @@ function MesajlarIcerigi() {
       content: text.trim(),
       is_read: false,
     })
+    // Local state'e aninda ekle
+setMessages(prev => [...prev, {
+  id: Date.now().toString(),
+  content: text.trim(),
+  sender_id: user.id,
+  created_at: new Date().toISOString(),
+}])
     setSablonAcik(false)
   }
 
