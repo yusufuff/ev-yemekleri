@@ -19,7 +19,7 @@ export default function ProfilPage() {
   const [sifreHata, setSifreHata] = useState('')
 
   const sessionYukle = async () => {
-    const res = await fetch('/api/auth/session', { cache: 'no-store' })
+    const res = await fetch('/api/auth/session?t=' + Date.now(), { cache: 'no-store' })
     const session = await res.json()
     if (!session?.user?.id) { router.push('/giris'); return }
     setProfile(session.user)
