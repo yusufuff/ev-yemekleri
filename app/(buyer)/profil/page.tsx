@@ -2,6 +2,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { getSupabaseBrowserClient } from '@/lib/supabase/client'
 
 export default function ProfilPage() {
   const router = useRouter()
@@ -12,38 +13,39 @@ export default function ProfilPage() {
   const [form, setForm] = useState({ full_name: '', phone: '', email: '' })
   const [chefForm, setChefForm] = useState({ bio: '', iban: '', radius: 5, min_order: 40 })
   const [notifs, setNotifs] = useState({ orders: true, favorites: true, reviews: true, campaigns: false, stock: true })
+  const [sifreForm, setSifreForm] = useState({ yeni: '', tekrar: '' })
+  const [sifreSaving, setSifreSaving] = useState(false)
+  const [sifreSaved, setSifreSaved] = useState(false)
+  const [sifreHata, setSifreHata] = useState('')
+
+  const sessionYukle = async () => {
+    const res = await fetch('/api/auth/session', { cache: 'no-store' })
+    const session = await res.json()
+    if (!session?.user?.id) { router.push('/giris'); return }
+    setProfile(session.user)
+    setForm({
+      full_name: session.user.full_name ?? '',
+      phone: session.user.phone ?? '',
+      email: session.user.email ?? '',
+    })
+    if (session.user.role === 'chef') {
+      try {
+        const cpRes = await fetch('/api/chef/profile', { cache: 'no-store' })
+        const cp = await cpRes.json()
+        if (cp && !cp.error) {
+          setChefForm({
+            bio: cp.bio ?? '',
+            iban: cp.iban ?? '',
+            radius: cp.delivery_radius_km ?? 5,
+            min_order: cp.min_order_amount ?? 40,
+          })
+        }
+      } catch (e) {}
+    }
+  }
 
   useEffect(() => {
-    const yukle = async () => {
-      try {
-        const res = await fetch('/api/auth/session')
-        const session = await res.json()
-        if (!session?.user?.id) { router.push('/giris'); return }
-        setProfile(session.user)
-        setForm({
-          full_name: session.user.full_name ?? '',
-          phone: session.user.phone ?? '',
-          email: session.user.email ?? '',
-        })
-        if (session.user.role === 'chef') {
-          const cpRes = await fetch('/api/chef/profile')
-          const cp = await cpRes.json()
-          if (cp && !cp.error) {
-            setChefForm({
-              bio: cp.bio ?? '',
-              iban: cp.iban ?? '',
-              radius: cp.delivery_radius_km ?? 5,
-              min_order: cp.min_order_amount ?? 40,
-            })
-          }
-        }
-      } catch (e) {
-        console.error('profil yukle hata:', e)
-      } finally {
-        setLoading(false)
-      }
-    }
-    yukle()
+    sessionYukle().finally(() => setLoading(false))
   }, [])
 
   const save = async () => {
@@ -64,13 +66,38 @@ export default function ProfilPage() {
       })
       const json = await res.json()
       if (!res.ok) { alert('Hata: ' + json.error); return }
-      setProfile(prev => ({ ...prev, full_name: form.full_name, phone: form.phone, email: form.email }))
+      await sessionYukle()
       setSaved(true)
       setTimeout(() => setSaved(false), 2000)
     } catch (e) {
       alert('Bir sorun olustu')
     } finally {
       setSaving(false)
+    }
+  }
+
+  const sifreDegistir = async () => {
+    setSifreHata('')
+    if (!sifreForm.yeni || sifreForm.yeni.length < 6) {
+      setSifreHata('Şifre en az 6 karakter olmalı')
+      return
+    }
+    if (sifreForm.yeni !== sifreForm.tekrar) {
+      setSifreHata('Şifreler eşleşmiyor')
+      return
+    }
+    setSifreSaving(true)
+    try {
+      const supabase = getSupabaseBrowserClient()
+      const { error } = await supabase.auth.updateUser({ password: sifreForm.yeni })
+      if (error) { setSifreHata('Hata: ' + error.message); return }
+      setSifreSaved(true)
+      setSifreForm({ yeni: '', tekrar: '' })
+      setTimeout(() => setSifreSaved(false), 2000)
+    } catch (e) {
+      setSifreHata('Bir sorun oluştu')
+    } finally {
+      setSifreSaving(false)
     }
   }
 
@@ -105,6 +132,8 @@ export default function ProfilPage() {
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+          {/* Kisisel Bilgiler */}
           <div style={{ background: 'white', borderRadius: 16, padding: 24, boxShadow: '0 2px 12px rgba(74,44,14,0.08)' }}>
             <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 17, fontWeight: 700, color: '#4A2C0E', marginBottom: 16 }}>Kişisel Bilgiler</div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20 }}>
@@ -136,8 +165,42 @@ export default function ProfilPage() {
               <input type="email" value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))}
                 style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #E8E0D4', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', boxSizing: 'border-box', color: '#4A2C0E' }} />
             </div>
+
+            <button onClick={save} disabled={saving} style={{ width: '100%', padding: '12px 0', background: saved ? '#3D6B47' : '#E8622A', color: 'white', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', transition: 'background 0.2s', opacity: saving ? 0.7 : 1 }}>
+              {saving ? '⏳ Kaydediliyor...' : saved ? '✅ Kaydedildi!' : '💾 Bilgileri Kaydet'}
+            </button>
           </div>
 
+          {/* Sifre Degistir */}
+          <div style={{ background: 'white', borderRadius: 16, padding: 24, boxShadow: '0 2px 12px rgba(74,44,14,0.08)' }}>
+            <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 17, fontWeight: 700, color: '#4A2C0E', marginBottom: 16 }}>🔒 Şifre Değiştir</div>
+
+            <div style={{ marginBottom: 12 }}>
+              <label style={{ fontSize: 12, fontWeight: 600, color: '#7A4A20', display: 'block', marginBottom: 5 }}>Yeni Şifre</label>
+              <input type="password" value={sifreForm.yeni} onChange={e => setSifreForm(p => ({ ...p, yeni: e.target.value }))}
+                placeholder="En az 6 karakter"
+                style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #E8E0D4', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', boxSizing: 'border-box', color: '#4A2C0E' }} />
+            </div>
+
+            <div style={{ marginBottom: 12 }}>
+              <label style={{ fontSize: 12, fontWeight: 600, color: '#7A4A20', display: 'block', marginBottom: 5 }}>Yeni Şifre (Tekrar)</label>
+              <input type="password" value={sifreForm.tekrar} onChange={e => setSifreForm(p => ({ ...p, tekrar: e.target.value }))}
+                placeholder="Şifreyi tekrar girin"
+                style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #E8E0D4', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', boxSizing: 'border-box', color: '#4A2C0E' }} />
+            </div>
+
+            {sifreHata && (
+              <div style={{ background: '#FEE2E2', color: '#DC2626', borderRadius: 8, padding: '8px 12px', fontSize: 13, marginBottom: 12 }}>
+                ❌ {sifreHata}
+              </div>
+            )}
+
+            <button onClick={sifreDegistir} disabled={sifreSaving} style={{ width: '100%', padding: '12px 0', background: sifreSaved ? '#3D6B47' : '#4A2C0E', color: 'white', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', opacity: sifreSaving ? 0.7 : 1 }}>
+              {sifreSaving ? '⏳ Değiştiriliyor...' : sifreSaved ? '✅ Şifre Değiştirildi!' : '🔒 Şifreyi Değiştir'}
+            </button>
+          </div>
+
+          {/* Asci Ayarlari */}
           {isChef && (
             <div style={{ background: 'white', borderRadius: 16, padding: 24, boxShadow: '0 2px 12px rgba(74,44,14,0.08)' }}>
               <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 17, fontWeight: 700, color: '#4A2C0E', marginBottom: 16 }}>Aşçı Ayarları</div>
@@ -166,6 +229,7 @@ export default function ProfilPage() {
             </div>
           )}
 
+          {/* Bildirimler */}
           <div style={{ background: 'white', borderRadius: 16, padding: 24, boxShadow: '0 2px 12px rgba(74,44,14,0.08)' }}>
             <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 17, fontWeight: 700, color: '#4A2C0E', marginBottom: 16 }}>Bildirim Tercihleri</div>
             {[
@@ -187,14 +251,11 @@ export default function ProfilPage() {
             ))}
           </div>
 
-          <div style={{ display: 'flex', gap: 10 }}>
-            <button onClick={save} disabled={saving} style={{ flex: 1, padding: '12px 0', background: saved ? '#3D6B47' : '#E8622A', color: 'white', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', transition: 'background 0.2s', opacity: saving ? 0.7 : 1 }}>
-              {saving ? '⏳ Kaydediliyor...' : saved ? '✅ Kaydedildi!' : '💾 Kaydet'}
-            </button>
-            <button onClick={cikisYap} style={{ padding: '12px 20px', background: '#FEE2E2', color: '#DC2626', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
-              Çıkış Yap
-            </button>
-          </div>
+          {/* Cikis */}
+          <button onClick={cikisYap} style={{ width: '100%', padding: '12px 0', background: '#FEE2E2', color: '#DC2626', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+            🚪 Çıkış Yap
+          </button>
+
         </div>
       </div>
     </div>

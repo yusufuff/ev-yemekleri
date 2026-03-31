@@ -37,7 +37,12 @@ export async function PATCH(req: NextRequest) {
     })
     .eq('id', user.id)
 
-  if (userError) return NextResponse.json({ error: userError.message }, { status: 500 })
+  if (userError) {
+  if (userError.code === '23505') {
+    return NextResponse.json({ error: 'Bu telefon numarası zaten kayıtlı.' }, { status: 400 })
+  }
+  return NextResponse.json({ error: userError.message }, { status: 500 })
+}
 
   if (email && email !== user.email) {
     await supabaseAdmin.auth.admin.updateUserById(user.id, { email })
