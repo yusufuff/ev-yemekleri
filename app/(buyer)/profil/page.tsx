@@ -54,7 +54,13 @@ export default function ProfilPage() {
       const res = await fetch('/api/user/profile', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+        body: JSON.stringify({body: JSON.stringify({
+  full_name: form.full_name,
+  phone: form.phone,
+  email: form.email,   // ← bunu ekle
+  bio: chefForm.bio,
+  ...
+})
           full_name: form.full_name,
           phone: form.phone,
           bio: chefForm.bio,
@@ -69,6 +75,8 @@ export default function ProfilPage() {
       // Aninda state guncelle
       setProfile(prev => ({ ...prev, full_name: form.full_name, phone: form.phone }))
       setSaved(true)
+      // api/auth/session cache'ini yenile
+await fetch('/api/auth/session', { cache: 'no-store' })
       setTimeout(() => setSaved(false), 2000)
     } catch (e) {
       alert('Bir sorun olustu')

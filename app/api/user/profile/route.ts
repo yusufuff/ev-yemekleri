@@ -20,7 +20,7 @@ export async function PATCH(req: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Oturum yok' }, { status: 401 })
 
   const body = await req.json()
-  const { full_name, phone, bio, iban, delivery_radius_km, min_order_amount } = body
+  const { full_name, phone, email, bio, iban, delivery_radius_km, min_order_amount } = body
 
   const supabaseAdmin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -38,6 +38,10 @@ export async function PATCH(req: NextRequest) {
     .eq('id', user.id)
 
   if (userError) return NextResponse.json({ error: userError.message }, { status: 500 })
+
+  if (email && email !== user.email) {
+    await supabaseAdmin.auth.admin.updateUserById(user.id, { email })
+  }
 
   const { data: profile } = await supabaseAdmin
     .from('users')
