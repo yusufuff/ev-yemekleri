@@ -124,7 +124,7 @@ export default function ProfilPage() {
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20 }}>
               <div style={{ width: 64, height: 64, borderRadius: '50%', background: '#E8622A', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 24, fontWeight: 700 }}>
-                {form.full_name?.charAt(0)?.toUpperCase() ?? '?'}
+                {(form.full_name || profile?.full_name || '?').charAt(0).toUpperCase()}
               </div>
               <div>
                 <div style={{ fontWeight: 700, fontSize: 15, color: '#4A2C0E' }}>{form.full_name || 'İsim girilmemiş'}</div>
