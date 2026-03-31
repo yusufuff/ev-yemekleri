@@ -162,10 +162,10 @@ export default function ProfilPage() {
               <input
                 type="email"
                 value={form.email}
-                disabled
+           
                 style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #E8E0D4', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', boxSizing: 'border-box', background: '#F5F5F5', color: '#8A7B6B' }}
               />
-              <div style={{ fontSize: 11, color: '#8A7B6B', marginTop: 4 }}>E-posta değiştirilemez</div>
+            
             </div>
           </div>
 

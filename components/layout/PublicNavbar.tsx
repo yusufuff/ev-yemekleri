@@ -1,7 +1,6 @@
 ﻿// @ts-nocheck
 'use client'
 import Link from 'next/link'
-
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import dynamic from 'next/dynamic'
@@ -12,15 +11,14 @@ const CartButton = dynamic(
   { ssr: false }
 )
 
-// Herkese açık
 const PUBLIC_LINKS = [
   { href: '/kesif',   label: 'Keşfet'      },
   { href: '/ara',     label: 'Yemek Ara'   },
   { href: '/asci-ol', label: 'Aşçı Ol 🍳' },
 ]
 
-// Sadece giriş yapınca
-const AUTH_LINKS = [{ href: '/davet', label: '🎁 Davet Et', roles: ['buyer','chef','admin'] },
+const AUTH_LINKS = [
+  { href: '/davet',        label: '🎁 Davet Et',  roles: ['buyer','chef','admin'] },
   { href: '/siparislerim', label: 'Siparişlerim', roles: ['buyer','chef','admin'] },
   { href: '/mesajlar',     label: 'Mesajlar',     roles: ['buyer','chef','admin'] },
   { href: '/favorilerim',  label: 'Favoriler',    roles: ['buyer','admin']        },
@@ -41,15 +39,18 @@ export function PublicNavbar() {
     const supabase = getSupabaseBrowserClient()
     supabase.auth.getUser().then(({ data }) => {
       if (data?.user) {
-        const meta = data.user.user_metadata
-        // DB'den rol al
-        supabase.from('users').select('role').eq('id', data.user.id).single().then(({ data: profile }) => {
-          setUser({
-            full_name: meta?.full_name || data.user.email?.split('@')[0],
-            role: profile?.role ?? meta?.role,
+        supabase
+          .from('users')
+          .select('role, full_name')
+          .eq('id', data.user.id)
+          .single()
+          .then(({ data: profile }) => {
+            setUser({
+              full_name: profile?.full_name || data.user.user_metadata?.full_name || data.user.email?.split('@')[0],
+              role: profile?.role ?? data.user.user_metadata?.role,
+            })
+            setLoaded(true)
           })
-          setLoaded(true)
-        })
       } else {
         setLoaded(true)
       }
@@ -64,16 +65,11 @@ export function PublicNavbar() {
 
   if (hidden) return null
 
-  // Gösterilecek desktop linkleri
   const visibleLinks = [
     ...PUBLIC_LINKS,
-    ...(user
-      ? AUTH_LINKS.filter(l => l.roles.includes(user.role ?? 'buyer'))
-      : []
-    ),
+    ...(user ? AUTH_LINKS.filter(l => l.roles.includes(user.role ?? 'buyer')) : []),
   ]
 
-  // Mobil alt nav
   const mobileNav = [
     { href: '/',             icon: '🏠', label: 'Ana Sayfa', auth: false },
     { href: '/kesif',        icon: '🗺️', label: 'Keşfet',   auth: false },
@@ -92,14 +88,12 @@ export function PublicNavbar() {
 
   return (
     <>
-      {/* ── Üst navbar (desktop) ── */}
       <nav style={{ background:'white', borderBottom:'1px solid #E8E0D4', position:'sticky', top:0, zIndex:50 }}>
         <div style={{ maxWidth:1152, margin:'0 auto', padding:'0 24px', height:56, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
           <Link href="/" style={{ fontFamily:"'Playfair Display',serif", fontWeight:900, fontSize:20, color:'#4A2C0E', textDecoration:'none' }}>
             EV YEMEKLERİ
           </Link>
 
-          {/* Desktop linkler */}
           <div style={{ display:'flex', alignItems:'center', gap:20 }} className="hidden-mobile">
             {visibleLinks.map(item => {
               const active = pathname?.startsWith(item.href)
@@ -115,7 +109,6 @@ export function PublicNavbar() {
           </div>
 
           <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-            {/* Mobil arama ikonu */}
             <Link href="/ara" className="mobile-only" style={{
               display:'flex', alignItems:'center', justifyContent:'center',
               width:36, height:36, borderRadius:10, background:'#F3EDE4',
@@ -150,7 +143,6 @@ export function PublicNavbar() {
         </div>
       </nav>
 
-      {/* ── Mobil alt navbar ── */}
       <nav style={{
         position:'fixed', bottom:0, left:0, right:0, zIndex:200,
         background:'white', borderTop:'1px solid #E8E0D4',
