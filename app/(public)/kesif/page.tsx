@@ -240,7 +240,10 @@ function KesifInner() {
     setLoading(true)
     const params = new URLSearchParams({ sort: activeSort === 'fast' ? 'distance' : activeSort })
     if (activeCategory && activeCategory !== 'vegan') params.set('category', activeCategory)
-    fetch(`/api/discover?${params}`)
+    const url = new URLSearchParams({ sort: activeSort === 'fast' ? 'distance' : activeSort, radius: String(radius) })
+if (activeCategory && activeCategory !== 'vegan') url.set('category', activeCategory)
+if (userCoords) { url.set('lat', String(userCoords.lat)); url.set('lng', String(userCoords.lng)) }
+fetch(`/api/discover?${url}`)
       .then(r => r.json())
       .then(data => { setChefs(data.chefs ?? []); setLoading(false) })
       .catch(() => setLoading(false))
