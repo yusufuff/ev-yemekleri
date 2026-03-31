@@ -121,4 +121,4 @@ export async function GET(req) {
     console.error('[discover] catch error:', err)
     return NextResponse.json({ chefs: [], total: 0, error: String(err) })
   }
-}
+}// cache-bust-234825
