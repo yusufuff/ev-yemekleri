@@ -51,7 +51,14 @@ export async function GET(request: NextRequest) {
       .filter(o => o.status !== 'cancelled')
       .reduce((sum, o) => sum + (parseFloat(o.subtotal ?? o.total_amount ?? 0) * 0.9), 0)
 
-    const pendingOrders = (todayOrders ?? []).filter(o => o.status === 'pending')
+    const { data: pendingOrdersData } = await supabase
+  .from('orders')
+  .select('id, order_number, status, subtotal, total_amount, created_at, delivery_type, buyer_id, order_items(id, item_name, quantity)')
+  .eq('chef_id', chefId)
+  .eq('status', 'pending')
+  .order('created_at', { ascending: false })
+
+const pendingOrders = pendingOrdersData ?? []
 
     // Tüm buyer ID'lerini topla
     const allOrders = [...(todayOrders ?? []), ...(activeOrders ?? [])]
