@@ -1,15 +1,19 @@
 // @ts-nocheck
 'use client'
-// @ts-nocheck
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { getSupabaseBrowserClient } from '@/lib/supabase/client'
+import { createClient } from '@supabase/supabase-js'
+
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+)
 
 export default function ProfilPage() {
   const router = useRouter()
-  const [user, setUser] = useState<any>(null)
-  const [profile, setProfile] = useState<any>(null)
-  const [chefProfile, setChefProfile] = useState<any>(null)
+  const [userId, setUserId] = useState(null)
+  const [profile, setProfile] = useState(null)
+  const [chefProfile, setChefProfile] = useState(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -19,75 +23,81 @@ export default function ProfilPage() {
 
   useEffect(() => {
     const yukle = async () => {
-      const supabase = getSupabaseBrowserClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { router.push('/giris'); return }
-      setUser(user)
+      try {
+        const res = await fetch('/api/auth/session')
+        const session = await res.json()
+        if (!session?.user?.id) { router.push('/giris'); return }
+        const uid = session.user.id
+        setUserId(uid)
 
-      const { data: p } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', user.id)
-        .single()
-
-      if (p) {
-        setProfile(p)
-        setForm({
-          full_name: p.full_name ?? '',
-          phone: p.phone ?? '',
-          email: user.email ?? '',
-        })
-      }
-
-      if (p?.role === 'chef') {
-        const { data: cp } = await supabase
-          .from('chef_profiles')
+        const { data: p } = await supabaseAdmin
+          .from('users')
           .select('*')
-          .eq('user_id', user.id)
+          .eq('id', uid)
           .single()
-        if (cp) {
-          setChefProfile(cp)
-          setChefForm({
-            bio: cp.bio ?? '',
-            iban: cp.iban ?? '',
-            radius: cp.delivery_radius_km ?? 5,
-            min_order: cp.min_order_amount ?? 40,
+
+        if (p) {
+          setProfile(p)
+          setForm({
+            full_name: p.full_name ?? '',
+            phone: p.phone ?? '',
+            email: session.user.email ?? '',
           })
         }
-      }
 
-      setLoading(false)
+        if (p?.role === 'chef') {
+          const { data: cp } = await supabaseAdmin
+            .from('chef_profiles')
+            .select('*')
+            .eq('user_id', uid)
+            .single()
+          if (cp) {
+            setChefProfile(cp)
+            setChefForm({
+              bio: cp.bio ?? '',
+              iban: cp.iban ?? '',
+              radius: cp.delivery_radius_km ?? 5,
+              min_order: cp.min_order_amount ?? 40,
+            })
+          }
+        }
+      } catch (e) {
+        console.error('profil yukle hata:', e)
+      } finally {
+        setLoading(false)
+      }
     }
     yukle()
   }, [])
 
   const save = async () => {
     setSaving(true)
-    const supabase = getSupabaseBrowserClient()
-    await supabase.from('users').update({
-      full_name: form.full_name,
-      phone: form.phone,
-      updated_at: new Date().toISOString(),
-    }).eq('id', user.id)
-
-    if (profile?.role === 'chef' && chefProfile) {
-      await supabase.from('chef_profiles').update({
-        bio: chefForm.bio,
-        iban: chefForm.iban,
-        delivery_radius_km: chefForm.radius,
-        min_order_amount: chefForm.min_order,
-        updated_at: new Date().toISOString(),
-      }).eq('user_id', user.id)
+    try {
+      const res = await fetch('/api/user/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          full_name: form.full_name,
+          phone: form.phone,
+          bio: chefForm.bio,
+          iban: chefForm.iban,
+          delivery_radius_km: chefForm.radius,
+          min_order_amount: chefForm.min_order,
+        }),
+      })
+      const json = await res.json()
+      if (!res.ok) { alert('Hata: ' + json.error); return }
+      setSaved(true)
+      setTimeout(() => setSaved(false), 2000)
+    } catch (e) {
+      alert('Bir sorun olustu')
+    } finally {
+      setSaving(false)
     }
-
-    setSaving(false)
-    setSaved(true)
-    setTimeout(() => setSaved(false), 2000)
   }
 
   const cikisYap = async () => {
-    const supabase = getSupabaseBrowserClient()
-    await supabase.auth.signOut()
+    await fetch('/api/auth/signout', { method: 'POST' })
     router.push('/')
   }
 
@@ -106,7 +116,6 @@ export default function ProfilPage() {
           Profil & Ayarlar
         </h1>
 
-        {/* Rol göstergesi */}
         <div style={{ display: 'flex', gap: 10, marginBottom: 24 }}>
           <div style={{
             flex: 1, padding: '12px 0', borderRadius: 12, textAlign: 'center',
@@ -130,7 +139,6 @@ export default function ProfilPage() {
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
-          {/* Kişisel Bilgiler */}
           <div style={{ background: 'white', borderRadius: 16, padding: 24, boxShadow: '0 2px 12px rgba(74,44,14,0.08)' }}>
             <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 17, fontWeight: 700, color: '#4A2C0E', marginBottom: 16 }}>
               Kişisel Bilgiler
@@ -154,7 +162,7 @@ export default function ProfilPage() {
                 <label style={{ fontSize: 12, fontWeight: 600, color: '#7A4A20', display: 'block', marginBottom: 5 }}>{label}</label>
                 <input
                   type={type}
-                  value={form[key as keyof typeof form]}
+                  value={form[key]}
                   onChange={e => setForm(p => ({ ...p, [key]: e.target.value }))}
                   disabled={key === 'email'}
                   style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #E8E0D4', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', boxSizing: 'border-box', background: key === 'email' ? '#F5F5F5' : 'white', color: '#4A2C0E' }}
@@ -163,7 +171,6 @@ export default function ProfilPage() {
             ))}
           </div>
 
-          {/* Aşçı Ayarları */}
           {isChef && (
             <div style={{ background: 'white', borderRadius: 16, padding: 24, boxShadow: '0 2px 12px rgba(74,44,14,0.08)' }}>
               <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 17, fontWeight: 700, color: '#4A2C0E', marginBottom: 16 }}>
@@ -194,7 +201,6 @@ export default function ProfilPage() {
             </div>
           )}
 
-          {/* Bildirimler */}
           <div style={{ background: 'white', borderRadius: 16, padding: 24, boxShadow: '0 2px 12px rgba(74,44,14,0.08)' }}>
             <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 17, fontWeight: 700, color: '#4A2C0E', marginBottom: 16 }}>
               Bildirim Tercihleri
@@ -211,17 +217,16 @@ export default function ProfilPage() {
                   <div style={{ fontWeight: 600, fontSize: 13, color: '#4A2C0E' }}>{title}</div>
                   <div style={{ fontSize: 11, color: '#8A7B6B' }}>{desc}</div>
                 </div>
-                <button onClick={() => setNotifs(p => ({ ...p, [key]: !p[key as keyof typeof notifs] }))} style={{
+                <button onClick={() => setNotifs(p => ({ ...p, [key]: !p[key] }))} style={{
                   width: 44, height: 24, borderRadius: 12, border: 'none', cursor: 'pointer', flexShrink: 0,
-                  background: notifs[key as keyof typeof notifs] ? '#3D6B47' : '#E8E0D4', position: 'relative', transition: 'background 0.2s',
+                  background: notifs[key] ? '#3D6B47' : '#E8E0D4', position: 'relative', transition: 'background 0.2s',
                 }}>
-                  <div style={{ width: 18, height: 18, borderRadius: '50%', background: 'white', position: 'absolute', top: 3, left: notifs[key as keyof typeof notifs] ? 23 : 3, transition: 'left 0.2s' }} />
+                  <div style={{ width: 18, height: 18, borderRadius: '50%', background: 'white', position: 'absolute', top: 3, left: notifs[key] ? 23 : 3, transition: 'left 0.2s' }} />
                 </button>
               </div>
             ))}
           </div>
 
-          {/* Kaydet / Çıkış */}
           <div style={{ display: 'flex', gap: 10 }}>
             <button onClick={save} disabled={saving} style={{
               flex: 1, padding: '12px 0', background: saved ? '#3D6B47' : '#E8622A',
