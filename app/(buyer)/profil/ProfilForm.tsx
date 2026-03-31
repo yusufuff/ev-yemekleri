@@ -3,6 +3,7 @@
 // @ts-nocheck
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 
 export default function ProfilForm({ user, chefData }) {
   const router = useRouter()
@@ -45,7 +46,7 @@ export default function ProfilForm({ user, chefData }) {
       setSaved(true)
       setTimeout(() => {
         setSaved(false)
-        router.refresh() // Server Component'i yeniden render et
+        router.refresh()
       }, 1000)
     } catch (e) {
       alert('Bir sorun oluştu')
@@ -62,7 +63,6 @@ export default function ProfilForm({ user, chefData }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
-      {/* Rol göstergesi */}
       <div style={{ display: 'flex', gap: 10 }}>
         <div style={{ flex: 1, padding: '12px 0', borderRadius: 12, textAlign: 'center', border: `2px solid ${!isChef ? '#E8622A' : '#E8E0D4'}`, background: !isChef ? '#FEF3EC' : 'white', color: !isChef ? '#E8622A' : '#8A7B6B', fontWeight: 700, fontSize: 14 }}>
           🛒 Alıcı {!isChef && '✓'}
@@ -72,7 +72,6 @@ export default function ProfilForm({ user, chefData }) {
         </div>
       </div>
 
-      {/* Kişisel Bilgiler */}
       <div style={{ background: 'white', borderRadius: 16, padding: 24, boxShadow: '0 2px 12px rgba(74,44,14,0.08)' }}>
         <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 17, fontWeight: 700, color: '#4A2C0E', marginBottom: 16 }}>Kişisel Bilgiler</div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20 }}>
@@ -110,7 +109,6 @@ export default function ProfilForm({ user, chefData }) {
         </button>
       </div>
 
-      {/* Aşçı Ayarları */}
       {isChef && (
         <div style={{ background: 'white', borderRadius: 16, padding: 24, boxShadow: '0 2px 12px rgba(74,44,14,0.08)' }}>
           <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 17, fontWeight: 700, color: '#4A2C0E', marginBottom: 16 }}>Aşçı Ayarları</div>
@@ -139,7 +137,6 @@ export default function ProfilForm({ user, chefData }) {
         </div>
       )}
 
-      {/* Bildirimler */}
       <div style={{ background: 'white', borderRadius: 16, padding: 24, boxShadow: '0 2px 12px rgba(74,44,14,0.08)' }}>
         <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 17, fontWeight: 700, color: '#4A2C0E', marginBottom: 16 }}>Bildirim Tercihleri</div>
         {[
@@ -161,7 +158,10 @@ export default function ProfilForm({ user, chefData }) {
         ))}
       </div>
 
-      {/* Çıkış */}
+      <Link href="/adreslerim" style={{ display: 'block', width: '100%', padding: '12px 0', background: 'white', color: '#4A2C0E', border: '1.5px solid #E8E0D4', borderRadius: 10, fontSize: 14, fontWeight: 600, textAlign: 'center', textDecoration: 'none' }}>
+        📍 Kayıtlı Adreslerim
+      </Link>
+
       <button onClick={cikisYap} style={{ width: '100%', padding: '12px 0', background: '#FEE2E2', color: '#DC2626', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
         🚪 Çıkış Yap
       </button>
