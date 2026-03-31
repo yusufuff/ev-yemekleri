@@ -17,7 +17,7 @@ function StatCard({ label, value, icon, color }) {
 
 export default function DashboardClient({ initialData }) {
   const router = useRouter()
-  const [data, setData] = useState(initialData)
+  const [data, setData] = useState(() => initialData)
   const [isOpen, setIsOpen] = useState(initialData?.is_open ?? true)
   const [guncelleniyor, setGuncelleniyor] = useState(null)
 
