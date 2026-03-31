@@ -30,7 +30,7 @@ export default function ProfilPage() {
         if (session.user.role === 'chef') {
           const cpRes = await fetch('/api/chef/profile')
           const cp = await cpRes.json()
-          if (cp) {
+          if (cp && !cp.error) {
             setChefForm({
               bio: cp.bio ?? '',
               iban: cp.iban ?? '',
@@ -65,8 +65,10 @@ export default function ProfilPage() {
       })
       const json = await res.json()
       if (!res.ok) { alert('Hata: ' + json.error); return }
-      setSaved(true)
+
+      // Aninda state guncelle
       setProfile(prev => ({ ...prev, full_name: form.full_name, phone: form.phone }))
+      setSaved(true)
       setTimeout(() => setSaved(false), 2000)
     } catch (e) {
       alert('Bir sorun olustu')
@@ -87,6 +89,7 @@ export default function ProfilPage() {
   )
 
   const isChef = profile?.role === 'chef'
+  const displayName = form.full_name || profile?.full_name || 'İsim girilmemiş'
 
   return (
     <div style={{ minHeight: '100vh', background: '#FAF6EF', fontFamily: "'DM Sans', sans-serif" }}>
@@ -124,10 +127,10 @@ export default function ProfilPage() {
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20 }}>
               <div style={{ width: 64, height: 64, borderRadius: '50%', background: '#E8622A', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 24, fontWeight: 700 }}>
-                {(form.full_name || profile?.full_name || '?').charAt(0).toUpperCase()}
+                {displayName.charAt(0).toUpperCase()}
               </div>
               <div>
-                <div style={{ fontWeight: 700, fontSize: 15, color: '#4A2C0E' }}>{form.full_name || 'İsim girilmemiş'}</div>
+                <div style={{ fontWeight: 700, fontSize: 15, color: '#4A2C0E' }}>{displayName}</div>
                 <div style={{ fontSize: 12, color: '#8A7B6B', marginTop: 2 }}>{isChef ? '👩‍🍳 Aşçı' : '🛒 Alıcı'}</div>
               </div>
             </div>
@@ -162,10 +165,9 @@ export default function ProfilPage() {
               <input
                 type="email"
                 value={form.email}
-           
-                style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #E8E0D4', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', boxSizing: 'border-box', background: '#F5F5F5', color: '#8A7B6B' }}
+                onChange={e => setForm(p => ({ ...p, email: e.target.value }))}
+                style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #E8E0D4', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', boxSizing: 'border-box', color: '#4A2C0E' }}
               />
-            
             </div>
           </div>
 
