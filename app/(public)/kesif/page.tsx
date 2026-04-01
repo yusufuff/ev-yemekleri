@@ -346,7 +346,7 @@ fetch(`/api/discover?${url}`)
             <div style={{ display: 'flex', alignItems: 'center', marginBottom: '14px' }}>
               <div style={{ background: '#E8622A', color: 'white', width: '22px', height: '22px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 700, marginRight: '8px' }}>2</div>
               <span style={{ fontSize: '11px', fontWeight: 700, color: '#E8622A', letterSpacing: '1px', textTransform: 'uppercase' }}>
-                AŞÇI KARTLARI — 2'Lİ GRİD, TIKLAYINCA PROFİL SAYFASI
+            
               </span>
             </div>
 
@@ -368,7 +368,7 @@ fetch(`/api/discover?${url}`)
             <div style={{ display: 'flex', alignItems: 'center', marginBottom: '14px' }}>
               <div style={{ background: '#E8622A', color: 'white', width: '22px', height: '22px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 700, marginRight: '8px' }}>3</div>
               <span style={{ fontSize: '11px', fontWeight: 700, color: '#E8622A', letterSpacing: '1px', textTransform: 'uppercase' }}>
-                KONUM HARİTASI — 1-10 KM YARIÇAP, AŞÇI PİNLERİ
+                
               </span>
             </div>
             <MockMap chefs={chefs} radius={radius} onRadius={setRadius} selectedPin={selectedPin} onPinClick={setSelectedPin} />
@@ -376,7 +376,7 @@ fetch(`/api/discover?${url}`)
         </div>
       </div>
 
-      <style>{`
+      <style>{
         @keyframes shimmer {
           0%   { background-position: 200% 0; }
           100% { background-position: -200% 0; }
