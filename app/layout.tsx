@@ -67,7 +67,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <CartProvider>
           <ToastProvider>
           <PWAProvider>
-            <PublicNavbar />
+        
             <PublicNavbar />
 <NotificationPermission />
 {children}
