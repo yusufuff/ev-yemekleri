@@ -29,13 +29,12 @@ const HIDDEN_PATHS = ['/giris', '/kayit', '/admin']
 
 export function PublicNavbar() {
   const pathname = usePathname()
+  const hidden = HIDDEN_PATHS.some(p => pathname?.startsWith(p))
   const [user, setUser] = useState(null)
   const [loaded, setLoaded] = useState(false)
 
-  // Gizli sayfalarda navbar gösterme
-  if (HIDDEN_PATHS.some(p => pathname?.startsWith(p))) return null
-
   useEffect(() => {
+    if (hidden) { setLoaded(true); return }
     const supabase = getSupabaseBrowserClient()
     supabase.auth.getUser().then(({ data }) => {
       if (data?.user) {
@@ -55,13 +54,15 @@ export function PublicNavbar() {
         setLoaded(true)
       }
     })
-  }, [])
+  }, [hidden])
 
   const handleLogout = async () => {
     const supabase = getSupabaseBrowserClient()
     await supabase.auth.signOut()
     window.location.href = '/'
   }
+
+  if (hidden) return null
 
   const visibleLinks = [
     ...PUBLIC_LINKS,
@@ -85,7 +86,6 @@ export function PublicNavbar() {
 
   return (
     <>
-      {/* Üst navbar (desktop) */}
       <nav style={{ background:'white', borderBottom:'1px solid #E8E0D4', position:'sticky', top:0, zIndex:50 }}>
         <div style={{ maxWidth:1152, margin:'0 auto', padding:'0 24px', height:56, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
           <Link href="/" style={{ fontFamily:"'Playfair Display',serif", fontWeight:900, fontSize:20, color:'#4A2C0E', textDecoration:'none' }}>
@@ -141,7 +141,6 @@ export function PublicNavbar() {
         </div>
       </nav>
 
-      {/* Mobil alt navbar */}
       <nav style={{
         position:'fixed', bottom:0, left:0, right:0, zIndex:200,
         background:'white', borderTop:'1px solid #E8E0D4',
