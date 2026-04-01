@@ -1,3 +1,5 @@
+import dynamic from 'next/dynamic'
+const LeafletMap = dynamic(() => import('@/components/map/LeafletMap'), { ssr: false })
 // @ts-nocheck
 'use client'
 
@@ -34,8 +36,7 @@ const FILTERS = [
   { key: 'sort_fast',   label: '⚡ En Hızlı',       type: 'sort',     value: 'fast' },
   { key: 'sort_price',  label: '💰 Uygun Fiyat',    type: 'sort',     value: 'price' },
 ]
-
-function MockMap({ chefs, radius, onRadius, selectedPin, onPinClick }) {
+{
   return (
     <div style={{ position: 'sticky', top: '72px' }}>
       <div style={{ background: 'white', borderRadius: '12px', padding: '14px 16px', marginBottom: '12px', boxShadow: '0 2px 12px rgba(74,44,14,0.08)', border: '1px solid #E8E0D4' }}>
@@ -313,7 +314,7 @@ function KesifInner() {
           </div>
 
           <div>
-            <MockMap chefs={chefs} radius={radius} onRadius={setRadius} selectedPin={selectedPin} onPinClick={setSelectedPin} />
+            <LeafletMap chefs={chefs} radius={radius} onRadius={setRadius} selectedPin={selectedPin} onPinClick={setSelectedPin} />
           </div>
         </div>
       </div>
