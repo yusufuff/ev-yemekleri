@@ -70,7 +70,7 @@ export default function ProfilForm({ user, chefData }) {
           // PostGIS formatında kaydet
           await supabase
             .from('chef_profiles')
-            .update({ location: `SRID=4326;POINT(${lng} ${lat})` })
+            .update({ location: `SRID=4326;POINT(${lng} ${lat})` } as any)
             .eq('user_id', authUser.id)
 
           setLocationSaved(true)
