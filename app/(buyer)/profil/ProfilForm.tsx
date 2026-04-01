@@ -63,7 +63,7 @@ export default function ProfilForm({ user, chefData }) {
         const lat = pos.coords.latitude
         const lng = pos.coords.longitude
         try {
-          const supabase = getSupabaseBrowserClient()
+          const supabase = getSupabaseBrowserClient() as any
           const { data: { user: authUser } } = await supabase.auth.getUser()
           if (!authUser) return
 
