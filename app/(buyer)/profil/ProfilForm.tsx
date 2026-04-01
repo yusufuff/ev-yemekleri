@@ -4,6 +4,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { getSupabaseBrowserClient } from '@/lib/supabase/client'
 
 export default function ProfilForm({ user, chefData }) {
   const router = useRouter()
@@ -21,6 +22,8 @@ export default function ProfilForm({ user, chefData }) {
   const [notifs, setNotifs] = useState({ orders: true, favorites: true, reviews: true, campaigns: false, stock: true })
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [locating, setLocating] = useState(false)
+  const [locationSaved, setLocationSaved] = useState(false)
 
   const isChef = user.role === 'chef'
   const displayName = form.full_name || user.full_name || 'İsim girilmemiş'
@@ -44,15 +47,41 @@ export default function ProfilForm({ user, chefData }) {
       const json = await res.json()
       if (!res.ok) { alert('Hata: ' + json.error); return }
       setSaved(true)
-      setTimeout(() => {
-        setSaved(false)
-        router.refresh()
-      }, 1000)
+      setTimeout(() => { setSaved(false); router.refresh() }, 1000)
     } catch (e) {
       alert('Bir sorun oluştu')
     } finally {
       setSaving(false)
     }
+  }
+
+  const konumuGuncelle = () => {
+    if (!navigator.geolocation) { alert('Tarayıcınız konum desteklemiyor.'); return }
+    setLocating(true)
+    navigator.geolocation.getCurrentPosition(
+      async pos => {
+        const lat = pos.coords.latitude
+        const lng = pos.coords.longitude
+        try {
+          const supabase = getSupabaseBrowserClient()
+          const { data: { user: authUser } } = await supabase.auth.getUser()
+          if (!authUser) return
+
+          // PostGIS formatında kaydet
+          await supabase
+            .from('chef_profiles')
+            .update({ location: `SRID=4326;POINT(${lng} ${lat})` })
+            .eq('user_id', authUser.id)
+
+          setLocationSaved(true)
+          setTimeout(() => setLocationSaved(false), 3000)
+        } catch (e) {
+          alert('Konum kaydedilemedi.')
+        }
+        setLocating(false)
+      },
+      () => { alert('Konum alınamadı.'); setLocating(false) }
+    )
   }
 
   const cikisYap = async () => {
@@ -112,6 +141,24 @@ export default function ProfilForm({ user, chefData }) {
       {isChef && (
         <div style={{ background: 'white', borderRadius: 16, padding: 24, boxShadow: '0 2px 12px rgba(74,44,14,0.08)' }}>
           <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 17, fontWeight: 700, color: '#4A2C0E', marginBottom: 16 }}>Aşçı Ayarları</div>
+
+          {/* Konum Güncelle */}
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ fontSize: 12, fontWeight: 600, color: '#7A4A20', display: 'block', marginBottom: 5 }}>Konum</label>
+            <button onClick={konumuGuncelle} disabled={locating} style={{
+              width: '100%', padding: '10px 14px', borderRadius: 8, fontSize: 13, fontWeight: 600,
+              cursor: locating ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
+              background: locationSaved ? '#ECFDF5' : '#FEF3EC',
+              border: `1.5px solid ${locationSaved ? '#3D6B47' : '#E8622A'}`,
+              color: locationSaved ? '#3D6B47' : '#E8622A',
+            }}>
+              {locating ? '⏳ Konum alınıyor...' : locationSaved ? '✅ Konum Güncellendi!' : '📍 Konumumu Güncelle'}
+            </button>
+            <div style={{ fontSize: 11, color: '#8A7B6B', marginTop: 4 }}>
+              Keşfet sayfasında doğru mesafe hesabı için konumunu güncelle
+            </div>
+          </div>
+
           <div style={{ marginBottom: 12 }}>
             <label style={{ fontSize: 12, fontWeight: 600, color: '#7A4A20', display: 'block', marginBottom: 5 }}>Biyografi</label>
             <textarea value={chefForm.bio} onChange={e => setChefForm(p => ({ ...p, bio: e.target.value }))} rows={3}
