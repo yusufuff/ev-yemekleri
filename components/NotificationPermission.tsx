@@ -3,18 +3,48 @@
 // @ts-nocheck
 import { useEffect } from 'react'
 import { getSupabaseBrowserClient } from '@/lib/supabase/client'
-import { requestNotificationPermission, onForegroundMessage } from '@/lib/firebase/client'
+import { initializeApp, getApps } from 'firebase/app'
+import { getMessaging, getToken, onMessage, isSupported } from 'firebase/messaging'
+
+const firebaseConfig = {
+  apiKey:            process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain:        process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId:         process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId:             process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+}
 
 export default function NotificationPermission() {
   useEffect(() => {
     const init = async () => {
       try {
-        const supabase = getSupabaseBrowserClient() as any as any
+        if (typeof window === 'undefined') return
+        if (!('Notification' in window)) return
+
+        const supabase = getSupabaseBrowserClient() as any
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) return
 
-        // FCM token al
-        const token = await requestNotificationPermission()
+        const supported = await isSupported()
+        if (!supported) return
+
+        const permission = await Notification.requestPermission()
+        if (permission !== 'granted') return
+
+        // Service worker'ı kaydet
+        const swReg = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
+          scope: '/',
+        })
+        await navigator.serviceWorker.ready
+
+        const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0]
+        const messaging = getMessaging(app)
+
+        const token = await getToken(messaging, {
+          vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY,
+          serviceWorkerRegistration: swReg,
+        })
+
         if (!token) return
 
         // Token'ı Supabase'e kaydet
@@ -23,23 +53,23 @@ export default function NotificationPermission() {
           .update({ fcm_token: token } as any)
           .eq('id', user.id)
 
-        // Uygulama açıkken gelen bildirimleri göster
-        onForegroundMessage(payload => {
+        console.log('[FCM] Token kaydedildi')
+
+        // Uygulama açıkken bildirimleri göster
+        onMessage(messaging, payload => {
           const { title, body } = payload.notification ?? {}
           if (!title) return
-          if ('Notification' in window && Notification.permission === 'granted') {
-            new Notification(title, {
-              body: body ?? '',
-              icon: '/icons/icon-192.png',
-            })
-          }
+          new Notification(title, {
+            body: body ?? '',
+            icon: '/icons/icon-192.png',
+          })
         })
+
       } catch (err) {
-        console.error('Bildirim izni hatası:', err)
+        console.error('[FCM] Bildirim hatası:', err)
       }
     }
 
-    // Sayfa yüklendikten 3 saniye sonra izin iste
     const timer = setTimeout(init, 3000)
     return () => clearTimeout(timer)
   }, [])
