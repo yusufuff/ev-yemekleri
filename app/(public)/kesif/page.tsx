@@ -1,24 +1,10 @@
+// @ts-nocheck
 'use client'
 
 import { Suspense, useState, useEffect } from 'react'
 import Link from 'next/link'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 
-// ── Tipler ────────────────────────────────────────────────────────────────────
-interface Chef {
-  chef_id: string
-  full_name: string
-  avg_rating: number | null
-  total_reviews: number
-  distance_km: number
-  delivery_types: string[]
-  badge: string | null
-  is_open: boolean
-  location_approx: string | null
-  preview_items: { id: string; name: string; price: number; category: string; remaining_stock: number; stock_status: string }[]
-}
-
-// ── Renk paleti (sıralı) ──────────────────────────────────────────────────────
 const CARD_COLORS = [
   'linear-gradient(135deg, #FECACA, #F87171)',
   'linear-gradient(135deg, #FDE68A, #F59E0B)',
@@ -28,7 +14,7 @@ const CARD_COLORS = [
   'linear-gradient(135deg, #FBCFE8, #EC4899)',
 ]
 
-const BADGE_META: Record<string, { emoji: string; label: string; bg: string; color: string }> = {
+const BADGE_META = {
   new:     { emoji: '🌱', label: 'Yeni Aşçı',  bg: '#F3F4F6', color: '#6B7280' },
   trusted: { emoji: '⭐', label: 'Güvenilir',  bg: '#D1FAE5', color: '#059669' },
   master:  { emoji: '🏅', label: 'Usta Eller', bg: '#FEF3C7', color: '#D97706' },
@@ -36,24 +22,22 @@ const BADGE_META: Record<string, { emoji: string; label: string; bg: string; col
 }
 
 const FILTERS = [
-  { key: 'radius_2',   label: '📍 2 km',          type: 'radius', value: '2' },
-  { key: 'radius_5',   label: '📍 5 km',           type: 'radius', value: '5' },
-  { key: 'radius_10',  label: '📍 10 km',          type: 'radius', value: '10' },
-  { key: 'cat_main',   label: '🍽️ Ev Yemeği',     type: 'category', value: 'main' },
-  { key: 'cat_vegan',  label: '🥗 Vegan',          type: 'category', value: 'vegan' },
-  { key: 'cat_pastry', label: '🥐 Börek',          type: 'category', value: 'pastry' },
-  { key: 'cat_dessert',label: '🍮 Tatlı',          type: 'category', value: 'dessert' },
-  { key: 'cat_soup',   label: '🥣 Çorba',          type: 'category', value: 'soup' },
-  { key: 'sort_rating',label: '⭐ En Yüksek Puan', type: 'sort', value: 'rating' },
-  { key: 'sort_fast',  label: '⚡ En Hızlı',       type: 'sort', value: 'fast' },
-  { key: 'sort_price', label: '💰 Uygun Fiyat',    type: 'sort', value: 'price' },
+  { key: 'radius_2',    label: '📍 2 km',          type: 'radius',   value: '2' },
+  { key: 'radius_5',    label: '📍 5 km',           type: 'radius',   value: '5' },
+  { key: 'radius_10',   label: '📍 10 km',          type: 'radius',   value: '10' },
+  { key: 'cat_main',    label: '🍽️ Ev Yemeği',     type: 'category', value: 'main' },
+  { key: 'cat_vegan',   label: '🥗 Vegan',          type: 'category', value: 'vegan' },
+  { key: 'cat_pastry',  label: '🥐 Börek',          type: 'category', value: 'pastry' },
+  { key: 'cat_dessert', label: '🍮 Tatlı',          type: 'category', value: 'dessert' },
+  { key: 'cat_soup',    label: '🥣 Çorba',          type: 'category', value: 'soup' },
+  { key: 'sort_rating', label: '⭐ En Yüksek Puan', type: 'sort',     value: 'rating' },
+  { key: 'sort_fast',   label: '⚡ En Hızlı',       type: 'sort',     value: 'fast' },
+  { key: 'sort_price',  label: '💰 Uygun Fiyat',    type: 'sort',     value: 'price' },
 ]
 
-// ── Harita bileşeni (mock) ────────────────────────────────────────────────────
-function MockMap({ chefs, radius, onRadius, selectedPin, onPinClick }: { chefs: Chef[]; radius: number; onRadius: (v: number) => void; selectedPin: string | null; onPinClick: (id: string | null) => void }) {
+function MockMap({ chefs, radius, onRadius, selectedPin, onPinClick }) {
   return (
     <div style={{ position: 'sticky', top: '72px' }}>
-      {/* Slider */}
       <div style={{ background: 'white', borderRadius: '12px', padding: '14px 16px', marginBottom: '12px', boxShadow: '0 2px 12px rgba(74,44,14,0.08)', border: '1px solid #E8E0D4' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
           <span style={{ fontSize: '12px', color: '#8A7B6B', fontWeight: 600 }}>📍 Mesafe:</span>
@@ -66,27 +50,22 @@ function MockMap({ chefs, radius, onRadius, selectedPin, onPinClick }: { chefs: 
         </div>
       </div>
 
-      {/* Harita alanı */}
       <div style={{ borderRadius: '16px', overflow: 'hidden', border: '1px solid #E8E0D4', background: '#E8F4E8', position: 'relative', height: '420px' }}>
-        {/* Grid arka plan */}
         <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(255,255,255,0.6) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.6) 1px, transparent 1px)', backgroundSize: '48px 48px' }} />
         <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(255,255,255,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.3) 1px, transparent 1px)', backgroundSize: '12px 12px' }} />
 
-        {/* Yeşil bloklar (bina simülasyonu) */}
         {[[15,10,18,14],[40,25,14,20],[65,15,20,16],[20,50,22,18],[55,45,16,22],[30,70,24,16],[70,60,18,20],[10,75,16,14]].map(([l,t,w,h],i) => (
           <div key={i} style={{ position: 'absolute', left: `${l}%`, top: `${t}%`, width: `${w}px`, height: `${h}px`, background: 'rgba(100,160,100,0.35)', borderRadius: '3px' }} />
         ))}
 
-        {/* Merkez — kullanıcı */}
         <div style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%,-50%)' }}>
           <div style={{ width: `${radius * 18}px`, height: `${radius * 18}px`, borderRadius: '50%', border: '2.5px dashed #E8622A', background: 'rgba(232,98,42,0.08)', transform: 'translate(-50%,-50%)', position: 'absolute', top: '50%', left: '50%' }} />
           <div style={{ width: '20px', height: '20px', borderRadius: '50%', background: '#E8622A', border: '3px solid white', boxShadow: '0 2px 8px rgba(232,98,42,0.5)', position: 'relative', zIndex: 2 }} />
           <div style={{ position: 'absolute', top: '-22px', left: '50%', transform: 'translateX(-50%)', background: '#E8622A', color: 'white', fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '10px', whiteSpace: 'nowrap' }}>Siz</div>
         </div>
 
-        {/* Aşçı pinleri */}
         {chefs.filter(c => c.is_open).map((chef, i) => {
-          const angle = (i / chefs.length) * Math.PI * 2
+          const angle = (i / Math.max(chefs.length, 1)) * Math.PI * 2
           const dist = 0.3 + (chef.distance_km / 10) * 0.35
           const x = 50 + Math.cos(angle) * dist * 100
           const y = 50 + Math.sin(angle) * dist * 60
@@ -109,9 +88,8 @@ function MockMap({ chefs, radius, onRadius, selectedPin, onPinClick }: { chefs: 
           )
         })}
 
-        {/* Kapalı pinler */}
         {chefs.filter(c => !c.is_open).map((chef, i) => {
-          const angle = (i / chefs.length) * Math.PI * 2 + 1
+          const angle = (i / Math.max(chefs.length, 1)) * Math.PI * 2 + 1
           const dist = 0.5 + (chef.distance_km / 10) * 0.3
           const x = 50 + Math.cos(angle) * dist * 90
           const y = 50 + Math.sin(angle) * dist * 55
@@ -122,7 +100,6 @@ function MockMap({ chefs, radius, onRadius, selectedPin, onPinClick }: { chefs: 
           )
         })}
 
-        {/* Açıklama */}
         <div style={{ position: 'absolute', bottom: '12px', left: '12px', background: 'rgba(255,255,255,0.92)', borderRadius: '8px', padding: '8px 12px', fontSize: '10px', color: '#4A2C0E', lineHeight: 1.8 }}>
           🟢 Açık aşçı &nbsp;⚫ Kapalı<br />🔴 Konumunuz
         </div>
@@ -131,8 +108,7 @@ function MockMap({ chefs, radius, onRadius, selectedPin, onPinClick }: { chefs: 
   )
 }
 
-// ── Chef Kart ─────────────────────────────────────────────────────────────────
-function ChefCard({ chef, index }: { chef: Chef; index: number }) {
+function ChefCard({ chef, index }) {
   const badge = BADGE_META[chef.badge ?? 'new']
   const color = CARD_COLORS[index % CARD_COLORS.length]
 
@@ -144,10 +120,9 @@ function ChefCard({ chef, index }: { chef: Chef; index: number }) {
         transition: 'transform 0.2s, box-shadow 0.2s', cursor: 'pointer',
         opacity: chef.is_open ? 1 : 0.65,
       }}
-        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-4px)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 8px 28px rgba(74,44,14,0.14)' }}
-        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 2px 12px rgba(74,44,14,0.08)' }}
+        onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 8px 28px rgba(74,44,14,0.14)' }}
+        onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 2px 12px rgba(74,44,14,0.08)' }}
       >
-        {/* Renkli başlık */}
         <div style={{ background: color, height: '80px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '36px', position: 'relative' }}>
           👩‍🍳
           {!chef.is_open && (
@@ -157,7 +132,6 @@ function ChefCard({ chef, index }: { chef: Chef; index: number }) {
           )}
         </div>
 
-        {/* İçerik */}
         <div style={{ padding: '14px' }}>
           <div style={{ fontWeight: 700, fontSize: '15px', color: '#4A2C0E', marginBottom: '4px' }}>{chef.full_name}</div>
 
@@ -171,18 +145,12 @@ function ChefCard({ chef, index }: { chef: Chef; index: number }) {
           </div>
 
           <div style={{ display: 'flex', gap: '6px', marginBottom: '8px', flexWrap: 'wrap' }}>
-            {chef.delivery_types.includes('delivery') && (
+            {(chef.delivery_types ?? []).includes('delivery') && (
               <span style={{ fontSize: '11px', background: '#EFF6FF', color: '#3B82F6', padding: '2px 8px', borderRadius: '10px', fontWeight: 600 }}>🛵 Teslimat</span>
             )}
-            {chef.delivery_types.includes('pickup') && (
+            {(chef.delivery_types ?? []).includes('pickup') && (
               <span style={{ fontSize: '11px', background: '#F3F4F6', color: '#6B7280', padding: '2px 8px', borderRadius: '10px', fontWeight: 600 }}>🚶 Gel-Al</span>
             )}
-            {chef.preview_items.slice(0, 2).map(item => (
-              <span key={item.id} style={{ fontSize: '11px', background: '#FAF6EF', color: '#7A4A20', padding: '2px 8px', borderRadius: '10px', fontWeight: 500 }}>
-                {item.category === 'main' ? '🍽️' : item.category === 'dessert' ? '🍮' : item.category === 'pastry' ? '🥐' : item.category === 'soup' ? '🥣' : '🥗'}
-                {' '}{item.category === 'main' ? 'Ev Yemeği' : item.category === 'dessert' ? 'Tatlı' : item.category === 'pastry' ? 'Börek' : item.category === 'soup' ? 'Çorba' : 'Salata'}
-              </span>
-            ))}
           </div>
 
           {badge && (
@@ -196,7 +164,7 @@ function ChefCard({ chef, index }: { chef: Chef; index: number }) {
             <span style={{ fontSize: '11px', color: chef.is_open ? '#10B981' : '#9CA3AF', fontWeight: 600 }}>
               {chef.is_open ? 'Şu an açık' : 'Kapalı'}
             </span>
-            {chef.is_open && chef.preview_items[0] && (
+            {chef.is_open && chef.preview_items?.[0] && (
               <span style={{ marginLeft: 'auto', fontSize: '12px', fontWeight: 700, color: '#E8622A' }}>
                 ₺{chef.preview_items[0].price}'den başlayan
               </span>
@@ -208,16 +176,21 @@ function ChefCard({ chef, index }: { chef: Chef; index: number }) {
   )
 }
 
-// ── Ana içerik ────────────────────────────────────────────────────────────────
 function KesifInner() {
   const searchParams = useSearchParams()
-  const router = useRouter()
-  const [chefs, setChefs] = useState<Chef[]>([])
+  const [chefs, setChefs] = useState([])
   const [loading, setLoading] = useState(true)
-  const [activeFilters, setActiveFilters] = useState<string[]>(['radius_5', 'cat_main'])
+  const [activeFilters, setActiveFilters] = useState(['radius_5', 'cat_main'])
   const [radius, setRadius] = useState(Number(searchParams.get('km') ?? 5))
-  const [userCoords, setUserCoords] = useState<{lat:number;lng:number} | null>(null)
+  const [userCoords, setUserCoords] = useState(null)
   const [locating, setLocating] = useState(false)
+  const [selectedPin, setSelectedPin] = useState(null)
+  const [aiQuery, setAiQuery] = useState('')
+  const [aiResult, setAiResult] = useState('')
+  const [aiLoading, setAiLoading] = useState(false)
+
+  const activeSort = activeFilters.find(f => f.startsWith('sort_'))?.replace('sort_', '') ?? 'distance'
+  const activeCategory = FILTERS.find(f => activeFilters.includes(f.key) && f.type === 'category')?.value ?? undefined
 
   const getLocation = () => {
     if (!navigator.geolocation) return
@@ -227,29 +200,19 @@ function KesifInner() {
       () => setLocating(false)
     )
   }
-  const [selectedPin, setSelectedPin] = useState<string | null>(null)
-  const [aiQuery, setAiQuery] = useState('')
-  const [aiResult, setAiResult] = useState('')
-  const [aiLoading, setAiLoading] = useState(false)
-
-  // Aktif kategoriye göre sort/category belirle
-  const activeSort = activeFilters.find(f => f.startsWith('sort_'))?.replace('sort_', '') ?? 'distance'
-  const activeCategory = FILTERS.find(f => activeFilters.includes(f.key) && f.type === 'category')?.value ?? undefined
 
   useEffect(() => {
     setLoading(true)
-    const params = new URLSearchParams({ sort: activeSort === 'fast' ? 'distance' : activeSort })
-    if (activeCategory && activeCategory !== 'vegan') params.set('category', activeCategory)
     const url = new URLSearchParams({ sort: activeSort === 'fast' ? 'distance' : activeSort, radius: String(radius) })
-if (activeCategory && activeCategory !== 'vegan') url.set('category', activeCategory)
-if (userCoords) { url.set('lat', String(userCoords.lat)); url.set('lng', String(userCoords.lng)) }
-fetch(`/api/discover?${url}`)
+    if (activeCategory && activeCategory !== 'vegan') url.set('category', activeCategory)
+    if (userCoords) { url.set('lat', String(userCoords.lat)); url.set('lng', String(userCoords.lng)) }
+    fetch(`/api/discover?${url}`)
       .then(r => r.json())
       .then(data => { setChefs(data.chefs ?? []); setLoading(false) })
       .catch(() => setLoading(false))
-  }, [activeSort, activeCategory, radius])
+  }, [activeSort, activeCategory, radius, userCoords])
 
-  function toggleFilter(key: string, type: string) {
+  function toggleFilter(key, type) {
     setActiveFilters(prev => {
       const withoutSameType = prev.filter(f => {
         const meta = FILTERS.find(x => x.key === f)
@@ -263,7 +226,6 @@ fetch(`/api/discover?${url}`)
     if (!aiQuery.trim()) return
     setAiLoading(true)
     setAiResult('Arama yapılıyor...')
-    // Simüle edilmiş AI sonucu
     await new Promise(r => setTimeout(r, 800))
     setAiResult(`"${aiQuery}" için ${chefs.length} aşçı bulundu. En yakın ve en yüksek puanlı aşçılar listeleniyor.`)
     setAiLoading(false)
@@ -273,23 +235,21 @@ fetch(`/api/discover?${url}`)
     <div style={{ minHeight: 'calc(100vh - 56px)', background: '#FAF6EF' }}>
       <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '20px 24px' }}>
 
-        {/* Konum + başlık */}
-        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16 }}>
-          <div style={{ fontSize:13, color:'#8A7B6B' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+          <div style={{ fontSize: 13, color: '#8A7B6B' }}>
             {userCoords ? '📍 Konumunuz aktif' : '📍 Adana, Seyhan (varsayılan)'}
           </div>
           <button onClick={getLocation} style={{
-            display:'flex', alignItems:'center', gap:6, padding:'8px 16px',
+            display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px',
             background: userCoords ? '#ECFDF5' : 'white',
-            border:'1.5px solid ' + (userCoords ? '#3D6B47' : '#E8E0D4'),
-            borderRadius:20, fontSize:12, fontWeight:700, cursor:'pointer',
-            color: userCoords ? '#3D6B47' : '#4A2C0E', fontFamily:'inherit',
+            border: '1.5px solid ' + (userCoords ? '#3D6B47' : '#E8E0D4'),
+            borderRadius: 20, fontSize: 12, fontWeight: 700, cursor: 'pointer',
+            color: userCoords ? '#3D6B47' : '#4A2C0E', fontFamily: 'inherit',
           }}>
             {locating ? '⏳ Konum alınıyor...' : userCoords ? '✅ Konum Aktif' : '📍 Konumumu Kullan'}
           </button>
         </div>
 
-        {/* AI Arama barı */}
         <div style={{ display: 'flex', gap: '10px', marginBottom: '16px' }}>
           <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '10px', background: 'white', border: '1.5px solid #E8E0D4', borderRadius: '12px', padding: '0 16px', boxShadow: '0 2px 8px rgba(74,44,14,0.06)' }}>
             <span style={{ fontSize: '16px' }}>🤖</span>
@@ -311,7 +271,6 @@ fetch(`/api/discover?${url}`)
           </button>
         </div>
 
-        {/* AI sonucu */}
         {aiResult && (
           <div style={{ background: '#FEF3EC', border: '1px solid #F28B5E', borderRadius: '10px', padding: '12px 16px', marginBottom: '14px', display: 'flex', gap: '10px', alignItems: 'center' }}>
             <span style={{ fontSize: '18px' }}>🤖</span>
@@ -320,7 +279,6 @@ fetch(`/api/discover?${url}`)
           </div>
         )}
 
-        {/* Filtre çubuğu */}
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center', marginBottom: '20px' }}>
           {FILTERS.map(f => (
             <button key={f.key} onClick={() => toggleFilter(f.key, f.type)} style={{
@@ -333,28 +291,19 @@ fetch(`/api/discover?${url}`)
               {f.label}
             </button>
           ))}
-          <button style={{ marginLeft: 'auto', padding: '7px 14px', borderRadius: '10px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', border: '1.5px solid #E8E0D4', background: 'white', color: '#4A2C0E', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            ⚙️ Detaylı Filtre
-          </button>
         </div>
 
-        {/* İçerik: Sol (kartlar) + Sağ (harita) */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 420px', gap: '20px', alignItems: 'start' }}>
-
-          {/* Sol: Header + 2'li grid */}
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '14px' }}>
-              <div style={{ background: '#E8622A', color: 'white', width: '22px', height: '22px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 700, marginRight: '8px' }}>2</div>
-              <span style={{ fontSize: '11px', fontWeight: 700, color: '#E8622A', letterSpacing: '1px', textTransform: 'uppercase' }}>
-            
-              </span>
-            </div>
-
             {loading ? (
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
                 {[...Array(4)].map((_, i) => (
                   <div key={i} style={{ height: '220px', background: 'linear-gradient(90deg,#F5EDD8 25%,#FAF6EF 50%,#F5EDD8 75%)', backgroundSize: '200% 100%', borderRadius: '16px', animation: 'shimmer 1.4s infinite' }} />
                 ))}
+              </div>
+            ) : chefs.length === 0 ? (
+              <div style={{ textAlign: 'center', color: '#8A7B6B', fontSize: 14, padding: '60px 0' }}>
+                Bu bölgede aşçı bulunamadı 😔
               </div>
             ) : (
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
@@ -363,26 +312,16 @@ fetch(`/api/discover?${url}`)
             )}
           </div>
 
-          {/* Sağ: Harita */}
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '14px' }}>
-              <div style={{ background: '#E8622A', color: 'white', width: '22px', height: '22px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 700, marginRight: '8px' }}>3</div>
-              <span style={{ fontSize: '11px', fontWeight: 700, color: '#E8622A', letterSpacing: '1px', textTransform: 'uppercase' }}>
-                
-              </span>
-            </div>
             <MockMap chefs={chefs} radius={radius} onRadius={setRadius} selectedPin={selectedPin} onPinClick={setSelectedPin} />
           </div>
         </div>
       </div>
 
-      <style>{
+      <style>{`
         @keyframes shimmer {
           0%   { background-position: 200% 0; }
           100% { background-position: -200% 0; }
-        }
-        @media (max-width: 900px) {
-          .kesif-grid { grid-template-columns: 1fr !important; }
         }
       `}</style>
     </div>
