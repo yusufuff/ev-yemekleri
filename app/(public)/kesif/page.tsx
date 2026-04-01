@@ -1,11 +1,12 @@
-import dynamic from 'next/dynamic'
-const LeafletMap = dynamic(() => import('@/components/map/LeafletMap'), { ssr: false })
 // @ts-nocheck
 'use client'
 
 import { Suspense, useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
+import dynamic from 'next/dynamic'
+
+const LeafletMap = dynamic(() => import('@/components/map/LeafletMap'), { ssr: false })
 
 const CARD_COLORS = [
   'linear-gradient(135deg, #FECACA, #F87171)',
@@ -36,78 +37,6 @@ const FILTERS = [
   { key: 'sort_fast',   label: '⚡ En Hızlı',       type: 'sort',     value: 'fast' },
   { key: 'sort_price',  label: '💰 Uygun Fiyat',    type: 'sort',     value: 'price' },
 ]
-{
-  return (
-    <div style={{ position: 'sticky', top: '72px' }}>
-      <div style={{ background: 'white', borderRadius: '12px', padding: '14px 16px', marginBottom: '12px', boxShadow: '0 2px 12px rgba(74,44,14,0.08)', border: '1px solid #E8E0D4' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-          <span style={{ fontSize: '12px', color: '#8A7B6B', fontWeight: 600 }}>📍 Mesafe:</span>
-          <span style={{ fontSize: '13px', fontWeight: 700, color: '#E8622A' }}>{radius} km</span>
-        </div>
-        <input type="range" min={1} max={10} value={radius} onChange={e => onRadius(Number(e.target.value))}
-          style={{ width: '100%', accentColor: '#E8622A', cursor: 'pointer' }} />
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: '#8A7B6B', marginTop: '4px' }}>
-          <span>1 km</span><span>10 km</span>
-        </div>
-      </div>
-
-      <div style={{ borderRadius: '16px', overflow: 'hidden', border: '1px solid #E8E0D4', background: '#E8F4E8', position: 'relative', height: '420px' }}>
-        <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(255,255,255,0.6) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.6) 1px, transparent 1px)', backgroundSize: '48px 48px' }} />
-        <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(255,255,255,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.3) 1px, transparent 1px)', backgroundSize: '12px 12px' }} />
-
-        {[[15,10,18,14],[40,25,14,20],[65,15,20,16],[20,50,22,18],[55,45,16,22],[30,70,24,16],[70,60,18,20],[10,75,16,14]].map(([l,t,w,h],i) => (
-          <div key={i} style={{ position: 'absolute', left: `${l}%`, top: `${t}%`, width: `${w}px`, height: `${h}px`, background: 'rgba(100,160,100,0.35)', borderRadius: '3px' }} />
-        ))}
-
-        <div style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%,-50%)' }}>
-          <div style={{ width: `${radius * 18}px`, height: `${radius * 18}px`, borderRadius: '50%', border: '2.5px dashed #E8622A', background: 'rgba(232,98,42,0.08)', transform: 'translate(-50%,-50%)', position: 'absolute', top: '50%', left: '50%' }} />
-          <div style={{ width: '20px', height: '20px', borderRadius: '50%', background: '#E8622A', border: '3px solid white', boxShadow: '0 2px 8px rgba(232,98,42,0.5)', position: 'relative', zIndex: 2 }} />
-          <div style={{ position: 'absolute', top: '-22px', left: '50%', transform: 'translateX(-50%)', background: '#E8622A', color: 'white', fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '10px', whiteSpace: 'nowrap' }}>Siz</div>
-        </div>
-
-        {chefs.filter(c => c.is_open).map((chef, i) => {
-          const angle = (i / Math.max(chefs.length, 1)) * Math.PI * 2
-          const dist = 0.3 + (chef.distance_km / 10) * 0.35
-          const x = 50 + Math.cos(angle) * dist * 100
-          const y = 50 + Math.sin(angle) * dist * 60
-          return (
-            <div key={chef.chef_id} style={{ position: 'absolute', left: `${x}%`, top: `${y}%`, transform: 'translate(-50%,-50%)', zIndex: 3, cursor: 'pointer' }}
-              onClick={() => onPinClick(selectedPin === chef.chef_id ? null : chef.chef_id)}>
-              <div style={{ background: '#3D6B47', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', border: '2px solid white', boxShadow: '0 2px 8px rgba(0,0,0,0.2)' }}>👩‍🍳</div>
-              <div style={{ position: 'absolute', bottom: '-18px', left: '50%', transform: 'translateX(-50%)', background: 'white', color: '#4A2C0E', fontSize: '9px', fontWeight: 700, padding: '2px 6px', borderRadius: '8px', whiteSpace: 'nowrap', boxShadow: '0 1px 4px rgba(0,0,0,0.15)' }}>
-                {chef.distance_km.toFixed(1)}km
-              </div>
-              {selectedPin === chef.chef_id && (
-                <div style={{ position: 'absolute', bottom: '40px', left: '50%', transform: 'translateX(-50%)', background: 'white', borderRadius: '10px', padding: '10px 12px', boxShadow: '0 4px 16px rgba(0,0,0,0.15)', minWidth: '160px', zIndex: 10, border: '1px solid #E8E0D4' }}>
-                  <div style={{ fontWeight: 700, fontSize: '13px', color: '#4A2C0E', marginBottom: '2px' }}>{chef.full_name}</div>
-                  <div style={{ fontSize: '11px', color: '#E8622A', marginBottom: '2px' }}>⭐ {chef.avg_rating?.toFixed(1)}</div>
-                  <div style={{ fontSize: '11px', color: '#8A7B6B', marginBottom: '8px' }}>📍 {chef.distance_km.toFixed(1)} km</div>
-                  <a href={`/asci/${chef.chef_id}`} style={{ display: 'block', textAlign: 'center', padding: '5px 0', background: '#E8622A', color: 'white', borderRadius: '6px', fontSize: '11px', fontWeight: 700, textDecoration: 'none' }}>Profile Git →</a>
-                </div>
-              )}
-            </div>
-          )
-        })}
-
-        {chefs.filter(c => !c.is_open).map((chef, i) => {
-          const angle = (i / Math.max(chefs.length, 1)) * Math.PI * 2 + 1
-          const dist = 0.5 + (chef.distance_km / 10) * 0.3
-          const x = 50 + Math.cos(angle) * dist * 90
-          const y = 50 + Math.sin(angle) * dist * 55
-          return (
-            <div key={chef.chef_id} style={{ position: 'absolute', left: `${x}%`, top: `${y}%`, transform: 'translate(-50%,-50%)', zIndex: 2 }}>
-              <div style={{ background: '#9CA3AF', borderRadius: '50%', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', border: '2px solid white', opacity: 0.7 }}>👩‍🍳</div>
-            </div>
-          )
-        })}
-
-        <div style={{ position: 'absolute', bottom: '12px', left: '12px', background: 'rgba(255,255,255,0.92)', borderRadius: '8px', padding: '8px 12px', fontSize: '10px', color: '#4A2C0E', lineHeight: 1.8 }}>
-          🟢 Açık aşçı &nbsp;⚫ Kapalı<br />🔴 Konumunuz
-        </div>
-      </div>
-    </div>
-  )
-}
 
 function ChefCard({ chef, index }) {
   const badge = BADGE_META[chef.badge ?? 'new']
@@ -254,20 +183,11 @@ function KesifInner() {
         <div style={{ display: 'flex', gap: '10px', marginBottom: '16px' }}>
           <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '10px', background: 'white', border: '1.5px solid #E8E0D4', borderRadius: '12px', padding: '0 16px', boxShadow: '0 2px 8px rgba(74,44,14,0.06)' }}>
             <span style={{ fontSize: '16px' }}>🤖</span>
-            <input
-              value={aiQuery}
-              onChange={e => setAiQuery(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && handleAiSearch()}
+            <input value={aiQuery} onChange={e => setAiQuery(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleAiSearch()}
               placeholder="Doğal dilde ara: 'yakınımda börekçi var mı?' veya 'en ucuz tatlı'"
-              style={{ flex: 1, border: 'none', outline: 'none', fontSize: '13px', color: '#4A2C0E', fontFamily: 'inherit', padding: '14px 0', background: 'transparent' }}
-            />
+              style={{ flex: 1, border: 'none', outline: 'none', fontSize: '13px', color: '#4A2C0E', fontFamily: 'inherit', padding: '14px 0', background: 'transparent' }} />
           </div>
-          <button onClick={handleAiSearch} disabled={aiLoading} style={{
-            padding: '0 20px', background: '#E8622A', color: 'white', border: 'none',
-            borderRadius: '12px', fontSize: '13px', fontWeight: 700, cursor: 'pointer',
-            fontFamily: 'inherit', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '6px',
-            opacity: aiLoading ? 0.7 : 1,
-          }}>
+          <button onClick={handleAiSearch} disabled={aiLoading} style={{ padding: '0 20px', background: '#E8622A', color: 'white', border: 'none', borderRadius: '12px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap', opacity: aiLoading ? 0.7 : 1 }}>
             ✨ AI ile Ara
           </button>
         </div>
@@ -314,7 +234,14 @@ function KesifInner() {
           </div>
 
           <div>
-            <LeafletMap chefs={chefs} radius={radius} onRadius={setRadius} selectedPin={selectedPin} onPinClick={setSelectedPin} />
+            <LeafletMap
+              chefs={chefs}
+              userCoords={userCoords}
+              radius={radius}
+              onRadius={setRadius}
+              selectedPin={selectedPin}
+              onPinClick={setSelectedPin}
+            />
           </div>
         </div>
       </div>
