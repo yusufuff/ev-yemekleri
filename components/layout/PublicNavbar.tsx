@@ -13,7 +13,6 @@ const CartButton = dynamic(
 
 const PUBLIC_LINKS = [
   { href: '/kesif',   label: 'Keşfet'      },
-  { href: '/ara',     label: 'Yemek Ara'   },
   { href: '/asci-ol', label: 'Aşçı Ol 🍳' },
 ]
 
