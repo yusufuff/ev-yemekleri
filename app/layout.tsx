@@ -5,7 +5,7 @@ import { CartProvider } from '@/hooks/useCart'
 import { PWAProvider } from '@/components/pwa/PWAPrompt'
 import { PublicNavbar } from '@/components/layout/PublicNavbar'
 import { ToastProvider } from '@/components/ui/Toast'
-
+import NotificationPermission from '@/components/NotificationPermission'
 const dmSans = DM_Sans({
   subsets: ['latin'],
   variable: '--font-dm-sans',
@@ -68,6 +68,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <ToastProvider>
           <PWAProvider>
             <PublicNavbar />
+            <PublicNavbar />
+<NotificationPermission />
+{children}
             {children}
           </PWAProvider>
           </ToastProvider>
