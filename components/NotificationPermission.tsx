@@ -20,7 +20,7 @@ export default function NotificationPermission() {
         // Token'ı Supabase'e kaydet
         await supabase
           .from('users')
-          .update({ fcm_token: token })
+          .update({ fcm_token: token } as any)
           .eq('id', user.id)
 
         // Uygulama açıkken gelen bildirimleri göster
