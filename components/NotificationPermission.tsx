@@ -9,7 +9,7 @@ export default function NotificationPermission() {
   useEffect(() => {
     const init = async () => {
       try {
-        const supabase = getSupabaseBrowserClient()
+        const supabase = getSupabaseBrowserClient() as any as any
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) return
 
