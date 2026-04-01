@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { getSupabaseServerClient, getCurrentUser, getAuthUser } from '@/lib/supabase/server'
+import { sendPushNotification } from '@/lib/firebase/send-notification'
 
 export async function GET(request: NextRequest) {
   const user = await getAuthUser() as any
@@ -17,7 +18,6 @@ export async function GET(request: NextRequest) {
     .eq('buyer_id', user.id)
     .order('created_at', { ascending: false })
 
-  // Chef isimlerini ayrı çek
   const chefIds = [...new Set((orders ?? []).map((o: any) => o.chef_id).filter(Boolean))]
   let chefMap: Record<string, string> = {}
   if (chefIds.length > 0) {
@@ -57,10 +57,7 @@ export async function POST(request: NextRequest) {
   const user = await getCurrentUser() as any
   const body = await request.json()
 
-  console.log('[orders POST] user:', user?.id ?? 'null')
-
   if (!user) {
-    console.log('[orders POST] kullanici bulunamadi, mock donuyor')
     const newOrder = {
       id: 'ord-' + Date.now(),
       created_at: new Date().toISOString(),
@@ -93,7 +90,6 @@ export async function POST(request: NextRequest) {
     .single()
 
   if (orderError) {
-    console.error('[orders POST] order insert error:', orderError)
     return NextResponse.json({ error: orderError.message }, { status: 500 })
   }
 
@@ -111,37 +107,32 @@ export async function POST(request: NextRequest) {
     console.error('[orders POST] order_items insert error:', itemsError)
   }
 
+  // Aşçıya yeni sipariş bildirimi gönder
   try {
     const supabaseAdmin = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!,
       { auth: { autoRefreshToken: false, persistSession: false } }
     )
-    const { data: chefUser } = await supabaseAdmin
+
+    const { data: chefProfile } = await supabaseAdmin
       .from('chef_profiles')
       .select('user_id')
       .eq('id', body.chef_id)
       .single()
-    if (chefUser) {
-      const { data: chefProfile } = await supabaseAdmin
-        .from('users')
-        .select('fcm_token')
-        .eq('id', chefUser.user_id)
-        .single()
-      if (chefProfile?.fcm_token) {
-        fetch(new URL('/api/notifications', request.url).toString(), {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            token: chefProfile.fcm_token,
-            title: 'Yeni Siparis!',
-            body: `${body.items?.length ?? 1} urun · ₺${body.total_amount}`,
-            data: { order_id: order.id, type: 'new_order' },
-          }),
-        }).catch(() => {})
-      }
+
+    if (chefProfile?.user_id) {
+      sendPushNotification({
+        userId: chefProfile.user_id,
+        title:  '🛒 Yeni Sipariş Geldi!',
+        body:   `${body.items?.length ?? 1} ürün · ₺${body.total_amount}`,
+        type:   'order_pending',
+        data:   { order_id: order.id, order_number: order.order_number ?? '' },
+      }).catch(err => console.error('[Push] aşçı bildirimi hatası:', err))
     }
-  } catch {}
+  } catch (err) {
+    console.error('[Push] aşçı bildirimi hatası:', err)
+  }
 
   return NextResponse.json({ order, payment_url: '/siparis-basari?order_id=' + order.id })
 }

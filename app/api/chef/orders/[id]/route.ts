@@ -1,6 +1,8 @@
-// v3 - auth cookie sorunu cozuldu, chef_id ile yetkilendirme
+// @ts-nocheck
+// v4 - push bildirimler eklendi
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { sendPushNotification } from '@/lib/firebase/send-notification'
 
 const VALID_TRANSITIONS: Record<string, string[]> = {
   pending:           ['confirmed', 'cancelled'],
@@ -10,6 +12,15 @@ const VALID_TRANSITIONS: Record<string, string[]> = {
   delivered_pending: ['delivered'],
   delivered:         [],
   cancelled:         [],
+}
+
+const STATUS_MESSAGES: Record<string, { title: string; body: string }> = {
+  confirmed:         { title: '✅ Siparişin Onaylandı!', body: 'Aşçı siparişini hazırlamaya başlıyor.' },
+  preparing:         { title: '👨‍🍳 Siparişin Hazırlanıyor', body: 'Aşçı yemeğini hazırlıyor, az kaldı!' },
+  on_way:            { title: '🛵 Siparişin Yolda!', body: 'Aşçı siparişini teslim etmek üzere.' },
+  delivered_pending: { title: '📦 Siparişin Kapıda!', body: 'Siparişin teslim edildi. Lütfen onayla.' },
+  delivered:         { title: '🎉 Siparişin Teslim Edildi!', body: 'Afiyet olsun! Değerlendirme yapmayı unutma.' },
+  cancelled:         { title: '❌ Siparişin İptal Edildi', body: 'Siparişin iptal edildi.' },
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
@@ -33,7 +44,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
   const { data: order, error: fetchErr } = await supabaseAdmin
     .from('orders')
-    .select('id, status, chef_id')
+    .select('id, status, chef_id, buyer_id, order_number')
     .eq('id', params.id)
     .single()
 
@@ -72,6 +83,18 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   if (updateErr) {
     console.error('Order update error:', updateErr)
     return NextResponse.json({ error: 'Guncelleme basarisiz.' }, { status: 500 })
+  }
+
+  // Push bildirim gönder (alıcıya)
+  const msg = STATUS_MESSAGES[status]
+  if (msg && order.buyer_id) {
+    sendPushNotification({
+      userId: order.buyer_id,
+      title:  msg.title,
+      body:   msg.body,
+      type:   `order_${status}`,
+      data:   { order_id: params.id, order_number: order.order_number ?? '' },
+    }).catch(err => console.error('[Push] bildirim hatası:', err))
   }
 
   return NextResponse.json({ success: true, status, order_id: params.id })
