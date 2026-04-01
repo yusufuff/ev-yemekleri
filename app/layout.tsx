@@ -6,6 +6,7 @@ import { PWAProvider } from '@/components/pwa/PWAPrompt'
 import { PublicNavbar } from '@/components/layout/PublicNavbar'
 import { ToastProvider } from '@/components/ui/Toast'
 import NotificationPermission from '@/components/NotificationPermission'
+
 const dmSans = DM_Sans({
   subsets: ['latin'],
   variable: '--font-dm-sans',
@@ -39,12 +40,12 @@ export const metadata: Metadata = {
     images: [{ url: '/icons/og-image.png', width: 1200, height: 630 }],
   },
   icons: {
-    icon:    [
+    icon: [
       { url: '/icons/icon-32.png',  sizes: '32x32',   type: 'image/png' },
       { url: '/icons/icon-96.png',  sizes: '96x96',   type: 'image/png' },
       { url: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
     ],
-    apple:   [
+    apple: [
       { url: '/icons/apple-touch-icon.png', sizes: '180x180' },
     ],
     shortcut: '/icons/icon-192.png',
@@ -66,13 +67,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="bg-cream text-brown antialiased">
         <CartProvider>
           <ToastProvider>
-          <PWAProvider>
-        
-            <PublicNavbar />
-<NotificationPermission />
-{children}
-            {children}
-          </PWAProvider>
+            <PWAProvider>
+              <PublicNavbar />
+              <NotificationPermission />
+              {children}
+            </PWAProvider>
           </ToastProvider>
         </CartProvider>
       </body>
