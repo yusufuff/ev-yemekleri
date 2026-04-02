@@ -4,6 +4,18 @@ import { useEffect, useState } from 'react'
 import { getSupabaseBrowserClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 
+const TYPE_ICONS: Record<string, string> = {
+  order_confirmed:         '✅',
+  order_preparing:         '👨‍🍳',
+  order_on_way:            '🛵',
+  order_delivered:         '🎉',
+  order_delivered_pending: '📦',
+  order_pending:           '🛒',
+  order_cancelled:         '❌',
+  new_message:             '💬',
+  default:                 '🔔',
+}
+
 export default function BildirimlerPage() {
   const [notifications, setNotifications] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -25,7 +37,7 @@ export default function BildirimlerPage() {
       // Hepsini okundu yap
       await supabase
         .from('notifications')
-        .update({ is_read: true })
+        .update({ is_read: true } as any)
         .eq('user_id', data.user.id)
         .eq('is_read', false)
 
@@ -37,16 +49,16 @@ export default function BildirimlerPage() {
     <div style={{ minHeight: '100vh', background: '#FAF6EF', fontFamily: "'DM Sans', sans-serif" }}>
       <div style={{ maxWidth: 680, margin: '0 auto', padding: '24px 16px' }}>
         <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: 26, fontWeight: 900, color: '#4A2C0E', marginBottom: 24 }}>
-          Bildirimler
+          🔔 Bildirimler
         </h1>
 
         {loading ? (
-          <div style={{ textAlign: 'center', color: '#8A7B6B', padding: 40 }}>Yukleniyor...</div>
+          <div style={{ textAlign: 'center', color: '#8A7B6B', padding: 40 }}>Yükleniyor...</div>
         ) : notifications.length === 0 ? (
           <div style={{ background: 'white', borderRadius: 16, padding: 40, textAlign: 'center', boxShadow: '0 2px 12px rgba(74,44,14,0.08)' }}>
             <div style={{ fontSize: 48, marginBottom: 12 }}>🔔</div>
-            <div style={{ fontWeight: 700, color: '#4A2C0E', marginBottom: 6 }}>Hic bildirim yok</div>
-            <div style={{ fontSize: 13, color: '#8A7B6B' }}>Yeni bildirimler burada gorunecek.</div>
+            <div style={{ fontWeight: 700, color: '#4A2C0E', marginBottom: 6 }}>Hiç bildirim yok</div>
+            <div style={{ fontSize: 13, color: '#8A7B6B' }}>Yeni bildirimler burada görünecek.</div>
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -59,11 +71,7 @@ export default function BildirimlerPage() {
                 display: 'flex', gap: 12, alignItems: 'flex-start',
               }}>
                 <div style={{ fontSize: 24, flexShrink: 0 }}>
-                  {notif.type === 'order_confirmed' ? '✅' :
-                   notif.type === 'order_preparing' ? '🍳' :
-                   notif.type === 'order_on_way' ? '🛵' :
-                   notif.type === 'order_delivered' ? '🎉' :
-                   notif.type === 'new_order' ? '🛒' : '🔔'}
+                  {TYPE_ICONS[notif.type] ?? TYPE_ICONS.default}
                 </div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontWeight: 700, fontSize: 14, color: '#4A2C0E', marginBottom: 3 }}>
@@ -86,7 +94,7 @@ export default function BildirimlerPage() {
 
         <div style={{ marginTop: 24, textAlign: 'center' }}>
           <Link href="/" style={{ fontSize: 13, color: '#E8622A', textDecoration: 'none', fontWeight: 600 }}>
-            Ana Sayfaya Don
+            ← Ana Sayfaya Dön
           </Link>
         </div>
       </div>
