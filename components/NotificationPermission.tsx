@@ -31,10 +31,8 @@ export default function NotificationPermission() {
         const permission = await Notification.requestPermission()
         if (permission !== 'granted') return
 
-        // Service worker'ı kaydet
-        const swReg = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
-          scope: '/',
-        })
+        // Ana sw.js'i kullan (Firebase entegre edildi)
+        const swReg = await navigator.serviceWorker.register('/sw.js', { scope: '/' })
         await navigator.serviceWorker.ready
 
         const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0]
@@ -45,17 +43,15 @@ export default function NotificationPermission() {
           serviceWorkerRegistration: swReg,
         })
 
-        if (!token) return
+        if (!token) { console.warn('[FCM] Token alınamadı'); return }
 
-        // Token'ı Supabase'e kaydet
         await supabase
           .from('users')
           .update({ fcm_token: token } as any)
           .eq('id', user.id)
 
-        console.log('[FCM] Token kaydedildi')
+        console.log('[FCM] Token kaydedildi ✅')
 
-        // Uygulama açıkken bildirimleri göster
         onMessage(messaging, payload => {
           const { title, body } = payload.notification ?? {}
           if (!title) return

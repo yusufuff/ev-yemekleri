@@ -1,50 +1,61 @@
 ﻿/**
  * Ev Yemekleri Service Worker
- *
- * Stratejiler:
- *  - Shell (/_next/static, /icons, /fonts) → Cache First
- *  - API istekleri → Network First (offline'da cache fallback)
- *  - Sayfa navigasyonları → Network First (offline'da shell)
- *  - Push bildirimleri → FCM payload ile zengin bildirim
- *  - Background Sync → gönderilemeyen bildirimleri kuyruğa al
  */
 
-const CACHE_VERSION   = 'ev-yemekleri-v1'
-const STATIC_CACHE    = `${CACHE_VERSION}-static`
-const DYNAMIC_CACHE   = `${CACHE_VERSION}-dynamic`
-const API_CACHE       = `${CACHE_VERSION}-api`
+importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js')
+importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js')
 
-// Uygulama kabuğu — her zaman önbelleğe alınan kaynaklar
-const STATIC_ASSETS = [
-  '/',
-  '/offline',
-  '/manifest.json',
+const CACHE_VERSION = 'ev-yemekleri-v2'
+const STATIC_CACHE  = `${CACHE_VERSION}-static`
+const DYNAMIC_CACHE = `${CACHE_VERSION}-dynamic`
+const API_CACHE     = `${CACHE_VERSION}-api`
 
-]
+const STATIC_ASSETS = ['/', '/offline', '/manifest.json']
+const CACHEABLE_APIS = ['/api/discover']
 
-// API endpoint'leri offline cache'e alınır
-const CACHEABLE_APIS = [
-  '/api/discover',
-  '/api/chefs',
-]
+// ─── Firebase ────────────────────────────────────────────────────────────────
 
-// ─── Kurulum ──────────────────────────────────────────────────────────────────
+firebase.initializeApp({
+  apiKey:            "AIzaSyAx6ILhA87jRATISca0qHk8V8xME9tSxM4",
+  authDomain:        "ev-yemekleri-335bb.firebaseapp.com",
+  projectId:         "ev-yemekleri-335bb",
+  storageBucket:     "ev-yemekleri-335bb.firebasestorage.app",
+  messagingSenderId: "944773361728",
+  appId:             "1:944773361728:web:8de8aa8d5b22507023efa5",
+})
 
-self.addEventListener('install', (event) => {
+const messaging = firebase.messaging()
+
+messaging.onBackgroundMessage(payload => {
+  const { title, body, icon } = payload.notification ?? {}
+  self.registration.showNotification(title ?? 'Ev Yemekleri', {
+    body:    body ?? '',
+    icon:    icon ?? '/icons/icon-192.png',
+    badge:   '/icons/icon-72.png',
+    data:    payload.data ?? {},
+    tag:     payload.data?.type ?? 'default',
+    requireInteraction: payload.data?.type === 'order_pending',
+    vibrate: payload.data?.type === 'order_pending' ? [200, 100, 200] : [100],
+  })
+})
+
+// ─── Kurulum ─────────────────────────────────────────────────────────────────
+
+self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(STATIC_CACHE).then(cache => cache.addAll(STATIC_ASSETS))
   )
   self.skipWaiting()
 })
 
-// ─── Aktivasyon — eski cache'leri temizle ─────────────────────────────────────
+// ─── Aktivasyon ──────────────────────────────────────────────────────────────
 
-self.addEventListener('activate', (event) => {
+self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys =>
       Promise.all(
         keys
-          .filter(k => k.startsWith('ev-yemekleri-') && k !== STATIC_CACHE && k !== DYNAMIC_CACHE && k !== API_CACHE)
+          .filter(k => k.startsWith('ev-yemekleri-') && ![STATIC_CACHE, DYNAMIC_CACHE, API_CACHE].includes(k))
           .map(k => caches.delete(k))
       )
     )
@@ -52,16 +63,14 @@ self.addEventListener('activate', (event) => {
   self.clients.claim()
 })
 
-// ─── Fetch interceptor ───────────────────────────────────────────────────────
+// ─── Fetch ───────────────────────────────────────────────────────────────────
 
-self.addEventListener('fetch', (event) => {
+self.addEventListener('fetch', event => {
   const { request } = event
   const url = new URL(request.url)
 
-  // Chrome extension ve non-GET istekleri atla
   if (request.method !== 'GET' || url.protocol === 'chrome-extension:') return
 
-  // Statik asset'ler → Cache First
   if (
     url.pathname.startsWith('/_next/static') ||
     url.pathname.startsWith('/icons') ||
@@ -71,26 +80,22 @@ self.addEventListener('fetch', (event) => {
     return
   }
 
-  // Cacheable API'ler → Stale While Revalidate
   if (CACHEABLE_APIS.some(p => url.pathname.startsWith(p))) {
     event.respondWith(staleWhileRevalidate(request, API_CACHE))
     return
   }
 
-  // Diğer API istekleri → Network Only (POST, ödeme vb.)
   if (url.pathname.startsWith('/api/')) return
 
-  // Sayfa navigasyonları → Network First (offline'da /offline)
   if (request.mode === 'navigate') {
     event.respondWith(networkFirstWithOfflineFallback(request))
     return
   }
 
-  // Diğer her şey → Network First
   event.respondWith(networkFirst(request, DYNAMIC_CACHE))
 })
 
-// ─── Strateji fonksiyonları ───────────────────────────────────────────────────
+// ─── Stratejiler ─────────────────────────────────────────────────────────────
 
 async function cacheFirst(request, cacheName) {
   const cached = await caches.match(request)
@@ -128,8 +133,8 @@ async function networkFirstWithOfflineFallback(request) {
 }
 
 async function staleWhileRevalidate(request, cacheName) {
-  const cache    = await caches.open(cacheName)
-  const cached   = await cache.match(request)
+  const cache = await caches.open(cacheName)
+  const cached = await cache.match(request)
   const fetchPromise = fetch(request).then(response => {
     if (response.ok) cache.put(request, response.clone())
     return response
@@ -137,132 +142,55 @@ async function staleWhileRevalidate(request, cacheName) {
   return cached ?? fetchPromise
 }
 
-// ─── Push Bildirimleri ────────────────────────────────────────────────────────
-
-self.addEventListener('push', (event) => {
-  if (!event.data) return
-
-  let payload
-  try {
-    payload = event.data.json()
-  } catch {
-    payload = { title: 'Ev Yemekleri', body: event.data.text() }
-  }
-
-  const {
-    title = 'Ev Yemekleri',
-    body  = '',
-    icon  = '/icons/icon-192.png',
-    badge = '/icons/icon-72.png',
-    image,
-    data  = {},
-    tag,
-    actions = [],
-  } = payload
-
-  // Bildirim tiplerine göre aksiyon butonları
-  const defaultActions = getActionsForType(data.type, data)
-
-  event.waitUntil(
-    self.registration.showNotification(title, {
-      body,
-      icon,
-      badge,
-      image,
-      data,
-      tag:          tag ?? data.type ?? 'default',
-      renotify:     true,
-      requireInteraction: data.type === 'order_pending',  // Yeni sipariş — interaksiyon gerektirir
-      vibrate:      data.type === 'order_pending' ? [200, 100, 200] : [100],
-      actions:      actions.length ? actions : defaultActions,
-    })
-  )
-})
-
-function getActionsForType(type, data) {
-  switch (type) {
-    case 'order_pending':
-      return [
-        { action: 'approve', title: '✅ Onayla' },
-        { action: 'reject',  title: '❌ Reddet' },
-      ]
-    case 'order_preparing':
-    case 'order_on_the_way':
-      return [
-        { action: 'track', title: '📍 Takip Et' },
-      ]
-    case 'new_message':
-      return [
-        { action: 'reply', title: '💬 Yanıtla' },
-      ]
-    default:
-      return []
-  }
-}
-
 // ─── Bildirim tıklama ────────────────────────────────────────────────────────
 
-self.addEventListener('notificationclick', (event) => {
+self.addEventListener('notificationclick', event => {
   event.notification.close()
-
   const { data, action } = event
+
   const urlMap = {
-    order_pending:    `/dashboard`,
-    order_confirmed:  `/siparislerim`,
-    order_preparing:  `/siparislerim`,
-    order_on_the_way: `/siparislerim`,
-    order_delivered:  `/siparislerim`,
+    order_pending:    '/dashboard',
+    order_confirmed:  '/siparislerim',
+    order_preparing:  '/siparislerim',
+    order_on_way:     '/siparislerim',
+    order_delivered:  '/siparislerim',
     new_message:      `/mesajlar?order=${data?.order_id ?? ''}`,
-    chef_approved:    `/dashboard`,
-    payout_processing:`/kazanc`,
   }
 
-  let targetUrl = '/'
+  let targetUrl = urlMap[data?.type] ?? '/'
   if (action === 'approve' && data?.order_id) targetUrl = `/dashboard?approve=${data.order_id}`
   else if (action === 'reject' && data?.order_id) targetUrl = `/dashboard?reject=${data.order_id}`
-  else if (action === 'track' && data?.order_id) targetUrl = `/siparislerim`
-  else if (action === 'reply' && data?.order_id) targetUrl = `/mesajlar?order=${data.order_id}`
-  else targetUrl = urlMap[data?.type] ?? '/'
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
-      // Zaten açık pencere varsa odaklan
       for (const client of list) {
         if (client.url.includes(self.location.origin) && 'focus' in client) {
           client.navigate(targetUrl)
           return client.focus()
         }
       }
-      // Yoksa yeni sekme aç
       return clients.openWindow(targetUrl)
     })
   )
 })
 
-// ─── Background Sync — offline sipariş bildirimleri ──────────────────────────
+// ─── Background Sync ─────────────────────────────────────────────────────────
 
-self.addEventListener('sync', (event) => {
+self.addEventListener('sync', event => {
   if (event.tag === 'sync-notifications') {
     event.waitUntil(syncPendingNotifications())
   }
 })
 
 async function syncPendingNotifications() {
-  // IndexedDB'den bekleyen bildirimleri çek ve gönder
-  // Gerçek implementasyonda idb kütüphanesi kullanılır
   try {
-    const response = await fetch('/api/notifications/pending', {
-      credentials: 'include',
-    })
+    const response = await fetch('/api/notifications/pending', { credentials: 'include' })
     if (response.ok) {
       const { notifications } = await response.json()
       for (const notif of notifications ?? []) {
         await self.registration.showNotification(notif.title, {
-          body:  notif.body,
-          icon: '/icons/icon-192.png',
-          badge: '/icons/icon-72.png',
-          data:  notif.data,
-          tag:   notif.type,
+          body: notif.body, icon: '/icons/icon-192.png',
+          badge: '/icons/icon-72.png', data: notif.data, tag: notif.type,
         })
       }
     }
@@ -270,13 +198,3 @@ async function syncPendingNotifications() {
     console.error('[SW] sync failed:', err)
   }
 }
-
-// ─── Periyodik Background Sync (tarayıcı destekliyorsa) ──────────────────────
-
-self.addEventListener('periodicsync', (event) => {
-  if (event.tag === 'check-orders') {
-    event.waitUntil(syncPendingNotifications())
-  }
-})
-
-// ─── Firebase Cloud Messaging ─────────────────────────────────────────────────
