@@ -31,8 +31,8 @@ export default function NotificationPermission() {
         const permission = await Notification.requestPermission()
         if (permission !== 'granted') return
 
-        // Ana sw.js'i kullan (Firebase entegre edildi)
-        const swReg = await navigator.serviceWorker.register('/sw.js', { scope: '/' })
+        // firebase-messaging-sw.js'i kayıt et
+        const swReg = await navigator.serviceWorker.register('/firebase-messaging-sw.js')
         await navigator.serviceWorker.ready
 
         const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0]
