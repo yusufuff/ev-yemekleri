@@ -31,16 +31,11 @@ export default function NotificationPermission() {
         const permission = await Notification.requestPermission()
         if (permission !== 'granted') return
 
-        // firebase-messaging-sw.js'i kayıt et
-        const swReg = await navigator.serviceWorker.register('/firebase-messaging-sw.js')
-        await navigator.serviceWorker.ready
-
         const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0]
         const messaging = getMessaging(app)
 
         const token = await getToken(messaging, {
           vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY,
-          serviceWorkerRegistration: swReg,
         })
 
         if (!token) { console.warn('[FCM] Token alınamadı'); return }
