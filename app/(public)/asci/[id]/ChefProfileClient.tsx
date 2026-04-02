@@ -1,6 +1,6 @@
 // @ts-nocheck
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useCart } from '@/hooks/useCart'
 
@@ -25,12 +25,20 @@ export default function ChefProfileClient({ chef, menuItems }) {
   const { addItem, items: cartItems } = useCart()
   const [activeCategory, setActiveCategory] = useState('all')
   const [shareMsg, setShareMsg] = useState('')
+  const [reviews, setReviews] = useState([])
+  const [reviewsLoading, setReviewsLoading] = useState(true)
 
   const badge = BADGE_META[chef.badge ?? 'new']
   const categories = ['all', ...Array.from(new Set(menuItems.map((i: any) => i.category).filter(Boolean)))]
   const filtered = activeCategory === 'all' ? menuItems : menuItems.filter((i: any) => i.category === activeCategory)
-
   const cartCount = cartItems.reduce((s: number, i: any) => s + i.quantity, 0)
+
+  useEffect(() => {
+    fetch(`/api/reviews?chef_id=${chef.chef_id}`)
+      .then(r => r.json())
+      .then(d => { setReviews(d.reviews ?? []); setReviewsLoading(false) })
+      .catch(() => setReviewsLoading(false))
+  }, [chef.chef_id])
 
   const handleShare = async () => {
     const url = window.location.href
@@ -84,12 +92,11 @@ export default function ChefProfileClient({ chef, menuItems }) {
             </button>
           </div>
 
-          {/* İstatistikler */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
             {[
               { label: 'Puan', value: chef.avg_rating ? chef.avg_rating.toFixed(1) : '—' },
               { label: 'Sipariş', value: chef.total_orders ?? 0 },
-              { label: 'Yorum', value: chef.total_reviews ?? 0 },
+              { label: 'Yorum', value: reviews.length || chef.total_reviews || 0 },
               { label: 'Menü', value: chef.active_menu_count ?? 0 },
             ].map(s => (
               <div key={s.label} style={{ background: 'rgba(255,255,255,0.1)', borderRadius: 10, padding: '10px 8px', textAlign: 'center' }}>
@@ -150,7 +157,7 @@ export default function ChefProfileClient({ chef, menuItems }) {
         {filtered.length === 0 ? (
           <div style={{ textAlign: 'center', color: '#8A7B6B', padding: 40 }}>Bu kategoride ürün yok.</div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
             {filtered.map((item: any) => {
               const inCart = cartItems.find((c: any) => c.menu_item_id === item.id)
               const outOfStock = item.stock_remaining !== null && item.stock_remaining <= 0
@@ -195,6 +202,50 @@ export default function ChefProfileClient({ chef, menuItems }) {
             })}
           </div>
         )}
+
+        {/* Yorumlar */}
+        <div style={{ background: 'white', borderRadius: 14, padding: 16, boxShadow: '0 2px 8px rgba(74,44,14,0.06)' }}>
+          <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 17, fontWeight: 700, color: '#4A2C0E', marginBottom: 14 }}>
+            ⭐ Müşteri Yorumları <span style={{ fontSize: 13, fontWeight: 400, color: '#8A7B6B' }}>({reviews.length} yorum)</span>
+          </div>
+
+          {reviewsLoading ? (
+            <div style={{ color: '#8A7B6B', fontSize: 13 }}>Yükleniyor...</div>
+          ) : reviews.length === 0 ? (
+            <div style={{ textAlign: 'center', color: '#8A7B6B', padding: '20px 0', fontSize: 13 }}>
+              Henüz yorum yok. İlk siparişi veren siz olun! 🍽️
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {reviews.map((r: any) => (
+                <div key={r.id} style={{ borderBottom: '1px solid #F5EDD8', paddingBottom: 12 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#E8622A', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 13, fontWeight: 700 }}>
+                        {r.buyer_name?.charAt(0).toUpperCase() ?? '?'}
+                      </div>
+                      <div>
+                        <div style={{ fontWeight: 600, fontSize: 13, color: '#4A2C0E' }}>{r.buyer_name ?? 'Misafir'}</div>
+                        <div style={{ fontSize: 11, color: '#8A7B6B' }}>
+                          {new Date(r.created_at).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                        </div>
+                      </div>
+                    </div>
+                    <div style={{ fontSize: 14 }}>{'⭐'.repeat(r.rating)}</div>
+                  </div>
+                  {r.comment && (
+                    <div style={{ fontSize: 13, color: '#6B5B4E', lineHeight: 1.5, marginLeft: 40 }}>{r.comment}</div>
+                  )}
+                  {r.chef_reply && (
+                    <div style={{ marginTop: 8, marginLeft: 40, background: '#F5EDD8', borderRadius: 8, padding: '8px 12px', fontSize: 12, color: '#4A2C0E' }}>
+                      <span style={{ fontWeight: 700 }}>👩‍🍳 Aşçı yanıtı:</span> {r.chef_reply}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Sepet butonu */}
