@@ -32,6 +32,7 @@ export function PublicNavbar() {
   const hidden = HIDDEN_PATHS.some(p => pathname?.startsWith(p))
   const [user, setUser] = useState(null)
   const [loaded, setLoaded] = useState(false)
+  const [unreadCount, setUnreadCount] = useState(0)
 
   useEffect(() => {
     if (hidden) { setLoaded(true); return }
@@ -45,10 +46,19 @@ export function PublicNavbar() {
           .single()
           .then(({ data: profile }) => {
             setUser({
-              full_name: profile?.full_name || data.user.user_metadata?.full_name || data.user.email?.split('@')[0],
-              role: profile?.role ?? data.user.user_metadata?.role,
+              id: data.user.id,
+              full_name: profile?.full_name || data.user.email?.split('@')[0],
+              role: profile?.role ?? 'buyer',
             })
             setLoaded(true)
+
+            // Okunmamış bildirim sayısını al
+            supabase
+              .from('notifications')
+              .select('id', { count: 'exact' })
+              .eq('user_id', data.user.id)
+              .eq('is_read', false)
+              .then(({ count }) => setUnreadCount(count ?? 0))
           })
       } else {
         setLoaded(true)
@@ -75,6 +85,7 @@ export function PublicNavbar() {
     ...(user
       ? [
           { href: '/siparislerim', icon: '📦', label: 'Siparişler' },
+          { href: '/bildirimler',  icon: '🔔', label: 'Bildirimler', badge: unreadCount },
           { href: '/profil',       icon: '👤', label: 'Profil'     },
         ]
       : [
@@ -112,6 +123,18 @@ export function PublicNavbar() {
               width:36, height:36, borderRadius:10, background:'#F3EDE4',
               textDecoration:'none', fontSize:18,
             }}>🔍</Link>
+
+            {/* Bildirim ikonu — sadece giriş yapanlara */}
+            {loaded && user && (
+              <Link href="/bildirimler" style={{ position:'relative', display:'flex', alignItems:'center', justifyContent:'center', width:36, height:36, borderRadius:10, background:'#F3EDE4', textDecoration:'none', fontSize:18 }}>
+                🔔
+                {unreadCount > 0 && (
+                  <div style={{ position:'absolute', top:-4, right:-4, background:'#E8622A', color:'white', fontSize:10, fontWeight:700, width:18, height:18, borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', border:'2px solid white' }}>
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </div>
+                )}
+              </Link>
+            )}
 
             <CartButton />
 
@@ -153,8 +176,14 @@ export function PublicNavbar() {
             <Link key={item.href} href={item.href} style={{
               flex:1, display:'flex', flexDirection:'column', alignItems:'center',
               justifyContent:'center', padding:'8px 4px', textDecoration:'none', gap:2,
+              position:'relative',
             }}>
               <span style={{ fontSize:20 }}>{item.icon}</span>
+              {item.badge > 0 && (
+                <div style={{ position:'absolute', top:4, right:'50%', marginRight:-18, background:'#E8622A', color:'white', fontSize:9, fontWeight:700, width:16, height:16, borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                  {item.badge > 9 ? '9+' : item.badge}
+                </div>
+              )}
               <span style={{ fontSize:10, fontWeight: isActive ? 700 : 500, color: isActive ? '#E8622A' : '#8A7B6B' }}>
                 {item.label}
               </span>
