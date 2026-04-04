@@ -8,30 +8,21 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 export type PushPermission = 'default' | 'granted' | 'denied'
 
 interface PWAState {
-  isInstalled:    boolean   // Standalone modda mı?
-  isOnline:       boolean   // Ağ bağlantısı var mı?
-  canInstall:     boolean   // Install prompt mevcut mu?
-  swReady:        boolean   // Service Worker aktif mi?
+  isInstalled:    boolean
+  isOnline:       boolean
+  canInstall:     boolean
+  swReady:        boolean
   pushPermission: PushPermission
 }
 
 interface PWAActions {
-  promptInstall:      () => Promise<boolean>
+  promptInstall:         () => Promise<boolean>
   requestPushPermission: () => Promise<PushPermission>
-  subscribePush:      () => Promise<boolean>
-  unsubscribePush:    () => Promise<void>
+  subscribePush:         () => Promise<boolean>
+  unsubscribePush:       () => Promise<void>
 }
 
-// ─── Yardımcılar ─────────────────────────────────────────────────────────────
-
-function urlBase64ToUint8Array(base64String: string): Uint8Array {
-  const padding    = '='.repeat((4 - (base64String.length % 4)) % 4)
-  const base64     = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/')
-  const rawData    = atob(base64)
-  return Uint8Array.from(rawData, c => c.charCodeAt(0))
-}
-
-// ─── usePWA ──────────────────────────────────────────────────────────────────
+// ─── usePWA ───────────────────────────────────────────────────────────────────
 
 export function usePWA(): PWAState & PWAActions {
   const [isInstalled,    setIsInstalled]    = useState(false)
@@ -47,33 +38,27 @@ export function usePWA(): PWAState & PWAActions {
   useEffect(() => {
     if (typeof window === 'undefined') return
 
-    // Standalone (kurulu) mod tespiti
     const standalone =
       window.matchMedia('(display-mode: standalone)').matches ||
       (window.navigator as any).standalone === true
     setIsInstalled(standalone)
 
-    // Ağ durumu
     setIsOnline(navigator.onLine)
     const handleOnline  = () => setIsOnline(true)
     const handleOffline = () => setIsOnline(false)
     window.addEventListener('online',  handleOnline)
     window.addEventListener('offline', handleOffline)
 
-    // Push izin durumu
     if ('Notification' in window) {
       setPushPermission(Notification.permission as PushPermission)
     }
 
-    // Install prompt yakala
     const handleInstall = (e: Event) => {
       e.preventDefault()
       installPromptRef.current = e
       setCanInstall(true)
     }
     window.addEventListener('beforeinstallprompt', handleInstall)
-
-    // Kurulum tamamlandı
     window.addEventListener('appinstalled', () => {
       setIsInstalled(true)
       setCanInstall(false)
@@ -87,7 +72,7 @@ export function usePWA(): PWAState & PWAActions {
     }
   }, [])
 
-  // ── Service Worker kaydı ─────────────────────────────────────────────────
+  // ── Service Worker kaydı (sadece sw.js — FCM SW ayrı) ────────────────────
 
   useEffect(() => {
     if (!('serviceWorker' in navigator)) return
@@ -96,8 +81,6 @@ export function usePWA(): PWAState & PWAActions {
       .then(reg => {
         setSwReady(true)
         console.log('[PWA] SW kayıtlı:', reg.scope)
-
-        // Periyodik sync (destekleniyorsa) — her 12 saatte bir
         if ('periodicSync' in reg) {
           ;(reg as any).periodicSync.register('check-orders', { minInterval: 12 * 60 * 60 * 1000 })
             .catch(() => {})
@@ -126,46 +109,57 @@ export function usePWA(): PWAState & PWAActions {
     return result
   }, [])
 
-  // ── Push abone ol ─────────────────────────────────────────────────────────
+  // ── Push abone ol — Firebase FCM kullanır ────────────────────────────────
 
   const subscribePush = useCallback(async (): Promise<boolean> => {
-    if (!('serviceWorker' in navigator) || !('PushManager' in window)) return false
-
     try {
       const permission = await requestPushPermission()
       if (permission !== 'granted') return false
 
-      const reg = await navigator.serviceWorker.ready
+      const { initializeApp, getApps } = await import('firebase/app')
+      const { getMessaging, getToken, isSupported } = await import('firebase/messaging')
 
-      // Mevcut aboneliği kontrol et
-      let sub = await reg.pushManager.getSubscription()
+      const supported = await isSupported()
+      if (!supported) return false
 
-      if (!sub) {
-        const vapidKey = process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY
-        if (!vapidKey) {
-          console.warn('[PWA] VAPID key eksik')
-          return false
-        }
-        sub = await reg.pushManager.subscribe({
-          userVisibleOnly:      true,
-          applicationServerKey: urlBase64ToUint8Array(vapidKey),
-        })
+      const firebaseConfig = {
+        apiKey:            process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+        authDomain:        process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+        projectId:         process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+        messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+        appId:             process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
       }
 
-      // Sunucuya kaydet
-      const res = await fetch('/api/push/subscribe', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({
-          endpoint: sub.endpoint,
-          p256dh:   btoa(String.fromCharCode(...new Uint8Array(sub.getKey('p256dh')!))),
-          auth:     btoa(String.fromCharCode(...new Uint8Array(sub.getKey('auth')!))),
-        }),
+      const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0]
+      const messaging = getMessaging(app)
+
+      // FCM SW'yi kaydet ve token al
+      const swReg = await navigator.serviceWorker.register('/firebase-messaging-sw.js', { scope: '/' })
+      await navigator.serviceWorker.ready
+
+      const token = await getToken(messaging, {
+        vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY,
+        serviceWorkerRegistration: swReg,
       })
 
-      return res.ok
+      if (!token) {
+        console.warn('[FCM] Token alınamadı')
+        return false
+      }
+
+      // Token'ı Supabase'e kaydet
+      const { getSupabaseBrowserClient } = await import('@/lib/supabase/client')
+      const supabase = getSupabaseBrowserClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        await supabase.from('users').update({ fcm_token: token } as any).eq('id', user.id)
+        console.log('[FCM] Token kaydedildi ✅')
+      }
+
+      setPushPermission('granted')
+      return true
     } catch (err) {
-      console.error('[PWA] Push abonelik hatası:', err)
+      console.error('[FCM] Abonelik hatası:', err)
       return false
     }
   }, [requestPushPermission])
@@ -173,16 +167,16 @@ export function usePWA(): PWAState & PWAActions {
   // ── Push aboneliği iptal ──────────────────────────────────────────────────
 
   const unsubscribePush = useCallback(async (): Promise<void> => {
-    if (!('serviceWorker' in navigator)) return
-    const reg = await navigator.serviceWorker.ready
-    const sub = await reg.pushManager.getSubscription()
-    if (sub) {
-      await sub.unsubscribe()
-      await fetch('/api/push/subscribe', {
-        method:  'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ endpoint: sub.endpoint }),
-      })
+    try {
+      const { getSupabaseBrowserClient } = await import('@/lib/supabase/client')
+      const supabase = getSupabaseBrowserClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        await supabase.from('users').update({ fcm_token: null } as any).eq('id', user.id)
+      }
+      console.log('[FCM] Abonelik iptal edildi')
+    } catch (err) {
+      console.error('[FCM] Abonelik iptal hatası:', err)
     }
   }, [])
 
@@ -192,7 +186,7 @@ export function usePWA(): PWAState & PWAActions {
   }
 }
 
-// ─── usePushNotification — tekil kullanım için ───────────────────────────────
+// ─── usePushNotification — tekil kullanım için ────────────────────────────────
 
 export function usePushNotification() {
   const { pushPermission, subscribePush, unsubscribePush } = usePWA()
