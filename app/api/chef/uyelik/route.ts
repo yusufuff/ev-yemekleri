@@ -35,9 +35,8 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (mevcut) {
-      // Yenile — bitiş tarihinden itibaren 1 ay ekle
-      const mevcutBitis = mevcut.expires_at ? new Date(mevcut.expires_at) : simdi
-      const yeniBitis = new Date(mevcutBitis > simdi ? mevcutBitis : simdi)
+      // Yenile — her zaman şimdiden 1 ay
+      const yeniBitis = new Date(simdi)
       yeniBitis.setMonth(yeniBitis.getMonth() + 1)
 
       const { error } = await admin
