@@ -1,9 +1,10 @@
 // app/(chef)/dashboard/DashboardClient.tsx - Client Component
 'use client'
 // @ts-nocheck
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { getSupabaseBrowserClient } from '@/lib/supabase/client'
 
 function StatCard({ label, value, icon, color }) {
   return (
@@ -20,6 +21,26 @@ export default function DashboardClient({ initialData }) {
   const [data, setData] = useState(() => initialData)
   const [isOpen, setIsOpen] = useState(initialData?.is_open ?? true)
   const [guncelleniyor, setGuncelleniyor] = useState(null)
+  const [abonelik, setAbonelik] = useState<any>(null)
+
+  useEffect(() => {
+    const supabase = getSupabaseBrowserClient()
+    supabase.auth.getUser().then(async ({ data: authData }) => {
+      if (!authData?.user) return
+      const { data: cp } = await supabase
+        .from('chef_profiles')
+        .select('id')
+        .eq('user_id', authData.user.id)
+        .single()
+      if (!cp) return
+      const { data: abone } = await supabase
+        .from('chef_subscriptions')
+        .select('status, expires_at, amount_paid')
+        .eq('chef_id', cp.id)
+        .single()
+      setAbonelik(abone ?? null)
+    })
+  }, [])
 
   const updateOrderStatus = async (orderId, status) => {
     setGuncelleniyor(orderId)
@@ -47,8 +68,6 @@ export default function DashboardClient({ initialData }) {
             : guncelle(prev.active_orders ?? []),
         }
       })
-
-      // Sayfayi server'dan yenile
       router.refresh()
     } catch (err) {
       console.error('Order update error:', err)
@@ -69,19 +88,65 @@ export default function DashboardClient({ initialData }) {
 
   const getSonrakiButon = order => {
     switch (order.status) {
-      case 'confirmed': return { label: '👨‍🍳 Hazırlamaya Başla', sonrakiStatus: 'preparing', renk: '#8B5CF6', bgRenk: '#F5F3FF' }
-      case 'preparing': return { label: '🛵 Yola Çıktım', sonrakiStatus: 'on_way', renk: '#F97316', bgRenk: '#FFF7ED' }
-      case 'on_way': return { label: '✅ Teslim Ettim', sonrakiStatus: 'delivered_pending', renk: '#22C55E', bgRenk: '#F0FDF4' }
-      case 'delivered_pending': return { label: '⏳ Alıcı Onayı Bekleniyor', sonrakiStatus: null, renk: '#9CA3AF', bgRenk: '#F9FAFB' }
+      case 'confirmed':         return { label: '👨‍🍳 Hazırlamaya Başla', sonrakiStatus: 'preparing',         renk: '#8B5CF6', bgRenk: '#F5F3FF' }
+      case 'preparing':         return { label: '🛵 Yola Çıktım',         sonrakiStatus: 'on_way',            renk: '#F97316', bgRenk: '#FFF7ED' }
+      case 'on_way':            return { label: '✅ Teslim Ettim',         sonrakiStatus: 'delivered_pending', renk: '#22C55E', bgRenk: '#F0FDF4' }
+      case 'delivered_pending': return { label: '⏳ Alıcı Onayı Bekleniyor', sonrakiStatus: null,             renk: '#9CA3AF', bgRenk: '#F9FAFB' }
       default: return null
     }
   }
 
   const stats = data?.stats ?? {}
 
+  // Üyelik banner hesapla
+  const kalanGun = abonelik?.expires_at
+    ? Math.ceil((new Date(abonelik.expires_at).getTime() - Date.now()) / 86400000)
+    : null
+  const uyelikAktif = abonelik?.status === 'active' && kalanGun !== null && kalanGun > 0
+
   return (
     <div style={{ minHeight: '100vh', background: '#FAF6EF', fontFamily: "'DM Sans', sans-serif" }}>
       <div style={{ maxWidth: 1100, margin: '0 auto', padding: '24px 16px' }}>
+
+        {/* Üyelik Banner */}
+        {abonelik === null ? (
+          <div style={{ background:'#FEF3EC', border:'1px solid #F28B5E', borderRadius:12, padding:'12px 20px', marginBottom:16, display:'flex', alignItems:'center', justifyContent:'space-between', gap:12 }}>
+            <div>
+              <span style={{ fontWeight:700, color:'#E8622A', fontSize:14 }}>⚠️ Aktif üyeliğiniz yok</span>
+              <span style={{ fontSize:13, color:'#8A7B6B', marginLeft:8 }}>Platformda görünmek ve sipariş almak için üyelik başlatın.</span>
+            </div>
+            <Link href="/uyelik" style={{ padding:'8px 18px', background:'#E8622A', color:'white', borderRadius:8, fontSize:13, fontWeight:700, textDecoration:'none', whiteSpace:'nowrap', flexShrink:0 }}>
+              Üyelik Al →
+            </Link>
+          </div>
+        ) : !uyelikAktif ? (
+          <div style={{ background:'#FEF2F2', border:'1px solid #FECACA', borderRadius:12, padding:'12px 20px', marginBottom:16, display:'flex', alignItems:'center', justifyContent:'space-between', gap:12 }}>
+            <span style={{ fontWeight:700, color:'#DC2626', fontSize:14 }}>❌ Üyeliğinizin süresi doldu — sipariş alamazsınız.</span>
+            <Link href="/uyelik" style={{ padding:'8px 18px', background:'#DC2626', color:'white', borderRadius:8, fontSize:13, fontWeight:700, textDecoration:'none', whiteSpace:'nowrap', flexShrink:0 }}>
+              Yenile →
+            </Link>
+          </div>
+        ) : kalanGun <= 7 ? (
+          <div style={{ background:'#FEF3EC', border:'1px solid #F28B5E', borderRadius:12, padding:'12px 20px', marginBottom:16, display:'flex', alignItems:'center', justifyContent:'space-between', gap:12 }}>
+            <span style={{ fontSize:13, color:'#4A2C0E' }}>
+              ⚠️ <strong>Üyelik {kalanGun} gün içinde bitiyor</strong>
+              <span style={{ color:'#8A7B6B', marginLeft:8 }}>· ₺{abonelik.amount_paid}/ay</span>
+            </span>
+            <Link href="/uyelik" style={{ padding:'8px 18px', background:'#E8622A', color:'white', borderRadius:8, fontSize:13, fontWeight:700, textDecoration:'none', whiteSpace:'nowrap', flexShrink:0 }}>
+              Yenile →
+            </Link>
+          </div>
+        ) : (
+          <div style={{ background:'#F0FDF4', border:'1px solid #86EFAC', borderRadius:12, padding:'12px 20px', marginBottom:16, display:'flex', alignItems:'center', justifyContent:'space-between', gap:12 }}>
+            <span style={{ fontSize:13, color:'#4A2C0E' }}>
+              ✅ <strong>Üyelik Aktif</strong>
+              <span style={{ color:'#8A7B6B', marginLeft:8 }}>· {kalanGun} gün kaldı · ₺{abonelik.amount_paid}/ay</span>
+            </span>
+            <Link href="/uyelik" style={{ fontSize:12, color:'#059669', textDecoration:'none', fontWeight:600, whiteSpace:'nowrap', flexShrink:0 }}>
+              Detay →
+            </Link>
+          </div>
+        )}
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
           <div>
@@ -200,7 +265,8 @@ export default function DashboardClient({ initialData }) {
                 <Link href="/menu" style={{ display: 'block', textAlign: 'center', padding: '8px 0', background: '#F5EDD8', color: '#4A2C0E', borderRadius: 8, textDecoration: 'none', fontSize: 12, fontWeight: 600, border: '1.5px solid #E8E0D4' }}>📦 Stok Güncelle</Link>
                 <Link href="/asci-ayarlar" style={{ display: 'block', textAlign: 'center', padding: '8px 0', background: '#F5EDD8', color: '#4A2C0E', borderRadius: 8, textDecoration: 'none', fontSize: 12, fontWeight: 600, border: '1.5px solid #E8E0D4' }}>⚙️ Profil Ayarları</Link>
                 <Link href="/kazanc" style={{ display: 'block', textAlign: 'center', padding: '8px 0', background: '#F5EDD8', color: '#4A2C0E', borderRadius: 8, textDecoration: 'none', fontSize: 12, fontWeight: 600, border: '1.5px solid #E8E0D4' }}>💰 Kazanç & Ödeme</Link>
-                <Link href="/paylasim" style={{ display: 'block', textAlign: 'center', padding: '8px 0', background: '#FEF3EC', color: '#E8622A', borderRadius: 8, textDecoration: 'none', fontSize: 12, fontWeight: 700, border: '1.5px solid #E8622A' }}>📲 Paylaşım & Kampanya</Link>
+                <Link href="/uyelik" style={{ display: 'block', textAlign: 'center', padding: '8px 0', background: '#FEF3EC', color: '#E8622A', borderRadius: 8, textDecoration: 'none', fontSize: 12, fontWeight: 700, border: '1.5px solid #E8622A' }}>💳 Üyeliğim</Link>
+                <Link href="/paylasim" style={{ display: 'block', textAlign: 'center', padding: '8px 0', background: '#F5EDD8', color: '#4A2C0E', borderRadius: 8, textDecoration: 'none', fontSize: 12, fontWeight: 600, border: '1.5px solid #E8E0D4' }}>📲 Paylaşım & Kampanya</Link>
               </div>
             </div>
 
