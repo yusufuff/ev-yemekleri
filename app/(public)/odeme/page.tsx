@@ -34,12 +34,29 @@ export default function OdemePage() {
   const [showNewAddress,   setShowNewAddress]   = useState(false)
   const [addressesLoading, setAddressesLoading] = useState(true)
 
+  // Aşçı konumu (Gel-Al için)
+  const [chefLocation, setChefLocation] = useState<string | null>(null)
+
   useEffect(() => {
     fetch('/api/user/credit').then(r => r.json()).then(d => {
       setPlatformCredit(d.credit ?? 0)
       setCreditLoading(false)
     })
   }, [])
+
+  // Aşçı konumunu çek (Gel-Al için)
+  useEffect(() => {
+    if (!items[0]?.chef_id) return
+    const supabase = getSupabaseBrowserClient()
+    supabase
+      .from('chef_profiles')
+      .select('location_approx')
+      .eq('id', items[0].chef_id)
+      .single()
+      .then(({ data }) => {
+        if (data?.location_approx) setChefLocation(data.location_approx)
+      })
+  }, [items])
 
   // Kayıtlı adresleri çek
   useEffect(() => {
@@ -220,6 +237,18 @@ export default function OdemePage() {
                 }}>{icon} {label}</button>
               ))}
             </div>
+
+            {deliveryType === 'pickup' && (
+              <div style={{ background:'#F0FDF4', border:'1.5px solid #86EFAC', borderRadius:10, padding:'12px 14px', marginBottom:12 }}>
+                <div style={{ fontSize:12, fontWeight:700, color:'#3D6B47', marginBottom:4 }}>📍 Aşçının Konumu</div>
+                <div style={{ fontSize:13, color:'#4A2C0E', fontWeight:600 }}>
+                  {chefLocation ?? 'Konum bilgisi alınıyor...'}
+                </div>
+                <div style={{ fontSize:11, color:'#8A7B6B', marginTop:4 }}>
+                  Siparişiniz hazır olduğunda aşçı size bilgi verecek.
+                </div>
+              </div>
+            )}
 
             {deliveryType === 'delivery' && (
               <div style={{ marginBottom:12 }}>
