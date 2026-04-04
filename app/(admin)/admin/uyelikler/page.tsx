@@ -5,56 +5,69 @@ import Link from 'next/link'
 import { getSupabaseBrowserClient } from '@/lib/supabase/client'
 
 const NAV = [
-  ['Dashboard', '/admin'],
-  ['Aşçılar', '/admin/asciler'],
+  ['Dashboard',    '/admin'],
+  ['Aşçılar',     '/admin/asciler'],
   ['Kullanıcılar', '/admin/kullanicilar'],
-  ['Siparişler', '/admin/siparisler'],
-  ['Ödemeler', '/admin/odemeler'],
-  ['Üyelikler', '/admin/uyelikler'],
+  ['Siparişler',  '/admin/siparisler'],
+  ['Ödemeler',    '/admin/odemeler'],
+  ['Üyelikler',   '/admin/uyelikler'],
 ]
 
 export default function UyeliklerPage() {
   const supabase = getSupabaseBrowserClient()
-  const [asciler, setAsciler] = useState<any[]>([])
-  const [yukleniyor, setYukleniyor] = useState(true)
-  const [kaydedilen, setKaydedilen] = useState<string | null>(null)
-  const [duzenlenen, setDuzenlenen] = useState<any>(null)
-  const [topluForm, setTopluForm] = useState({ plan: 'basic', monthly_fee: '299', discount_pct: '0', discount_reason: '' })
-  const [topluKaydediliyor, setTopluKaydediliyor] = useState(false)
+
+  const [yukleniyor,    setYukleniyor]    = useState(true)
+  const [asciler,       setAsciler]       = useState<any[]>([])
+  const [aylikUcret,    setAylikUcret]    = useState('100')
+  const [yeniUcret,     setYeniUcret]     = useState('100')
+  const [ucretKaydedil, setUcretKaydedil] = useState(false)
+  const [ucretYukleniyor, setUcretYukleniyor] = useState(false)
 
   useEffect(() => { verileriYukle() }, [])
 
   const verileriYukle = async () => {
     setYukleniyor(true)
     try {
+      // Global üyelik ücretini çek
+      const { data: setting } = await supabase
+        .from('platform_settings')
+        .select('value')
+        .eq('key', 'membership_fee')
+        .single()
+
+      if (setting?.value) {
+        setAylikUcret(setting.value)
+        setYeniUcret(setting.value)
+      }
+
       // Tüm aşçıları çek
       const { data: chefData } = await supabase
         .from('chef_profiles')
-        .select('id, badge, user_id, users(full_name)')
-        .order('created_at')
+        .select('id, badge, verification_status, user_id, created_at')
+        .order('created_at', { ascending: false })
 
-      // Üyelikleri çek
+      // Abonelikleri çek
       const { data: aboneData } = await supabase
         .from('chef_subscriptions')
         .select('*')
 
-      // Paylaşım sayıları
-      const { data: shareData } = await supabase
-        .from('share_logs')
-        .select('chef_id')
+      // Kullanıcı adlarını çek
+      const userIds = (chefData ?? []).map((c: any) => c.user_id)
+      const { data: userData } = await supabase
+        .from('users')
+        .select('id, full_name')
+        .in('id', userIds)
 
-      const shareMap: Record<string, number> = {}
-      ;(shareData ?? []).forEach((s: any) => {
-        shareMap[s.chef_id] = (shareMap[s.chef_id] ?? 0) + 1
-      })
+      const userMap: Record<string, string> = {}
+      ;(userData ?? []).forEach((u: any) => { userMap[u.id] = u.full_name })
 
       const aboneMap: Record<string, any> = {}
       ;(aboneData ?? []).forEach((a: any) => { aboneMap[a.chef_id] = a })
 
       const birlesik = (chefData ?? []).map((c: any) => ({
         ...c,
+        full_name: userMap[c.user_id] ?? 'İsimsiz Aşçı',
         abonelik: aboneMap[c.id] ?? null,
-        share_count: shareMap[c.id] ?? 0,
       }))
 
       setAsciler(birlesik)
@@ -65,80 +78,64 @@ export default function UyeliklerPage() {
     }
   }
 
-  const kaydet = async (chefId: string, data: any) => {
-    setKaydedilen(chefId)
+  const ucretiKaydet = async () => {
+    if (!yeniUcret || isNaN(Number(yeniUcret)) || Number(yeniUcret) < 0) {
+      alert('Geçerli bir ücret girin.')
+      return
+    }
+    setUcretYukleniyor(true)
     try {
-      const mevcutAbone = asciler.find(a => a.id === chefId)?.abonelik
+      await supabase
+        .from('platform_settings')
+        .upsert({ key: 'membership_fee', value: yeniUcret, updated_at: new Date().toISOString() })
 
-      if (mevcutAbone) {
-        await supabase
-          .from('chef_subscriptions')
-          .update({
-            monthly_fee: parseFloat(data.monthly_fee),
-            discount_pct: parseInt(data.discount_pct),
-            discount_reason: data.discount_reason,
-            plan: data.plan,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('chef_id', chefId)
-      } else {
-        await supabase
-          .from('chef_subscriptions')
-          .insert({
-            chef_id: chefId,
-            monthly_fee: parseFloat(data.monthly_fee),
-            discount_pct: parseInt(data.discount_pct),
-            discount_reason: data.discount_reason,
-            plan: data.plan,
-            is_active: true,
-          })
-      }
-
-      setDuzenlenen(null)
-      verileriYukle()
+      setAylikUcret(yeniUcret)
+      setUcretKaydedil(true)
+      setTimeout(() => setUcretKaydedil(false), 2000)
     } catch (e) {
       alert('Kaydetme hatası!')
     } finally {
-      setTimeout(() => setKaydedilen(null), 1500)
+      setUcretYukleniyor(false)
     }
   }
 
-  const topluKaydet = async () => {
-    if (!confirm(`Tüm ${asciler.length} aşçıya %${topluForm.discount_pct} indirim uygulanacak. Emin misin?`)) return
-    setTopluKaydediliyor(true)
+  const abonelikDurumDegistir = async (chefId: string, aktif: boolean) => {
+    const mevcutAbone = asciler.find(a => a.id === chefId)?.abonelik
     try {
-      for (const asci of asciler) {
-        if (asci.abonelik) {
-          await supabase.from('chef_subscriptions').update({
-            monthly_fee: parseFloat(topluForm.monthly_fee),
-            discount_pct: parseInt(topluForm.discount_pct),
-            discount_reason: topluForm.discount_reason,
-            plan: topluForm.plan,
-            updated_at: new Date().toISOString(),
-          }).eq('chef_id', asci.id)
-        } else {
-          await supabase.from('chef_subscriptions').insert({
-            chef_id: asci.id,
-            monthly_fee: parseFloat(topluForm.monthly_fee),
-            discount_pct: parseInt(topluForm.discount_pct),
-            discount_reason: topluForm.discount_reason,
-            plan: topluForm.plan,
-            is_active: true,
+      if (mevcutAbone) {
+        await supabase
+          .from('chef_subscriptions')
+          .update({ status: aktif ? 'active' : 'cancelled', updated_at: new Date().toISOString() })
+          .eq('chef_id', chefId)
+      } else {
+        const simdi = new Date()
+        const bitis = new Date(simdi)
+        bitis.setMonth(bitis.getMonth() + 1)
+        await supabase
+          .from('chef_subscriptions')
+          .insert({
+            chef_id:     chefId,
+            status:      aktif ? 'active' : 'cancelled',
+            amount_paid: Number(aylikUcret),
+            started_at:  simdi.toISOString(),
+            expires_at:  bitis.toISOString(),
           })
-        }
       }
-      alert('✅ Tüm aşçılara uygulandı!')
       verileriYukle()
-    } catch(e) {
-      alert('Hata oluştu!')
-    } finally {
-      setTopluKaydediliyor(false)
+    } catch (e) {
+      alert('İşlem başarısız!')
     }
   }
 
-  const BADGE_RENK: Record<string, string> = {
-    new: '#6B7280', trusted: '#059669', master: '#D97706', chef: '#B45309'
+  const BADGE_META: Record<string, { label: string; color: string }> = {
+    new:     { label: 'Yeni',      color: '#6B7280' },
+    trusted: { label: 'Güvenilir', color: '#059669' },
+    master:  { label: 'Usta',      color: '#D97706' },
+    chef:    { label: 'Şef',       color: '#B45309' },
   }
+
+  const aktifSayisi = asciler.filter(a => a.abonelik?.status === 'active').length
+  const toplamGelir = aktifSayisi * Number(aylikUcret)
 
   return (
     <div style={{ minHeight:'100vh', background:'#FAF6EF', fontFamily:"'DM Sans', sans-serif" }}>
@@ -152,196 +149,140 @@ export default function UyeliklerPage() {
         </div>
       </nav>
 
-      <div style={{ maxWidth:1200, margin:'0 auto', padding:'28px 24px' }}>
-        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:24 }}>
-          <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:24, fontWeight:900, color:'#4A2C0E' }}>
-            🏷️ Üyelik Yönetimi
-          </h1>
-          <div style={{ fontSize:13, color:'#8A7B6B' }}>{asciler.length} aşçı</div>
+      <div style={{ maxWidth:1100, margin:'0 auto', padding:'28px 24px' }}>
+        <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:24, fontWeight:900, color:'#4A2C0E', marginBottom:24 }}>
+          💳 Üyelik Yönetimi
+        </h1>
+
+        {/* Özet kartlar */}
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:16, marginBottom:24 }}>
+          {[
+            { label: 'Aylık Ücret',     value: `₺${aylikUcret}`,      icon: '💰', color: '#E8622A' },
+            { label: 'Aktif Üye',       value: `${aktifSayisi} aşçı`, icon: '✅', color: '#059669' },
+            { label: 'Aylık Gelir',     value: `₺${toplamGelir}`,     icon: '📈', color: '#8B5CF6' },
+          ].map(card => (
+            <div key={card.label} style={{ background:'white', borderRadius:14, padding:20, boxShadow:'0 2px 8px rgba(74,44,14,0.06)' }}>
+              <div style={{ fontSize:24, marginBottom:8 }}>{card.icon}</div>
+              <div style={{ fontSize:11, color:'#8A7B6B', fontWeight:600, textTransform:'uppercase', letterSpacing:1, marginBottom:4 }}>{card.label}</div>
+              <div style={{ fontSize:24, fontWeight:800, color: card.color }}>{card.value}</div>
+            </div>
+          ))}
         </div>
 
-        {/* Bilgi notu */}
-        <div style={{ background:'#F5F3FF', border:'1px solid #DDD6FE', borderRadius:12, padding:16, marginBottom:24 }}>
-          <div style={{ fontWeight:700, color:'#5B21B6', marginBottom:6 }}>💡 Nasıl Çalışır?</div>
-          <div style={{ fontSize:13, color:'#6B21A8', lineHeight:1.6 }}>
-            Her aşçıya aylık üyelik ücreti ve indirim oranı belirleyebilirsiniz.
-            İndirim oranını <strong>%100</strong> yaparak aşçıya ücretsiz üyelik tanımlayabilirsiniz.
-            Aşçılar sosyal medyada paylaşım yaptığında bu sayfadan indirim tanımlayın.
-          </div>
-        </div>
-
-        {/* Toplu Uygulama */}
+        {/* Global ücret ayarı */}
         <div style={{ background:'white', borderRadius:16, padding:24, boxShadow:'0 2px 8px rgba(74,44,14,0.06)', marginBottom:20, border:'2px solid #E8622A' }}>
-          <div style={{ fontFamily:"'Playfair Display',serif", fontSize:17, fontWeight:700, color:'#4A2C0E', marginBottom:4 }}>⚡ Tüm Aşçılara Toplu Uygula</div>
-          <div style={{ fontSize:13, color:'#8A7B6B', marginBottom:16 }}>Belirlediğin ayarlar tüm aşçılara tek seferde uygulanır.</div>
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(4, 1fr)', gap:12, marginBottom:16 }}>
-            <div>
-              <label style={{ fontSize:12, fontWeight:700, color:'#8A7B6B', display:'block', marginBottom:6 }}>Plan</label>
-              <select value={topluForm.plan} onChange={e => setTopluForm({...topluForm, plan: e.target.value})}
-                style={{ width:'100%', padding:'10px 12px', borderRadius:10, border:'1.5px solid #E8E0D4', fontSize:13, color:'#4A2C0E', background:'#FAF6EF' }}>
-                <option value="basic">🌱 Basic</option>
-                <option value="premium">⭐ Premium</option>
-              </select>
-            </div>
-            <div>
-              <label style={{ fontSize:12, fontWeight:700, color:'#8A7B6B', display:'block', marginBottom:6 }}>Aylık Ücret (₺)</label>
-              <input type="number" value={topluForm.monthly_fee} onChange={e => setTopluForm({...topluForm, monthly_fee: e.target.value})}
-                style={{ width:'100%', padding:'10px 12px', borderRadius:10, border:'1.5px solid #E8E0D4', fontSize:13, color:'#4A2C0E', background:'#FAF6EF', boxSizing:'border-box' }} />
-            </div>
-            <div>
-              <label style={{ fontSize:12, fontWeight:700, color:'#8A7B6B', display:'block', marginBottom:6 }}>İndirim Oranı (%0-100)</label>
-              <input type="number" min="0" max="100" value={topluForm.discount_pct} onChange={e => setTopluForm({...topluForm, discount_pct: e.target.value})}
-                style={{ width:'100%', padding:'10px 12px', borderRadius:10, border:'1.5px solid #E8E0D4', fontSize:13, color:'#4A2C0E', background:'#FAF6EF', boxSizing:'border-box' }} />
-            </div>
-            <div>
-              <label style={{ fontSize:12, fontWeight:700, color:'#8A7B6B', display:'block', marginBottom:6 }}>İndirim Sebebi</label>
-              <input type="text" value={topluForm.discount_reason} onChange={e => setTopluForm({...topluForm, discount_reason: e.target.value})}
-                placeholder="örn: Açılış kampanyası"
-                style={{ width:'100%', padding:'10px 12px', borderRadius:10, border:'1.5px solid #E8E0D4', fontSize:13, color:'#4A2C0E', background:'#FAF6EF', boxSizing:'border-box' }} />
-            </div>
+          <div style={{ fontFamily:"'Playfair Display',serif", fontSize:17, fontWeight:700, color:'#4A2C0E', marginBottom:4 }}>
+            ⚙️ Aylık Üyelik Ücreti
           </div>
-          <div style={{ background:'#FEF3EC', borderRadius:10, padding:12, marginBottom:16, fontSize:13, color:'#E8622A', fontWeight:600 }}>
-            💡 {asciler.length} aşçı aylık <strong>₺{parseInt(topluForm.discount_pct) > 0 ? Math.round(parseFloat(topluForm.monthly_fee) * (1 - parseInt(topluForm.discount_pct)/100)) : topluForm.monthly_fee}</strong> ödeyecek
-            {parseInt(topluForm.discount_pct) > 0 && ` (%${topluForm.discount_pct} indirimli)`}
-            {parseInt(topluForm.discount_pct) === 100 && ' → HEPSİ ÜCRETSİZ 🎉'}
+          <div style={{ fontSize:13, color:'#8A7B6B', marginBottom:16 }}>
+            Tüm aşçılara uygulanacak aylık üyelik ücretini buradan belirleyin.
           </div>
-          <button onClick={topluKaydet} disabled={topluKaydediliyor}
-            style={{ padding:'12px 28px', borderRadius:10, border:'none', background:'#E8622A', color:'white', fontWeight:700, fontSize:14, cursor:'pointer', opacity: topluKaydediliyor ? 0.7 : 1 }}>
-            {topluKaydediliyor ? '⏳ Uygulanıyor...' : `⚡ Tüm Aşçılara Uygula (${asciler.length} aşçı)`}
-          </button>
+          <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+            <div style={{ position:'relative', flex:'0 0 200px' }}>
+              <span style={{ position:'absolute', left:14, top:'50%', transform:'translateY(-50%)', fontSize:16, fontWeight:700, color:'#4A2C0E' }}>₺</span>
+              <input
+                type="number"
+                min="0"
+                value={yeniUcret}
+                onChange={e => setYeniUcret(e.target.value)}
+                style={{ width:'100%', padding:'12px 12px 12px 32px', border:'2px solid #E8E0D4', borderRadius:10, fontSize:18, fontWeight:700, color:'#4A2C0E', fontFamily:'inherit', boxSizing:'border-box' }}
+              />
+            </div>
+            <span style={{ fontSize:14, color:'#8A7B6B', fontWeight:600 }}>/ay</span>
+            <button
+              onClick={ucretiKaydet}
+              disabled={ucretYukleniyor || yeniUcret === aylikUcret}
+              style={{
+                padding:'12px 24px', borderRadius:10, border:'none',
+                background: ucretKaydedil ? '#059669' : (yeniUcret === aylikUcret ? '#E8E0D4' : '#E8622A'),
+                color:'white', fontWeight:700, fontSize:14, cursor: yeniUcret === aylikUcret ? 'default' : 'pointer',
+                transition:'background 0.2s',
+              }}
+            >
+              {ucretKaydedil ? '✅ Kaydedildi!' : ucretYukleniyor ? '⏳ Kaydediliyor...' : 'Kaydet'}
+            </button>
+            {yeniUcret !== aylikUcret && (
+              <span style={{ fontSize:12, color:'#E8622A', fontWeight:600 }}>
+                Mevcut: ₺{aylikUcret}/ay → Yeni: ₺{yeniUcret}/ay
+              </span>
+            )}
+          </div>
         </div>
 
-        {/* Bireysel Aşçılar */}
-        <div style={{ fontFamily:"'Playfair Display',serif", fontSize:16, fontWeight:700, color:'#4A2C0E', marginBottom:12 }}>👩‍🍳 Bireysel Düzenleme</div>
+        {/* Aşçı listesi */}
+        <div style={{ fontFamily:"'Playfair Display',serif", fontSize:16, fontWeight:700, color:'#4A2C0E', marginBottom:12 }}>
+          👩‍🍳 Aşçı Üyelikleri
+        </div>
 
         {yukleniyor ? (
           <div style={{ textAlign:'center', padding:60, color:'#8A7B6B' }}>Yükleniyor...</div>
+        ) : asciler.length === 0 ? (
+          <div style={{ textAlign:'center', padding:60, color:'#8A7B6B' }}>Henüz aşçı yok.</div>
         ) : (
-          <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+          <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
             {asciler.map(asci => {
-              const duz = duzenlenen?.id === asci.id ? duzenlenen : null
-              const indirimliUcret = asci.abonelik?.discount_pct > 0
-                ? Math.round((asci.abonelik.monthly_fee ?? 299) * (1 - asci.abonelik.discount_pct / 100))
+              const aktif = asci.abonelik?.status === 'active'
+              const badge = BADGE_META[asci.badge ?? 'new']
+              const kalanGun = asci.abonelik?.expires_at
+                ? Math.ceil((new Date(asci.abonelik.expires_at).getTime() - Date.now()) / 86400000)
                 : null
 
               return (
-                <div key={asci.id} style={{ background:'white', borderRadius:16, padding:20, boxShadow:'0 2px 8px rgba(74,44,14,0.06)' }}>
-                  <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom: duz ? 20 : 0 }}>
-                    {/* Sol: Aşçı bilgisi */}
-                    <div style={{ display:'flex', alignItems:'center', gap:14 }}>
-                      <div style={{ width:44, height:44, borderRadius:22, background:'#FEF3EC', display:'flex', alignItems:'center', justifyContent:'center', fontSize:22 }}>👩‍🍳</div>
-                      <div>
-                        <div style={{ fontWeight:700, fontSize:15, color:'#4A2C0E' }}>{(asci.users as any)?.full_name ?? 'İsimsiz Aşçı'}</div>
-                        <div style={{ display:'flex', gap:8, marginTop:4 }}>
-                          <span style={{ fontSize:11, fontWeight:700, color: BADGE_RENK[asci.badge] ?? '#6B7280', background: BADGE_RENK[asci.badge] + '15', borderRadius:6, padding:'2px 8px' }}>
-                            {asci.badge === 'new' ? '🌱 Yeni' : asci.badge === 'trusted' ? '⭐ Güvenilir' : asci.badge === 'master' ? '🏅 Usta' : '👑 Şef'}
-                          </span>
-                          <span style={{ fontSize:11, color:'#8A7B6B' }}>📤 {asci.share_count} paylaşım</span>
-                        </div>
-                      </div>
-                    </div>
+                <div key={asci.id} style={{
+                  background:'white', borderRadius:14, padding:'16px 20px',
+                  boxShadow:'0 2px 8px rgba(74,44,14,0.06)',
+                  display:'flex', alignItems:'center', gap:16,
+                  borderLeft: `4px solid ${aktif ? '#059669' : '#E8E0D4'}`,
+                }}>
+                  {/* Avatar */}
+                  <div style={{ width:44, height:44, borderRadius:22, background:'#FEF3EC', display:'flex', alignItems:'center', justifyContent:'center', fontSize:22, flexShrink:0 }}>👩‍🍳</div>
 
-                    {/* Orta: Üyelik durumu */}
-                    <div style={{ textAlign:'center' }}>
-                      {asci.abonelik ? (
-                        <>
-                          <div style={{ fontSize:11, color:'#8A7B6B', marginBottom:2 }}>Aylık Ücret</div>
-                          {indirimliUcret !== null ? (
-                            <div>
-                              <span style={{ fontSize:13, color:'#8A7B6B', textDecoration:'line-through', marginRight:6 }}>₺{asci.abonelik.monthly_fee}</span>
-                              <span style={{ fontSize:18, fontWeight:800, color:'#059669' }}>₺{indirimliUcret}</span>
-                              <span style={{ fontSize:11, background:'#D1FAE5', color:'#059669', borderRadius:6, padding:'2px 8px', marginLeft:6, fontWeight:700 }}>%{asci.abonelik.discount_pct} indirim</span>
-                            </div>
-                          ) : (
-                            <div style={{ fontSize:18, fontWeight:800, color:'#4A2C0E' }}>₺{asci.abonelik.monthly_fee}/ay</div>
-                          )}
-                          {asci.abonelik.discount_reason && (
-                            <div style={{ fontSize:11, color:'#059669', marginTop:2 }}>🎁 {asci.abonelik.discount_reason}</div>
-                          )}
-                        </>
-                      ) : (
-                        <div style={{ fontSize:12, color:'#8A7B6B', fontStyle:'italic' }}>Üyelik tanımlı değil</div>
+                  {/* Bilgi */}
+                  <div style={{ flex:1 }}>
+                    <div style={{ fontWeight:700, fontSize:14, color:'#4A2C0E', marginBottom:4 }}>
+                      {asci.full_name}
+                    </div>
+                    <div style={{ display:'flex', gap:8, alignItems:'center', flexWrap:'wrap' }}>
+                      <span style={{ fontSize:11, fontWeight:700, color: badge.color, background: badge.color + '18', borderRadius:6, padding:'2px 8px' }}>
+                        {badge.label}
+                      </span>
+                      <span style={{ fontSize:11, color:'#8A7B6B' }}>
+                        {asci.verification_status === 'approved' ? '✅ Onaylı' : '⏳ Bekliyor'}
+                      </span>
+                      {kalanGun !== null && (
+                        <span style={{ fontSize:11, color: kalanGun < 7 ? '#DC2626' : '#8A7B6B' }}>
+                          {kalanGun > 0 ? `📅 ${kalanGun} gün kaldı` : '⚠️ Süresi doldu'}
+                        </span>
                       )}
                     </div>
-
-                    {/* Sağ: Düzenle butonu */}
-                    <button
-                      onClick={() => setDuzenlenen(duz ? null : {
-                        id: asci.id,
-                        plan: asci.abonelik?.plan ?? 'basic',
-                        monthly_fee: asci.abonelik?.monthly_fee ?? 299,
-                        discount_pct: asci.abonelik?.discount_pct ?? 0,
-                        discount_reason: asci.abonelik?.discount_reason ?? '',
-                      })}
-                      style={{ padding:'8px 16px', borderRadius:10, border:'1.5px solid #E8622A', background: duz ? '#E8622A' : 'transparent', color: duz ? 'white' : '#E8622A', fontWeight:700, fontSize:13, cursor:'pointer' }}
-                    >
-                      {duz ? 'İptal' : '✏️ Düzenle'}
-                    </button>
                   </div>
 
-                  {/* Düzenleme formu */}
-                  {duz && (
-                    <div style={{ borderTop:'1px solid #F0E8DC', paddingTop:20 }}>
-                      <div style={{ display:'grid', gridTemplateColumns:'repeat(4, 1fr)', gap:12, marginBottom:16 }}>
-                        <div>
-                          <label style={{ fontSize:12, fontWeight:700, color:'#8A7B6B', display:'block', marginBottom:6 }}>Plan</label>
-                          <select
-                            value={duz.plan}
-                            onChange={e => setDuzenlenen({ ...duz, plan: e.target.value })}
-                            style={{ width:'100%', padding:'10px 12px', borderRadius:10, border:'1.5px solid #E8E0D4', fontSize:13, color:'#4A2C0E', background:'#FAF6EF' }}
-                          >
-                            <option value="basic">🌱 Basic</option>
-                            <option value="premium">⭐ Premium</option>
-                          </select>
-                        </div>
-                        <div>
-                          <label style={{ fontSize:12, fontWeight:700, color:'#8A7B6B', display:'block', marginBottom:6 }}>Aylık Ücret (₺)</label>
-                          <input
-                            type="number"
-                            value={duz.monthly_fee}
-                            onChange={e => setDuzenlenen({ ...duz, monthly_fee: e.target.value })}
-                            style={{ width:'100%', padding:'10px 12px', borderRadius:10, border:'1.5px solid #E8E0D4', fontSize:13, color:'#4A2C0E', background:'#FAF6EF', boxSizing:'border-box' }}
-                          />
-                        </div>
-                        <div>
-                          <label style={{ fontSize:12, fontWeight:700, color:'#8A7B6B', display:'block', marginBottom:6 }}>İndirim Oranı (%0-100)</label>
-                          <input
-                            type="number"
-                            min="0"
-                            max="100"
-                            value={duz.discount_pct}
-                            onChange={e => setDuzenlenen({ ...duz, discount_pct: e.target.value })}
-                            style={{ width:'100%', padding:'10px 12px', borderRadius:10, border:'1.5px solid #E8E0D4', fontSize:13, color:'#4A2C0E', background:'#FAF6EF', boxSizing:'border-box' }}
-                          />
-                        </div>
-                        <div>
-                          <label style={{ fontSize:12, fontWeight:700, color:'#8A7B6B', display:'block', marginBottom:6 }}>İndirim Sebebi</label>
-                          <input
-                            type="text"
-                            value={duz.discount_reason}
-                            onChange={e => setDuzenlenen({ ...duz, discount_reason: e.target.value })}
-                            placeholder="örn: Sosyal medya paylaşımı"
-                            style={{ width:'100%', padding:'10px 12px', borderRadius:10, border:'1.5px solid #E8E0D4', fontSize:13, color:'#4A2C0E', background:'#FAF6EF', boxSizing:'border-box' }}
-                          />
-                        </div>
-                      </div>
+                  {/* Ücret */}
+                  <div style={{ textAlign:'center', flexShrink:0 }}>
+                    <div style={{ fontSize:11, color:'#8A7B6B', marginBottom:2 }}>Aylık Ücret</div>
+                    <div style={{ fontSize:16, fontWeight:800, color:'#E8622A' }}>₺{aylikUcret}</div>
+                  </div>
 
-                      {/* Önizleme */}
-                      <div style={{ background:'#F5F3FF', borderRadius:10, padding:12, marginBottom:16, fontSize:13, color:'#5B21B6' }}>
-                        💡 Aşçı aylık <strong>₺{duz.discount_pct > 0 ? Math.round(duz.monthly_fee * (1 - duz.discount_pct / 100)) : duz.monthly_fee}</strong> ödeyecek
-                        {duz.discount_pct > 0 && ` (₺${duz.monthly_fee} yerine %${duz.discount_pct} indirimli)`}
-                        {parseInt(duz.discount_pct) === 100 && ' → ÜCRETSİZ ÜYELİK 🎉'}
-                      </div>
-
-                      <button
-                        onClick={() => kaydet(asci.id, duz)}
-                        disabled={kaydedilen === asci.id}
-                        style={{ padding:'10px 24px', borderRadius:10, border:'none', background:'#E8622A', color:'white', fontWeight:700, fontSize:14, cursor:'pointer', opacity: kaydedilen === asci.id ? 0.7 : 1 }}
-                      >
-                        {kaydedilen === asci.id ? '✅ Kaydedildi!' : 'Kaydet'}
-                      </button>
+                  {/* Durum toggle */}
+                  <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:4, flexShrink:0 }}>
+                    <div style={{ fontSize:11, color: aktif ? '#059669' : '#8A7B6B', fontWeight:700 }}>
+                      {aktif ? 'Aktif' : 'Pasif'}
                     </div>
-                  )}
+                    <div
+                      onClick={() => abonelikDurumDegistir(asci.id, !aktif)}
+                      style={{
+                        width:48, height:26, borderRadius:13, cursor:'pointer',
+                        background: aktif ? '#059669' : '#E8E0D4',
+                        position:'relative', transition:'background 0.2s',
+                      }}
+                    >
+                      <div style={{
+                        width:20, height:20, borderRadius:'50%', background:'white',
+                        position:'absolute', top:3, left: aktif ? 25 : 3,
+                        transition:'left 0.2s', boxShadow:'0 1px 3px rgba(0,0,0,0.2)',
+                      }} />
+                    </div>
+                  </div>
                 </div>
               )
             })}
