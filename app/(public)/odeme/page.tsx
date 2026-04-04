@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useCart } from '@/hooks/useCart'
+import { getSupabaseBrowserClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 
 export default function OdemePage() {
@@ -23,9 +24,15 @@ export default function OdemePage() {
   const [step,           setStep]           = useState(1)
 
   // Platform kredisi
-  const [platformCredit,    setPlatformCredit]    = useState(0)
-  const [useCredit,         setUseCredit]         = useState(false)
-  const [creditLoading,     setCreditLoading]     = useState(true)
+  const [platformCredit, setPlatformCredit] = useState(0)
+  const [useCredit,      setUseCredit]      = useState(false)
+  const [creditLoading,  setCreditLoading]  = useState(true)
+
+  // Kayıtlı adresler
+  const [savedAddresses,   setSavedAddresses]   = useState<any[]>([])
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null)
+  const [showNewAddress,   setShowNewAddress]   = useState(false)
+  const [addressesLoading, setAddressesLoading] = useState(true)
 
   useEffect(() => {
     fetch('/api/user/credit').then(r => r.json()).then(d => {
@@ -34,10 +41,49 @@ export default function OdemePage() {
     })
   }, [])
 
-  const subtotal      = summary.total || summary.subtotal
+  // Kayıtlı adresleri çek
+  useEffect(() => {
+    const supabase = getSupabaseBrowserClient()
+    supabase.auth.getUser().then(async ({ data }) => {
+      if (!data?.user) { setAddressesLoading(false); setShowNewAddress(true); return }
+
+      const { data: addrs } = await supabase
+        .from('addresses')
+        .select('*')
+        .eq('user_id', data.user.id)
+        .order('is_default', { ascending: false })
+        .order('created_at', { ascending: false })
+
+      if (addrs && addrs.length > 0) {
+        setSavedAddresses(addrs)
+        // Varsayılan adresi seç
+        const defaultAddr = addrs.find(a => a.is_default) ?? addrs[0]
+        setSelectedAddressId(defaultAddr.id)
+        setAddress(defaultAddr.full_address)
+        setShowNewAddress(false)
+      } else {
+        setShowNewAddress(true)
+      }
+      setAddressesLoading(false)
+    })
+  }, [])
+
+  const handleAddressSelect = (addr: any) => {
+    setSelectedAddressId(addr.id)
+    setAddress(addr.full_address)
+    setShowNewAddress(false)
+  }
+
+  const handleNewAddress = () => {
+    setSelectedAddressId(null)
+    setAddress('')
+    setShowNewAddress(true)
+  }
+
+  const subtotal       = summary.total || summary.subtotal
   const couponDiscount = couponApplied && appliedCoupon ? (appliedCoupon.discount_amount ?? 0) : 0
   const creditDiscount = useCredit ? Math.min(platformCredit, Math.max(0, subtotal - couponDiscount)) : 0
-  const finalTotal    = Math.max(0, subtotal - couponDiscount - creditDiscount)
+  const finalTotal     = Math.max(0, subtotal - couponDiscount - creditDiscount)
 
   if (items.length === 0) {
     return (
@@ -76,15 +122,15 @@ export default function OdemePage() {
           discount_amount: couponDiscount + creditDiscount,
           coupon_code:     appliedCoupon?.code,
           credit_used:     creditDiscount,
-          items:           items.map(i => ({ name: i.name, quantity: i.quantity, price: i.price })),
+          items:           items.map(i => ({ name: i.name, quantity: i.quantity, price: i.price, menu_item_id: i.menu_item_id })),
         }),
       })
       const data = await res.json()
-      if (!res.ok) { alert(data.error ?? 'Bir hata olustu.'); return }
+      if (!res.ok) { alert(data.error ?? 'Bir hata oluştu.'); return }
       clear()
       window.location.href = '/siparis-basari?order_id=' + data.order.id
     } catch {
-      alert('Bir hata olustu, tekrar deneyin.')
+      alert('Bir hata oluştu, tekrar deneyin.')
     } finally {
       setLoading(false)
     }
@@ -144,7 +190,7 @@ export default function OdemePage() {
             ))}
             {couponDiscount > 0 && (
               <div style={{ display:'flex', justifyContent:'space-between', fontSize:13, color:'#3D6B47', padding:'6px 0', fontWeight:600 }}>
-                <span>🏷 Kupon indirimi</span>
+                <span>🏷️ Kupon indirimi</span>
                 <span>-₺{couponDiscount.toFixed(0)}</span>
               </div>
             )}
@@ -174,14 +220,82 @@ export default function OdemePage() {
                 }}>{icon} {label}</button>
               ))}
             </div>
+
             {deliveryType === 'delivery' && (
               <div style={{ marginBottom:12 }}>
-                <label style={{ fontSize:12, fontWeight:600, color:'#7A4A20', display:'block', marginBottom:6 }}>Teslimat Adresi *</label>
-                <textarea value={address} onChange={e => setAddress(e.target.value)}
-                  placeholder="Mahalle, cadde, sokak, bina no, daire…" rows={3}
-                  style={{ width:'100%', padding:'10px 14px', border:'1.5px solid #E8E0D4', borderRadius:8, fontSize:13, fontFamily:'inherit', resize:'none', boxSizing:'border-box' }} />
+                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
+                  <label style={{ fontSize:12, fontWeight:600, color:'#7A4A20' }}>Teslimat Adresi *</label>
+                  {savedAddresses.length > 0 && (
+                    <Link href="/adreslerim" style={{ fontSize:11, color:'#E8622A', textDecoration:'none', fontWeight:600 }}>
+                      + Yeni Adres Ekle
+                    </Link>
+                  )}
+                </div>
+
+                {/* Kayıtlı adresler */}
+                {addressesLoading ? (
+                  <div style={{ height:60, background:'#F5EDD8', borderRadius:10, animation:'shimmer 1.4s infinite', backgroundSize:'200% 100%' }} />
+                ) : savedAddresses.length > 0 ? (
+                  <div style={{ display:'flex', flexDirection:'column', gap:8, marginBottom:12 }}>
+                    {savedAddresses.map(addr => (
+                      <div key={addr.id} onClick={() => handleAddressSelect(addr)} style={{
+                        padding:'12px 14px', borderRadius:10, cursor:'pointer',
+                        border:`2px solid ${selectedAddressId === addr.id ? '#E8622A' : '#E8E0D4'}`,
+                        background: selectedAddressId === addr.id ? '#FEF3EC' : 'white',
+                        display:'flex', alignItems:'flex-start', gap:10,
+                      }}>
+                        <div style={{ fontSize:20, flexShrink:0 }}>
+                          {addr.label === 'Ev' ? '🏠' : addr.label === 'İş' ? '🏢' : '📍'}
+                        </div>
+                        <div style={{ flex:1 }}>
+                          <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+                            <span style={{ fontSize:13, fontWeight:700, color:'#4A2C0E' }}>{addr.label || 'Adres'}</span>
+                            {addr.is_default && (
+                              <span style={{ fontSize:10, background:'#E8622A', color:'white', padding:'1px 6px', borderRadius:10, fontWeight:600 }}>Varsayılan</span>
+                            )}
+                          </div>
+                          <div style={{ fontSize:12, color:'#8A7B6B', marginTop:2, lineHeight:1.4 }}>
+                            {addr.full_address}
+                          </div>
+                          {addr.recipient_name && (
+                            <div style={{ fontSize:11, color:'#B0A090', marginTop:2 }}>👤 {addr.recipient_name}</div>
+                          )}
+                        </div>
+                        <div style={{
+                          width:18, height:18, borderRadius:'50%', flexShrink:0,
+                          border:`2px solid ${selectedAddressId === addr.id ? '#E8622A' : '#E8E0D4'}`,
+                          background: selectedAddressId === addr.id ? '#E8622A' : 'white',
+                          display:'flex', alignItems:'center', justifyContent:'center',
+                        }}>
+                          {selectedAddressId === addr.id && (
+                            <div style={{ width:8, height:8, borderRadius:'50%', background:'white' }} />
+                          )}
+                        </div>
+                      </div>
+                    ))}
+
+                    {/* Yeni adres gir */}
+                    <div onClick={handleNewAddress} style={{
+                      padding:'10px 14px', borderRadius:10, cursor:'pointer',
+                      border:`2px dashed ${showNewAddress && !selectedAddressId ? '#E8622A' : '#E8E0D4'}`,
+                      background: showNewAddress && !selectedAddressId ? '#FEF3EC' : 'white',
+                      display:'flex', alignItems:'center', gap:8, color:'#8A7B6B',
+                    }}>
+                      <span style={{ fontSize:16 }}>✏️</span>
+                      <span style={{ fontSize:13, fontWeight:600 }}>Farklı adres gir</span>
+                    </div>
+                  </div>
+                ) : null}
+
+                {/* Manuel adres girişi */}
+                {(showNewAddress || savedAddresses.length === 0) && (
+                  <textarea value={address} onChange={e => setAddress(e.target.value)}
+                    placeholder="Mahalle, cadde, sokak, bina no, daire…" rows={3}
+                    style={{ width:'100%', padding:'10px 14px', border:'1.5px solid #E8E0D4', borderRadius:8, fontSize:13, fontFamily:'inherit', resize:'none', boxSizing:'border-box' }} />
+                )}
               </div>
             )}
+
             <div>
               <label style={{ fontSize:12, fontWeight:600, color:'#7A4A20', display:'block', marginBottom:6 }}>Sipariş Notu (opsiyonel)</label>
               <input value={note} onChange={e => setNote(e.target.value)} placeholder="Örn: Az acılı olsun"
@@ -202,29 +316,24 @@ export default function OdemePage() {
                     )}
                   </div>
                 </div>
-                <label style={{ display:'flex', alignItems:'center', gap:8, cursor:'pointer' }}>
-                  <span style={{ fontSize:13, color: useCredit ? '#8B5CF6' : '#8A7B6B', fontWeight:600 }}>
-                    {useCredit ? 'Kullanılıyor' : 'Kullan'}
-                  </span>
-                  <div onClick={() => setUseCredit(p => !p)} style={{
-                    width:44, height:24, borderRadius:12, cursor:'pointer',
-                    background: useCredit ? '#8B5CF6' : '#E8E0D4',
-                    position:'relative', transition:'background 0.2s',
-                  }}>
-                    <div style={{
-                      width:18, height:18, borderRadius:'50%', background:'white',
-                      position:'absolute', top:3, left: useCredit ? 23 : 3,
-                      transition:'left 0.2s', boxShadow:'0 1px 3px rgba(0,0,0,0.2)',
-                    }} />
-                  </div>
-                </label>
+                <div onClick={() => setUseCredit(p => !p)} style={{
+                  width:44, height:24, borderRadius:12, cursor:'pointer',
+                  background: useCredit ? '#8B5CF6' : '#E8E0D4',
+                  position:'relative', transition:'background 0.2s',
+                }}>
+                  <div style={{
+                    width:18, height:18, borderRadius:'50%', background:'white',
+                    position:'absolute', top:3, left: useCredit ? 23 : 3,
+                    transition:'left 0.2s', boxShadow:'0 1px 3px rgba(0,0,0,0.2)',
+                  }} />
+                </div>
               </div>
             </div>
           )}
 
           {/* Kupon */}
           <div style={{ background:'white', borderRadius:16, padding:20, boxShadow:'0 2px 12px rgba(74,44,14,0.08)' }}>
-            <div style={{ fontWeight:700, fontSize:15, color:'#4A2C0E', marginBottom:12 }}>🏷 Kupon Kodu</div>
+            <div style={{ fontWeight:700, fontSize:15, color:'#4A2C0E', marginBottom:12 }}>🏷️ Kupon Kodu</div>
             {couponApplied ? (
               <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', background:'#ECFDF5', borderRadius:8, padding:'10px 14px' }}>
                 <span style={{ color:'#3D6B47', fontWeight:700, fontSize:13 }}>
@@ -273,6 +382,13 @@ export default function OdemePage() {
 
         </div>
       </div>
+
+      <style>{`
+        @keyframes shimmer {
+          0%   { background-position: 200% 0; }
+          100% { background-position: -200% 0; }
+        }
+      `}</style>
     </div>
   )
 }
