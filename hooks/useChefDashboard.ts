@@ -1,11 +1,10 @@
 // @ts-nocheck
 /**
  * useChefDashboard
- * Chef dashboard için Realtime + polling hibrit veri yönetimi.
+ * Chef dashboard için Realtime veri yönetimi.
  *
  * - İlk yükleme: API'den tam veri
  * - Supabase Realtime: orders tablosu değişince anında yenile
- * - Fallback polling: 30 saniyede bir (Realtime bağlantı kesintisi için)
  */
 'use client'
 
@@ -22,13 +21,10 @@ interface UseChefDashboardReturn {
   toggleOpen: (isOpen: boolean) => Promise<void>
 }
 
-const POLL_INTERVAL = 30_000  // 30 saniye
-
 export function useChefDashboard(): UseChefDashboardReturn {
   const [data,      setData]      = useState<DashboardData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error,     setError]     = useState<string | null>(null)
-  const pollRef    = useRef<NodeJS.Timeout | null>(null)
   const mountedRef = useRef(true)
   const supabase   = getSupabaseBrowserClient()
 
@@ -68,7 +64,6 @@ export function useChefDashboard(): UseChefDashboardReturn {
     const json = await res.json()
 
     if (res.ok) {
-      // Optimistik güncelleme — hemen yansıt, Realtime de gelecek
       await fetchData(true)
     }
 
@@ -77,7 +72,6 @@ export function useChefDashboard(): UseChefDashboardReturn {
 
   // ── Açık/kapalı toggle ────────────────────────────────────────────────────
   const toggleOpen = useCallback(async (isOpen: boolean) => {
-    // Optimistik UI güncelleme
     setData(prev => prev ? {
       ...prev,
       stats: { ...prev.stats, is_open: isOpen }
@@ -90,17 +84,13 @@ export function useChefDashboard(): UseChefDashboardReturn {
     })
   }, [])
 
-  // ── İlk yükleme + polling ──────────────────────────────────────────────────
+  // ── İlk yükleme ───────────────────────────────────────────────────────────
   useEffect(() => {
     mountedRef.current = true
     fetchData()
 
-    // Polling — Realtime bağlantı kesilse de veri güncel kalır
-    pollRef.current = setInterval(() => fetchData(true), POLL_INTERVAL)
-
     return () => {
       mountedRef.current = false
-      if (pollRef.current) clearInterval(pollRef.current)
     }
   }, [fetchData])
 
@@ -122,7 +112,6 @@ export function useChefDashboard(): UseChefDashboardReturn {
         },
         (payload) => {
           console.log('📦 Realtime order change:', payload.eventType)
-          // Tüm veriyi yenile (view'lar aggregate hesaplar)
           fetchData(true)
         }
       )
