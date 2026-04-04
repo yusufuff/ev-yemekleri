@@ -276,7 +276,7 @@ function KesifInner() {
       const matchingChefIds = new Set<string>(items.map((item: any) => item.chef_id))
 
       // Keşfet listesini bu aşçılarla filtrele
-      const filtered = originalChefs.filter(c => matchingChefIds.has(c.id))
+      const filtered = originalChefs.filter(c => matchingChefIds.has(c.chef_id))
 
       if (filtered.length > 0) {
         setChefs(filtered)
