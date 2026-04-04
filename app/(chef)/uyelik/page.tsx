@@ -65,7 +65,7 @@ export default function UyelikPage() {
 
       if (res.ok) {
         setMesaj({ tip: 'basari', metin: 'Üyeliğiniz başarıyla aktive edildi! 🎉' })
-        verileriYukle()
+        setTimeout(() => window.location.reload(), 1500)
       } else {
         setMesaj({ tip: 'hata', metin: data.error ?? 'Bir hata oluştu.' })
       }
