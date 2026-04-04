@@ -2,7 +2,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { getSupabaseServerClient, getCurrentUser, getAuthUser } from '@/lib/supabase/server'
-import { sendPushNotification } from '@/lib/firebase/send-notification'
 
 export async function GET(request: NextRequest) {
   const user = await getAuthUser() as any
@@ -107,7 +106,7 @@ export async function POST(request: NextRequest) {
     console.error('[orders POST] order_items insert error:', itemsError)
   }
 
-  // Aşçıya yeni sipariş bildirimi gönder
+  // Aşçıya direkt Supabase ile bildirim yaz
   try {
     const supabaseAdmin = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -122,16 +121,26 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (chefProfile?.user_id) {
-      sendPushNotification({
-        userId: chefProfile.user_id,
-        title:  '🛒 Yeni Sipariş Geldi!',
-        body:   `${body.items?.length ?? 1} ürün · ₺${body.total_amount}`,
-        type:   'order_pending',
-        data:   { order_id: order.id, order_number: order.order_number ?? '' },
-      }).catch(err => console.error('[Push] aşçı bildirimi hatası:', err))
+      const itemCount = body.items?.length ?? 1
+      const { error: notifError } = await supabaseAdmin
+        .from('notifications')
+        .insert({
+          user_id: chefProfile.user_id,
+          type:    'new_order',
+          title:   'Yeni Siparis Geldi!',
+          body:    `${itemCount} urun - ${body.total_amount} TL`,
+          data:    { order_id: order.id, order_number: order.order_number ?? '' },
+          is_read: false,
+        })
+
+      if (notifError) {
+        console.error('[orders] bildirim hatasi:', notifError.message)
+      } else {
+        console.log('[orders] asci bildirimi gonderildi:', chefProfile.user_id)
+      }
     }
-  } catch (err) {
-    console.error('[Push] aşçı bildirimi hatası:', err)
+  } catch (err: any) {
+    console.error('[orders] bildirim try-catch hatasi:', err.message)
   }
 
   return NextResponse.json({ order, payment_url: '/siparis-basari?order_id=' + order.id })
