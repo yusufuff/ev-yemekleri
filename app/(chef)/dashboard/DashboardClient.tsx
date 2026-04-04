@@ -32,7 +32,7 @@ export default function DashboardClient({ initialData }) {
         .select('id')
         .eq('user_id', authData.user.id)
         .single()
-      if (!cp) return
+      if (!cp?.id) return
       const { data: abone } = await supabase
         .from('chef_subscriptions')
         .select('status, expires_at, amount_paid')
