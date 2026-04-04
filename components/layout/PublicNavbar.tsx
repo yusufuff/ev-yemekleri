@@ -2,7 +2,7 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import dynamic from 'next/dynamic'
 import { getSupabaseBrowserClient } from '@/lib/supabase/client'
 
@@ -33,38 +33,90 @@ export function PublicNavbar() {
   const [user, setUser] = useState(null)
   const [loaded, setLoaded] = useState(false)
   const [unreadCount, setUnreadCount] = useState(0)
+  const channelRef = useRef(null)
 
   useEffect(() => {
     if (hidden) { setLoaded(true); return }
     const supabase = getSupabaseBrowserClient()
-    supabase.auth.getUser().then(({ data }) => {
-      if (data?.user) {
-        supabase
-          .from('users')
-          .select('role, full_name')
-          .eq('id', data.user.id)
-          .single()
-          .then(({ data: profile }) => {
-            setUser({
-              id: data.user.id,
-              full_name: profile?.full_name || data.user.email?.split('@')[0],
-              role: profile?.role ?? 'buyer',
-            })
-            setLoaded(true)
 
-            // Okunmamış bildirim sayısını al
-            supabase
-              .from('notifications')
-              .select('id', { count: 'exact' })
-              .eq('user_id', data.user.id)
-              .eq('is_read', false)
-              .then(({ count }) => setUnreadCount(count ?? 0))
+    supabase.auth.getUser().then(({ data }) => {
+      if (!data?.user) { setLoaded(true); return }
+
+      const userId = data.user.id
+
+      supabase
+        .from('users')
+        .select('role, full_name')
+        .eq('id', userId)
+        .single()
+        .then(({ data: profile }) => {
+          setUser({
+            id: userId,
+            full_name: profile?.full_name || data.user.email?.split('@')[0],
+            role: profile?.role ?? 'buyer',
           })
-      } else {
-        setLoaded(true)
-      }
+          setLoaded(true)
+
+          // İlk okunmamış sayısını çek
+          supabase
+            .from('notifications')
+            .select('id', { count: 'exact' })
+            .eq('user_id', userId)
+            .eq('is_read', false)
+            .then(({ count }) => setUnreadCount(count ?? 0))
+
+          // Realtime — yeni bildirim gelince badge güncelle
+          if (channelRef.current) supabase.removeChannel(channelRef.current)
+
+          channelRef.current = supabase
+            .channel(`navbar-notif-${userId}`)
+            .on(
+              'postgres_changes',
+              {
+                event:  'INSERT',
+                schema: 'public',
+                table:  'notifications',
+                filter: `user_id=eq.${userId}`,
+              },
+              () => {
+                setUnreadCount(prev => prev + 1)
+              }
+            )
+            .on(
+              'postgres_changes',
+              {
+                event:  'UPDATE',
+                schema: 'public',
+                table:  'notifications',
+                filter: `user_id=eq.${userId}`,
+              },
+              () => {
+                // Bildirimler sayfasına gidince hepsi okundu olur — sayacı sıfırla
+                supabase
+                  .from('notifications')
+                  .select('id', { count: 'exact' })
+                  .eq('user_id', userId)
+                  .eq('is_read', false)
+                  .then(({ count }) => setUnreadCount(count ?? 0))
+              }
+            )
+            .subscribe()
+        })
     })
+
+    return () => {
+      if (channelRef.current) {
+        getSupabaseBrowserClient().removeChannel(channelRef.current)
+      }
+    }
   }, [hidden])
+
+  // Bildirimler sayfasına girilince sayacı sıfırla
+  useEffect(() => {
+    if (pathname === '/bildirimler') {
+      setUnreadCount(0)
+    }
+  }, [pathname])
 
   const handleLogout = async () => {
     const supabase = getSupabaseBrowserClient()
@@ -124,7 +176,7 @@ export function PublicNavbar() {
               textDecoration:'none', fontSize:18,
             }}>🔍</Link>
 
-            {/* Bildirim ikonu — sadece giriş yapanlara */}
+            {/* Bildirim ikonu */}
             {loaded && user && (
               <Link href="/bildirimler" style={{ position:'relative', display:'flex', alignItems:'center', justifyContent:'center', width:36, height:36, borderRadius:10, background:'#F3EDE4', textDecoration:'none', fontSize:18 }}>
                 🔔
@@ -164,6 +216,7 @@ export function PublicNavbar() {
         </div>
       </nav>
 
+      {/* Mobil alt nav */}
       <nav style={{
         position:'fixed', bottom:0, left:0, right:0, zIndex:200,
         background:'white', borderTop:'1px solid #E8E0D4',
