@@ -1,19 +1,19 @@
-ï»¿// @ts-nocheck
+// @ts-nocheck
 /**
- * GET    /api/messages/[orderId]  â€” KonuÅŸma geÃ§miÅŸi + okundu iÅŸareti
- * POST   /api/messages/[orderId]  â€” Yeni mesaj gÃ¶nder
+ * GET    /api/messages/[orderId]  — Konuşma geçmişi + okundu işareti
+ * POST   /api/messages/[orderId]  — Yeni mesaj gönder
  */
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseServerClient, getCurrentUser } from '@/lib/supabase/server'
 
-// â”€â”€ GET â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ¦¦ GET ¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦
 
 export async function GET(
   _req: NextRequest,
   { params }: { params: { orderId: string } }
 ) {
   const user = await getCurrentUser() as any
-  if (!user) return NextResponse.json({ error: 'GiriÅŸ gerekli.' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Giriş gerekli.' }, { status: 401 })
 
   const supabase = await getSupabaseServerClient()
 
@@ -23,14 +23,14 @@ export async function GET(
     .eq('id', params.orderId)
     .single()
 
-  if (!order) return NextResponse.json({ error: 'SipariÅŸ bulunamadÄ±.' }, { status: 404 })
+  if (!order) return NextResponse.json({ error: 'Sipariş bulunamadı.' }, { status: 404 })
 
   const chefUserId = (order as any).chef_profiles?.user_id
   const isBuyer    = order.buyer_id === user.id
   const isChef     = chefUserId     === user.id
 
   if (!isBuyer && !isChef) {
-    return NextResponse.json({ error: 'Yetkisiz eriÅŸim.' }, { status: 403 })
+    return NextResponse.json({ error: 'Yetkisiz erişim.' }, { status: 403 })
   }
 
   const { data: messages } = await supabase
@@ -60,19 +60,19 @@ export async function GET(
   })
 }
 
-// â”€â”€ POST â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ¦¦ POST ¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦
 
 export async function POST(
   req: NextRequest,
   { params }: { params: { orderId: string } }
 ) {
   const user = await getCurrentUser() as any
-  if (!user) return NextResponse.json({ error: 'GiriÅŸ gerekli.' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Giriş gerekli.' }, { status: 401 })
 
   const { content } = await req.json()
   const trimmed = content?.trim()
   if (!trimmed || trimmed.length > 1000) {
-    return NextResponse.json({ error: 'Mesaj geÃ§ersiz (1â€“1000 karakter).' }, { status: 400 })
+    return NextResponse.json({ error: 'Mesaj geçersiz (1–1000 karakter).' }, { status: 400 })
   }
 
   const supabase = await getSupabaseServerClient()
@@ -83,7 +83,7 @@ export async function POST(
     .eq('id', params.orderId)
     .single()
 
-  if (!order) return NextResponse.json({ error: 'SipariÅŸ bulunamadÄ±.' }, { status: 404 })
+  if (!order) return NextResponse.json({ error: 'Sipariş bulunamadı.' }, { status: 404 })
 
   const chefUserId = (order as any).chef_profiles?.user_id
   const isBuyer    = order.buyer_id === user.id
@@ -91,7 +91,7 @@ export async function POST(
   const hasAccess  = isBuyer || isChef
   if (!hasAccess) return NextResponse.json({ error: 'Yetkisiz.' }, { status: 403 })
 
-  // recipient = karÅŸÄ± tarafÄ±n user_id'si
+  // recipient = karşı tarafın user_id'si
   const recipientId = isBuyer ? chefUserId : order.buyer_id
 
   const { data: msg, error } = await supabase
@@ -108,10 +108,10 @@ export async function POST(
 
   if (error) {
     console.error('[messages POST]', error)
-    return NextResponse.json({ error: 'Mesaj gÃ¶nderilemedi.' }, { status: 500 })
+    return NextResponse.json({ error: 'Mesaj gönderilemedi.' }, { status: 500 })
   }
 
-  // KarÅŸÄ± tarafa bildirim gÃ¶nder
+  // Karşı tarafa bildirim gönder
   try {
     const { createClient } = await import('@supabase/supabase-js')
     const admin = createClient(
@@ -121,8 +121,8 @@ export async function POST(
     )
     await admin.from('notifications').insert({
       user_id: recipientId,
-      type:    'siparis',
-      title:   isChef ? 'ğŸ‘©â€ğŸ³ AÅŸÃ§Ä±nÄ±zdan mesaj' : 'ğŸ’¬ Yeni mesaj',
+      type:    'system',
+      title:   isChef ? '????? Aşçınızdan mesaj' : '?? Yeni mesaj',
       body:    trimmed.slice(0, 80),
       is_read: false,
     })
