@@ -3,6 +3,21 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { getSupabaseServerClient, getCurrentUser, getAuthUser } from '@/lib/supabase/server'
 
+async function pushGonder(userId: string, title: string, body: string) {
+  try {
+    await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/send-push-notification`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+      },
+      body: JSON.stringify({ user_id: userId, title, body }),
+    })
+  } catch (e) {
+    console.error('[Push] hata:', e)
+  }
+}
+
 export async function GET(request: NextRequest) {
   const user = await getAuthUser() as any
 
@@ -106,7 +121,7 @@ export async function POST(request: NextRequest) {
     console.error('[orders POST] order_items insert error:', itemsError)
   }
 
-  // Aşçıya direkt Supabase ile bildirim yaz
+  // Aşçıya bildirim gönder
   try {
     const supabaseAdmin = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -122,25 +137,26 @@ export async function POST(request: NextRequest) {
 
     if (chefProfile?.user_id) {
       const itemCount = body.items?.length ?? 1
-      const { error: notifError } = await supabaseAdmin
-        .from('notifications')
-        .insert({
-          user_id: chefProfile.user_id,
-          type:    'new_order',
-          title:   'Yeni Siparis Geldi!',
-          body:    `${itemCount} urun - ${body.total_amount} TL`,
-          data:    { order_id: order.id, order_number: order.order_number ?? '' },
-          is_read: false,
-        })
 
-      if (notifError) {
-        console.error('[orders] bildirim hatasi:', notifError.message)
-      } else {
-        console.log('[orders] asci bildirimi gonderildi:', chefProfile.user_id)
-      }
+      // In-app bildirim
+      await supabaseAdmin.from('notifications').insert({
+        user_id: chefProfile.user_id,
+        type:    'new_order',
+        title:   '🍽️ Yeni Sipariş Geldi!',
+        body:    `${itemCount} ürün - ${body.total_amount} TL`,
+        data:    { order_id: order.id, order_number: order.order_number ?? '' },
+        is_read: false,
+      })
+
+      // Push bildirim
+      pushGonder(
+        chefProfile.user_id,
+        '🍽️ Yeni Sipariş Geldi!',
+        `${itemCount} ürün - ${body.total_amount} TL`
+      )
     }
   } catch (err: any) {
-    console.error('[orders] bildirim try-catch hatasi:', err.message)
+    console.error('[orders] bildirim hatasi:', err.message)
   }
 
   return NextResponse.json({ order, payment_url: '/siparis-basari?order_id=' + order.id })
