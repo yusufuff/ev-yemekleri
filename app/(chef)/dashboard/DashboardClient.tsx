@@ -205,7 +205,7 @@ export default function DashboardClient({ initialData }) {
                   </button>
                   <button onClick={() => updateOrderStatus(order.id, 'cancelled')}
                     style={{ padding: '8px 14px', background: '#FEE2E2', color: '#DC2626', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>❌</button>
-                  <button style={{ padding: '8px 14px', background: '#F5EDD8', color: '#4A2C0E', border: '1.5px solid #E8E0D4', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>💬</button>
+                  
                 </div>
               </div>
             ))}
