@@ -19,7 +19,7 @@ const PUBLIC_LINKS = [
 const AUTH_LINKS = [
   { href: '/davet',        label: '🎁 Davet Et',  roles: ['buyer','chef','admin'] },
   { href: '/siparislerim', label: 'Siparişlerim', roles: ['buyer','chef','admin'] },
-  { href: '/mesajlar',     label: 'Mesajlar',     roles: ['buyer','chef','admin'] },
+  { href: '/mesajlar',     label: 'Mesajlar',     roles: ['buyer','chef','admin'], badge: true },
   { href: '/favorilerim',  label: 'Favoriler',    roles: ['buyer','admin']        },
   { href: '/dashboard',    label: 'Panel',        roles: ['chef','admin']         },
   { href: '/profil',       label: 'Profil',       roles: ['buyer','chef','admin'] },
@@ -33,6 +33,7 @@ export function PublicNavbar() {
   const [user, setUser] = useState(null)
   const [loaded, setLoaded] = useState(false)
   const [unreadCount, setUnreadCount] = useState(0)
+  const [unreadMessages, setUnreadMessages] = useState(0)
   const channelRef = useRef(null)
 
   useEffect(() => {
@@ -57,7 +58,7 @@ export function PublicNavbar() {
           })
           setLoaded(true)
 
-          // İlk okunmamış sayısını çek
+          // Okunmamış bildirim sayısı
           supabase
             .from('notifications')
             .select('id', { count: 'exact' })
@@ -65,39 +66,35 @@ export function PublicNavbar() {
             .eq('is_read', false)
             .then(({ count }) => setUnreadCount(count ?? 0))
 
-          // Realtime — yeni bildirim gelince badge güncelle
+          // Okunmamış mesaj sayısı
+          supabase
+            .from('messages')
+            .select('id', { count: 'exact' })
+            .eq('recipient_id', userId)
+            .eq('is_read', false)
+            .then(({ count }) => setUnreadMessages(count ?? 0))
+
+          // Realtime
           if (channelRef.current) supabase.removeChannel(channelRef.current)
 
           channelRef.current = supabase
             .channel(`navbar-notif-${userId}`)
-            .on(
-              'postgres_changes',
-              {
-                event:  'INSERT',
-                schema: 'public',
-                table:  'notifications',
-                filter: `user_id=eq.${userId}`,
-              },
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${userId}` },
+              () => { setUnreadCount(prev => prev + 1) }
+            )
+            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'notifications', filter: `user_id=eq.${userId}` },
               () => {
-                setUnreadCount(prev => prev + 1)
+                supabase.from('notifications').select('id', { count: 'exact' }).eq('user_id', userId).eq('is_read', false)
+                  .then(({ count }) => setUnreadCount(count ?? 0))
               }
             )
-            .on(
-              'postgres_changes',
-              {
-                event:  'UPDATE',
-                schema: 'public',
-                table:  'notifications',
-                filter: `user_id=eq.${userId}`,
-              },
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `recipient_id=eq.${userId}` },
+              () => { setUnreadMessages(prev => prev + 1) }
+            )
+            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages', filter: `recipient_id=eq.${userId}` },
               () => {
-                // Bildirimler sayfasına gidince hepsi okundu olur — sayacı sıfırla
-                supabase
-                  .from('notifications')
-                  .select('id', { count: 'exact' })
-                  .eq('user_id', userId)
-                  .eq('is_read', false)
-                  .then(({ count }) => setUnreadCount(count ?? 0))
+                supabase.from('messages').select('id', { count: 'exact' }).eq('recipient_id', userId).eq('is_read', false)
+                  .then(({ count }) => setUnreadMessages(count ?? 0))
               }
             )
             .subscribe()
@@ -111,11 +108,9 @@ export function PublicNavbar() {
     }
   }, [hidden])
 
-  // Bildirimler sayfasına girilince sayacı sıfırla
   useEffect(() => {
-    if (pathname === '/bildirimler') {
-      setUnreadCount(0)
-    }
+    if (pathname === '/bildirimler') setUnreadCount(0)
+    if (pathname === '/mesajlar') setUnreadMessages(0)
   }, [pathname])
 
   const handleLogout = async () => {
@@ -163,8 +158,15 @@ export function PublicNavbar() {
                   fontSize:13, fontWeight:600, textDecoration:'none',
                   color: active ? '#E8622A' : '#8A7B6B',
                   borderBottom: active ? '2px solid #E8622A' : '2px solid transparent',
-                  paddingBottom:2,
-                }}>{item.label}</Link>
+                  paddingBottom:2, position:'relative', display:'inline-flex', alignItems:'center', gap:4,
+                }}>
+                  {item.label}
+                  {item.badge && unreadMessages > 0 && (
+                    <span style={{ background:'#ef4444', color:'white', fontSize:10, fontWeight:700, borderRadius:10, padding:'1px 5px', lineHeight:1.4 }}>
+                      {unreadMessages > 9 ? '9+' : unreadMessages}
+                    </span>
+                  )}
+                </Link>
               )
             })}
           </div>
@@ -176,7 +178,6 @@ export function PublicNavbar() {
               textDecoration:'none', fontSize:18,
             }}>🔍</Link>
 
-            {/* Bildirim ikonu */}
             {loaded && user && (
               <Link href="/bildirimler" style={{ position:'relative', display:'flex', alignItems:'center', justifyContent:'center', width:36, height:36, borderRadius:10, background:'#F3EDE4', textDecoration:'none', fontSize:18 }}>
                 🔔
