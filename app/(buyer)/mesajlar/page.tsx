@@ -228,6 +228,19 @@ function MesajlarIcerigi() {
       content: text.trim(),
       is_read: false,
     })
+    // Push bildirim gönder
+fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/send-push-notification`, {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+  },
+  body: JSON.stringify({
+    user_id: recipientId,
+    title: '💬 Yeni Mesaj',
+    body: text.trim().length > 50 ? text.trim().substring(0, 50) + '...' : text.trim(),
+  }),
+}).catch(() => {})
 
     setSablonAcik(false)
   }
