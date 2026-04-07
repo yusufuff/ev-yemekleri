@@ -349,9 +349,29 @@ function MesajlarIcerigi() {
                   }}>
                     💬 Şablon
                   </button>
-                  <div style={{ flex: 1, fontSize: 13, color: '#8A7B6B', padding: '10px 14px', background: '#F5F5F5', borderRadius: 10 }}>
-                    Şablon seçerek mesaj gönderin
-                  </div>
+                  <input
+                    id="mesaj-input"
+                    type="text"
+                    placeholder="Mesajınızı yazın..."
+                    onKeyDown={(e) => { if (e.key === 'Enter') { sendMessage(e.target.value); e.target.value = '' } }}
+                    style={{
+                      flex: 1, fontSize: 13, color: '#4A2C0E', padding: '10px 14px',
+                      background: '#F5F5F5', borderRadius: 10, border: '1.5px solid #E8E0D4',
+                      outline: 'none', fontFamily: 'inherit',
+                    }}
+                  />
+                  <button
+                    onClick={() => {
+                      const input = document.getElementById('mesaj-input')
+                      if (input?.value) { sendMessage(input.value); input.value = '' }
+                    }}
+                    style={{
+                      padding: '10px 16px', background: '#E8622A', border: 'none',
+                      borderRadius: 10, cursor: 'pointer', color: 'white', fontWeight: 700, fontSize: 13,
+                    }}
+                  >
+                    Gönder
+                  </button>
                 </div>
               </>
             ) : (
