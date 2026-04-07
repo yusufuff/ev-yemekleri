@@ -1,8 +1,6 @@
 // @ts-nocheck
-// v4 - push bildirimler eklendi
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { sendPushNotification } from '@/lib/firebase/send-notification'
 
 const VALID_TRANSITIONS: Record<string, string[]> = {
   pending:           ['confirmed', 'cancelled'],
@@ -21,6 +19,21 @@ const STATUS_MESSAGES: Record<string, { title: string; body: string }> = {
   delivered_pending: { title: '📦 Siparişin Kapıda!', body: 'Siparişin teslim edildi. Lütfen onayla.' },
   delivered:         { title: '🎉 Siparişin Teslim Edildi!', body: 'Afiyet olsun! Değerlendirme yapmayı unutma.' },
   cancelled:         { title: '❌ Siparişin İptal Edildi', body: 'Siparişin iptal edildi.' },
+}
+
+async function pushGonder(userId: string, title: string, body: string) {
+  try {
+    await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/send-push-notification`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+      },
+      body: JSON.stringify({ user_id: userId, title, body }),
+    })
+  } catch (e) {
+    console.error('[Push] hata:', e)
+  }
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
@@ -56,11 +69,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
   if (!allowed.includes(status)) {
     return NextResponse.json(
-      {
-        error: `${order.status} -> ${status} gecisi yapilamaz.`,
-        current_status: order.status,
-        allowed,
-      },
+      { error: `${order.status} -> ${status} gecisi yapilamaz.`, current_status: order.status, allowed },
       { status: 400 }
     )
   }
@@ -81,20 +90,13 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     .eq('id', params.id)
 
   if (updateErr) {
-    console.error('Order update error:', updateErr)
     return NextResponse.json({ error: 'Guncelleme basarisiz.' }, { status: 500 })
   }
 
   // Push bildirim gönder (alıcıya)
   const msg = STATUS_MESSAGES[status]
   if (msg && order.buyer_id) {
-    sendPushNotification({
-      userId: order.buyer_id,
-      title:  msg.title,
-      body:   msg.body,
-      type:   `order_${status}`,
-      data:   { order_id: params.id, order_number: order.order_number ?? '' },
-    }).catch(err => console.error('[Push] bildirim hatası:', err))
+    pushGonder(order.buyer_id, msg.title, msg.body)
   }
 
   return NextResponse.json({ success: true, status, order_id: params.id })
