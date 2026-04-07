@@ -52,7 +52,7 @@ export default function DashboardClient({ initialData }) {
         body: JSON.stringify({ status }),
       })
       const json = await res.json()
-      if (!res.ok) { alert(`Hata: ${json.error}`); return }
+if (!res.ok) { console.error(`Hata: ${json.error}`); return }
 
       setData(prev => {
         if (!prev) return prev
