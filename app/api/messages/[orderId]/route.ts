@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 /**
  * GET    /api/messages/[orderId]  — Konuşma geçmişi + okundu işareti
  * POST   /api/messages/[orderId]  — Yeni mesaj gönder
@@ -126,6 +126,19 @@ export async function POST(
       body:    trimmed.slice(0, 80),
       is_read: false,
     })
+    // Push bildirim gönder
+    await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/send-push-notification`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+      },
+      body: JSON.stringify({
+        user_id: recipientId,
+        title: isChef ? '👩‍🍳 Aşçınızdan mesaj' : '💬 Yeni mesaj',
+        body: trimmed.slice(0, 80),
+      }),
+    }).catch(() => {})
   } catch (e) {
     console.error('[messages notification]', e)
   }
