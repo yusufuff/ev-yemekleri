@@ -134,6 +134,7 @@ function MesajlarIcerigi() {
             .select('full_name')
             .eq('id', order.buyer_id)
             .single()
+            console.log('buyer:', buyer, 'order.buyer_id:', order.buyer_id)
           karsiAd = buyer?.full_name ?? 'Alıcı'
         }
 
