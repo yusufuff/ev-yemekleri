@@ -45,7 +45,7 @@ function ReviewModal({ orderId, chefName, chefId, onClose }) {
       setTimeout(onClose, 1500)
     } else {
       const json = await res.json()
-      alert(json.error ?? 'Bir hata oluştu.')
+      console.error(json.error ?? 'Bir hata oluştu.')
     }
     setSaving(false)
   }
