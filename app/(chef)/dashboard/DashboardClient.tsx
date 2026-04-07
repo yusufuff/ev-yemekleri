@@ -189,6 +189,15 @@ export default function DashboardClient({ initialData }) {
                   </div>
                   <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 700, color: '#E8622A' }}>₺{order.total_amount}</div>
                 </div>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
+  <a href={`/mesajlar?order_id=${order.id}`} style={{
+    padding: '6px 14px', background: '#EFF6FF', color: '#3b82f6',
+    borderRadius: 8, fontSize: 12, fontWeight: 700, textDecoration: 'none',
+    border: '1px solid #BFDBFE',
+  }}>
+    💬 Alıcıya Yaz
+  </a>
+</div>
                 <div style={{ display: 'flex', gap: 8 }}>
                   <button onClick={() => updateOrderStatus(order.id, 'confirmed')} disabled={guncelleniyor === order.id}
                     style={{ flex: 1, padding: '8px 0', background: '#ECFDF5', color: '#3D6B47', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer', opacity: guncelleniyor === order.id ? 0.7 : 1 }}>
