@@ -138,13 +138,14 @@ function MesajlarIcerigi() {
           karsiAd = buyer?.full_name ?? 'Alıcı'
         }
 
-        const { data: lastMsg } = await supabase
+        const { data: lastMsgArr } = await supabase
           .from('messages')
           .select('content, created_at')
           .eq('order_id', order.id)
           .order('created_at', { ascending: false })
           .limit(1)
-          .single()
+          
+          const lastMsg = lastMsgArr?.[0]
 
         return {
           order_id: order.id,
