@@ -34,12 +34,11 @@ export default function KazancPage() {
         </div>
 
         {/* Stat kartlari */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 24 }}>
           {[
             { label: 'Bu Hafta', value: `₺${(data?.this_week ?? 0).toFixed(0)}`, change: data?.week_change, icon: '💰', color: '#E8622A' },
             { label: 'Bu Ay', value: `₺${(data?.this_month ?? 0).toFixed(0)}`, change: data?.month_change, icon: '📅', color: '#3D6B47' },
             { label: 'Bekleyen Bakiye', value: `₺${(data?.pending_balance ?? 0).toFixed(0)}`, change: null, icon: '🏦', color: '#4A2C0E' },
-            { label: 'Komisyon', value: '%10', change: null, icon: '%', color: '#3B82F6' },
           ].map((card) => (
             <div key={card.label} style={{ background: 'white', borderRadius: 14, padding: 20, boxShadow: '0 2px 12px rgba(74,44,14,0.08)', position: 'relative', overflow: 'hidden' }}>
               <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: card.color }} />
@@ -67,10 +66,9 @@ export default function KazancPage() {
               </div>
             </div>
 
-            {/* Bar grafik */}
             <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, height: 140, padding: '0 4px', background: '#F5EDD8', borderRadius: 8, overflow: 'hidden' }}>
               {Object.entries(data?.daily_earnings ?? {}).map(([day, amount]: any) => (
-                <div key={day} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', height: '100%', paddingBottom: 0 }}>
+                <div key={day} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', height: '100%' }}>
                   <div style={{ fontSize: 9, color: '#8A7B6B', marginBottom: 2 }}>₺{amount > 0 ? amount.toFixed(0) : ''}</div>
                   <div style={{ width: '100%', borderRadius: '4px 4px 0 0', background: amount > 0 ? 'linear-gradient(to top, #E8622A, #F28B5E)' : '#E8E0D4', height: `${Math.max((amount / maxVal) * 100, amount > 0 ? 5 : 2)}%`, transition: 'height 0.3s' }} />
                 </div>
@@ -101,7 +99,8 @@ export default function KazancPage() {
             <button
               disabled={(data?.pending_balance ?? 0) < 200}
               style={{
-                width: '100%', padding: '13px 0', borderRadius: 10, border: 'none', fontSize: 14, fontWeight: 700, cursor: (data?.pending_balance ?? 0) >= 200 ? 'pointer' : 'not-allowed',
+                width: '100%', padding: '13px 0', borderRadius: 10, border: 'none', fontSize: 14, fontWeight: 700,
+                cursor: (data?.pending_balance ?? 0) >= 200 ? 'pointer' : 'not-allowed',
                 background: (data?.pending_balance ?? 0) >= 200 ? '#E8622A' : '#E8E0D4',
                 color: (data?.pending_balance ?? 0) >= 200 ? 'white' : '#8A7B6B',
                 fontFamily: 'inherit', marginBottom: 12,
@@ -115,11 +114,11 @@ export default function KazancPage() {
             </div>
 
             <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid #E8E0D4' }}>
-              <div style={{ fontWeight: 600, fontSize: 13, color: '#4A2C0E', marginBottom: 10 }}>Komisyon Hesabi</div>
+              <div style={{ fontWeight: 600, fontSize: 13, color: '#4A2C0E', marginBottom: 10 }}>Kazanc Ozeti</div>
               <div style={{ fontSize: 12, color: '#8A7B6B', lineHeight: 2 }}>
-                Siparis tutari: ₺{(data?.this_week ?? 0 / 0.9).toFixed(0)}<br />
-                Platform komisyonu (%10): ₺{((data?.this_week ?? 0) / 0.9 * 0.1).toFixed(0)}<br />
-                <strong style={{ color: '#3D6B47' }}>Net kazanciniz: ₺{(data?.this_week ?? 0).toFixed(0)}</strong>
+                Bu hafta kazanciniz: ₺{(data?.this_week ?? 0).toFixed(0)}<br />
+                Bu ay kazanciniz: ₺{(data?.this_month ?? 0).toFixed(0)}<br />
+                <strong style={{ color: '#3D6B47' }}>Toplam bekleyen: ₺{(data?.pending_balance ?? 0).toFixed(0)}</strong>
               </div>
             </div>
           </div>
