@@ -9,20 +9,20 @@ import { useCart } from '@/hooks/useCart'
 
 const STATUS_META = {
   pending:           { label: 'Onay Bekleniyor',  color: '#E8622A', bg: '#FEF3EC', step: 0 },
-  confirmed:         { label: 'Onaylandı',         color: '#3D6B47', bg: '#ECFDF5', step: 1 },
-  preparing:         { label: 'Hazırlanıyor',      color: '#8B5CF6', bg: '#F5F3FF', step: 2 },
+  confirmed:         { label: 'Onaylandi',         color: '#3D6B47', bg: '#ECFDF5', step: 1 },
+  preparing:         { label: 'Hazirlaniyor',      color: '#8B5CF6', bg: '#F5F3FF', step: 2 },
   on_way:            { label: 'Yolda',             color: '#3B82F6', bg: '#EFF6FF', step: 3 },
   on_the_way:        { label: 'Yolda',             color: '#3B82F6', bg: '#EFF6FF', step: 3 },
   delivered_pending: { label: 'Teslim Edildi ⏳', color: '#F59E0B', bg: '#FFFBEB', step: 4 },
   delivered:         { label: 'Teslim Edildi',     color: '#3D6B47', bg: '#ECFDF5', step: 4 },
-  cancelled:         { label: 'İptal Edildi',      color: '#DC2626', bg: '#FEE2E2', step: -1 },
+  cancelled:         { label: 'Iptal Edildi',      color: '#DC2626', bg: '#FEE2E2', step: -1 },
 }
-const STEPS = ['Alındı', 'Onaylandı', 'Hazırlanıyor', 'Yolda', 'Teslim']
+const STEPS = ['Alindi', 'Onaylandi', 'Hazirlaniyor', 'Yolda', 'Teslim']
 
 function formatDate(iso) {
   const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 60000)
-  if (diff < 60) return diff + ' dakika önce'
-  if (diff < 1440) return Math.floor(diff/60) + ' saat önce'
+  if (diff < 60) return diff + ' dakika once'
+  if (diff < 1440) return Math.floor(diff/60) + ' saat once'
   return new Date(iso).toLocaleDateString('tr-TR', { day:'numeric', month:'long' })
 }
 
@@ -33,20 +33,15 @@ function ReviewModal({ orderId, chefName, chefId, onClose }) {
   const [done, setDone] = useState(false)
 
   const submit = async () => {
-    if (!chefId) { alert('Aşçı bilgisi eksik.'); return }
+    if (!chefId) { alert('Asci bilgisi eksik.'); return }
     setSaving(true)
     const res = await fetch('/api/reviews', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ order_id: orderId, chef_id: chefId, rating, comment }),
     })
-    if (res.ok) {
-      setDone(true)
-      setTimeout(onClose, 1500)
-    } else {
-      const json = await res.json()
-      console.error(json.error ?? 'Bir hata oluştu.')
-    }
+    if (res.ok) { setDone(true); setTimeout(onClose, 1500) }
+    else { const json = await res.json(); console.error(json.error) }
     setSaving(false)
   }
 
@@ -56,13 +51,13 @@ function ReviewModal({ orderId, chefName, chefId, onClose }) {
       <div style={{ background:'white', borderRadius:20, padding:28, width:'100%', maxWidth:420 }}>
         {done ? (
           <div style={{ textAlign:'center', padding:'20px 0' }}>
-            <div style={{ fontSize:48, marginBottom:12 }}>🎉</div>
-            <div style={{ fontFamily:"'Playfair Display',serif", fontSize:20, fontWeight:700, color:'#4A2C0E' }}>Teşekkürler!</div>
+            <div style={{ fontSize:48, marginBottom:12 }}>✅</div>
+            <div style={{ fontFamily:"'Playfair Display',serif", fontSize:20, fontWeight:700, color:'#4A2C0E' }}>Tesekkurler!</div>
             <div style={{ fontSize:13, color:'#8A7B6B', marginTop:8 }}>Yorumunuz kaydedildi.</div>
           </div>
         ) : (
           <>
-            <div style={{ fontFamily:"'Playfair Display',serif", fontSize:20, fontWeight:700, color:'#4A2C0E', marginBottom:4 }}>Değerlendirme</div>
+            <div style={{ fontFamily:"'Playfair Display',serif", fontSize:20, fontWeight:700, color:'#4A2C0E', marginBottom:4 }}>Degerlendirme</div>
             <div style={{ fontSize:13, color:'#8A7B6B', marginBottom:20 }}>👩‍🍳 {chefName}</div>
             <div style={{ display:'flex', gap:8, justifyContent:'center', marginBottom:20 }}>
               {[1,2,3,4,5].map(s => (
@@ -70,16 +65,16 @@ function ReviewModal({ orderId, chefName, chefId, onClose }) {
               ))}
             </div>
             <textarea value={comment} onChange={e => setComment(e.target.value)} rows={3}
-              placeholder="Deneyiminizi paylaşın..."
+              placeholder="Deneyiminizi paylasin..."
               style={{ width:'100%', padding:'10px 14px', border:'1.5px solid #E8E0D4', borderRadius:8, fontSize:13, fontFamily:'inherit', resize:'none', boxSizing:'border-box', marginBottom:16 }} />
             <div style={{ display:'flex', gap:10 }}>
               <button onClick={submit} disabled={saving}
                 style={{ flex:1, padding:'12px 0', background:'#E8622A', color:'white', border:'none', borderRadius:10, fontSize:14, fontWeight:700, cursor:'pointer', fontFamily:'inherit', opacity: saving ? 0.7 : 1 }}>
-                {saving ? 'Gönderiliyor...' : '⭐ Değerlendir'}
+                {saving ? 'Gonderiliyor...' : '⭐ Degerlendir'}
               </button>
               <button onClick={onClose}
                 style={{ padding:'12px 20px', background:'#F5EDD8', color:'#4A2C0E', border:'1.5px solid #E8E0D4', borderRadius:10, fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>
-                İptal
+                Iptal
               </button>
             </div>
           </>
@@ -142,7 +137,7 @@ export default function SiparislerimPage() {
         created_at: o.created_at,
         estimated_minutes: 0,
         chef_id: o.chef_id,
-        chef_name: chefMap[o.chef_id] ?? 'Aşçı',
+        chef_name: chefMap[o.chef_id] ?? 'Asci',
         delivery_address: typeof o.delivery_address === 'object' ? (o.delivery_address?.full_address ?? '') : (o.delivery_address ?? ''),
         items: (itemsMap[o.id] ?? []).map(i => ({
           id: i.id, name: i.item_name ?? i.name, quantity: i.quantity,
@@ -157,18 +152,28 @@ export default function SiparislerimPage() {
   }
 
   const cancelOrder = async (orderId) => {
-    if (!confirm('Siparişi iptal etmek istediğinize emin misiniz?')) return
+    if (!confirm('Siparisi iptal etmek istediginize emin misiniz?')) return
     try {
       const supabase = getSupabaseBrowserClient()
       await supabase.from('orders').update({ status: 'cancelled' }).eq('id', orderId)
       loadOrders()
-    } catch { alert('İptal işlemi başarısız.') }
+    } catch { alert('Iptal islemi basarisiz.') }
   }
 
   const siparisiOnayla = async (orderId) => {
-    if (!confirm('Siparişi teslim aldığınızı onaylıyor musunuz?')) return
+    if (!confirm('Siparisi teslim aldiginizi onayliyor musunuz?')) return
     setOnaylaniyor(orderId)
     try {
+      // Önce iyzico escrow -> asci hesabi transferi tetikle
+      const approveRes = await fetch('/api/payments/approve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ order_id: orderId }),
+      })
+      const approveJson = await approveRes.json()
+      if (!approveRes.ok) console.error('Approve hatasi:', approveJson.error)
+
+      // Siparis durumunu guncelle
       const res = await fetch(`/api/chef/orders/${orderId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -178,7 +183,7 @@ export default function SiparislerimPage() {
       if (!res.ok) { alert(`Hata: ${json.error}`); return }
       setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: 'delivered' } : o))
     } catch {
-      alert('Onay işlemi başarısız.')
+      alert('Onay islemi basarisiz.')
     } finally {
       setOnaylaniyor(null)
     }
@@ -210,21 +215,21 @@ export default function SiparislerimPage() {
     <>
       <div style={{ minHeight:'100vh', background:'#FAF6EF', fontFamily:"'DM Sans', sans-serif" }}>
         <div style={{ maxWidth:680, margin:'0 auto', padding:'24px 16px' }}>
-          <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:26, fontWeight:900, color:'#4A2C0E', marginBottom:20 }}>Siparişlerim</h1>
+          <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:26, fontWeight:900, color:'#4A2C0E', marginBottom:20 }}>Siparislerim</h1>
 
           <div style={{ display:'flex', borderBottom:'2px solid #E8E0D4', marginBottom:20 }}>
-            {[['active', 'Aktif (' + active.length + ')'], ['past', 'Geçmiş (' + past.length + ')']].map(([key, label]) => (
+            {[['active', 'Aktif (' + active.length + ')'], ['past', 'Gecmis (' + past.length + ')']].map(([key, label]) => (
               <button key={key} onClick={() => setTab(key)} style={{ padding:'10px 20px', fontSize:13, fontWeight:600, cursor:'pointer', border:'none', background:'transparent', fontFamily:'inherit', color: tab === key ? '#E8622A' : '#8A7B6B', borderBottom: '2px solid ' + (tab === key ? '#E8622A' : 'transparent'), marginBottom:-2 }}>{label}</button>
             ))}
           </div>
 
           {loading ? (
-            <div style={{ textAlign:'center', padding:48, color:'#8A7B6B' }}>Yükleniyor...</div>
+            <div style={{ textAlign:'center', padding:48, color:'#8A7B6B' }}>Yukleniyor...</div>
           ) : shown.length === 0 ? (
             <div style={{ textAlign:'center', padding:48 }}>
               <div style={{ fontSize:48, marginBottom:12 }}>📦</div>
-              <div style={{ fontWeight:700, fontSize:16, color:'#4A2C0E', marginBottom:8 }}>{tab === 'active' ? 'Aktif sipariş yok' : 'Geçmiş sipariş yok'}</div>
-              <Link href="/kesif" style={{ display:'inline-block', marginTop:8, padding:'10px 20px', background:'#E8622A', color:'white', borderRadius:10, textDecoration:'none', fontWeight:700, fontSize:13 }}>Sipariş Ver</Link>
+              <div style={{ fontWeight:700, fontSize:16, color:'#4A2C0E', marginBottom:8 }}>{tab === 'active' ? 'Aktif siparis yok' : 'Gecmis siparis yok'}</div>
+              <Link href="/kesif" style={{ display:'inline-block', marginTop:8, padding:'10px 20px', background:'#E8622A', color:'white', borderRadius:10, textDecoration:'none', fontWeight:700, fontSize:13 }}>Siparis Ver</Link>
             </div>
           ) : (
             <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
@@ -253,12 +258,12 @@ export default function SiparislerimPage() {
                       {isDeliveredPending && (
                         <div style={{ marginTop:14 }}>
                           <div style={{ background:'#FFFBEB', border:'1.5px solid #FDE68A', borderRadius:10, padding:'10px 14px', marginBottom:12, fontSize:13, color:'#92400E' }}>
-                            🚚 Aşçı siparişinizi teslim ettiğini bildirdi. Aldıysanız onaylayın!
-                            <div style={{ fontSize:11, color:'#B45309', marginTop:4 }}>24 saat içinde onaylamazsanız otomatik teslim edildi sayılır.</div>
+                            🚚 Asci siparisini teslim ettigini bildirdi. Aldiysaniz onaylayin!
+                            <div style={{ fontSize:11, color:'#B45309', marginTop:4 }}>24 saat icinde onaylamazsaniz otomatik teslim edildi sayilir.</div>
                           </div>
                           <button onClick={() => siparisiOnayla(order.id)} disabled={onaylaniyor === order.id}
                             style={{ width:'100%', padding:'12px 0', background:'#22C55E', color:'white', border:'none', borderRadius:10, fontSize:14, fontWeight:700, cursor:'pointer', fontFamily:'inherit', opacity: onaylaniyor === order.id ? 0.7 : 1 }}>
-                            {onaylaniyor === order.id ? '⏳ Onaylanıyor...' : '✅ Siparişi Aldım'}
+                            {onaylaniyor === order.id ? '⏳ Onaylaniyor...' : '✅ Siparisi Aldim'}
                           </button>
                         </div>
                       )}
@@ -281,16 +286,16 @@ export default function SiparislerimPage() {
                             </div>
                           )}
                           <div style={{ display:'flex', gap:8, marginTop:10 }}>
-                            <Link href={'/mesajlar?order_id=' + order.id} style={{ flex:1, padding:'8px 0', background:'white', border:'1.5px solid #E8E0D4', borderRadius:8, fontSize:12, fontWeight:600, color:'#4A2C0E', textDecoration:'none', textAlign:'center' }}>💬 Aşçıya Yaz</Link>
-                            <button onClick={() => cancelOrder(order.id)} style={{ padding:'8px 14px', background:'#FEE2E2', border:'none', borderRadius:8, fontSize:12, fontWeight:600, cursor:'pointer', color:'#DC2626' }}>❌ İptal</button>
+                            <Link href={'/mesajlar?order_id=' + order.id} style={{ flex:1, padding:'8px 0', background:'white', border:'1.5px solid #E8E0D4', borderRadius:8, fontSize:12, fontWeight:600, color:'#4A2C0E', textDecoration:'none', textAlign:'center' }}>💬 Asciya Yaz</Link>
+                            <button onClick={() => cancelOrder(order.id)} style={{ padding:'8px 14px', background:'#FEE2E2', border:'none', borderRadius:8, fontSize:12, fontWeight:600, cursor:'pointer', color:'#DC2626' }}>❌ Iptal</button>
                           </div>
                         </div>
                       )}
 
                       {order.status === 'delivered' && (
                         <div style={{ display:'flex', gap:8, marginTop:10 }}>
-                          <button onClick={() => handleReorder(order)} style={{ flex:1, padding:'8px 0', background:'#E8622A', color:'white', borderRadius:8, fontSize:12, fontWeight:700, border:'none', cursor:'pointer', fontFamily:'inherit' }}>🔄 Tekrar Sipariş</button>
-                          <button onClick={() => setReviewOrder({ id: order.id, chef: order.chef_name, chefId: order.chef_id })} style={{ padding:'8px 14px', background:'#FEF3C7', border:'none', borderRadius:8, fontSize:12, fontWeight:600, cursor:'pointer', color:'#D97706' }}>⭐ Değerlendir</button>
+                          <button onClick={() => handleReorder(order)} style={{ flex:1, padding:'8px 0', background:'#E8622A', color:'white', borderRadius:8, fontSize:12, fontWeight:700, border:'none', cursor:'pointer', fontFamily:'inherit' }}>🔄 Tekrar Siparis</button>
+                          <button onClick={() => setReviewOrder({ id: order.id, chef: order.chef_name, chefId: order.chef_id })} style={{ padding:'8px 14px', background:'#FEF3C7', border:'none', borderRadius:8, fontSize:12, fontWeight:600, cursor:'pointer', color:'#D97706' }}>⭐ Degerlendir</button>
                         </div>
                       )}
                     </div>

@@ -1,29 +1,24 @@
 ﻿// @ts-nocheck
 /**
  * POST /api/payments/callback
- * İyzico ödeme sonrası bu URL'e POST eder (form redirect).
- * token parametresiyle gelir.
- *
- * Akış:
- * 1. İyzico'dan token ile sonucu doğrula
- * 2. Siparişi güncelle (payment_status: paid / failed)
- * 3. Başarı/hata sayfasına yönlendir
+ * İyzico ödeme sonrası bu URL'e POST eder.
  */
 import { NextRequest, NextResponse } from 'next/server'
-import { getSupabaseServerClient } from '@/lib/supabase/server'
+import { createClient } from '@supabase/supabase-js'
 import { retrieveCheckoutForm } from '@/lib/iyzico'
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+)
 
 export async function POST(req: NextRequest) {
   const form  = await req.formData()
   const token = form.get('token')?.toString()
 
   if (!token) {
-    return NextResponse.redirect(
-      new URL('/odeme/hata?reason=no_token', req.url)
-    )
+    return NextResponse.redirect(new URL('/odeme/hata?reason=no_token', req.url))
   }
-
-  const supabase = await getSupabaseServerClient()
 
   // İyzico'da doğrula
   const result = await retrieveCheckoutForm(token)
@@ -36,19 +31,16 @@ export async function POST(req: NextRequest) {
     .single()
 
   if (!order) {
-    return NextResponse.redirect(
-      new URL('/odeme/hata?reason=order_not_found', req.url)
-    )
+    return NextResponse.redirect(new URL('/odeme/hata?reason=order_not_found', req.url))
   }
 
   if (!result.success) {
-    // Ödeme başarısız â†’ siparişi güncelle
     await supabase
       .from('orders')
       .update({
-        payment_status: 'pending',
-        status:         'cancelled',
-        cancelled_at:   new Date().toISOString(),
+        payment_status:  'pending',
+        status:          'cancelled',
+        cancelled_at:    new Date().toISOString(),
         cancellation_reason: `İyzico: ${result.error ?? 'Ödeme reddedildi'}`,
       })
       .eq('id', order.id)
@@ -58,42 +50,46 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  // Başarılı ödeme
+  // Başarılı ödeme — payment_transaction_id'yi kaydet (Marketplace approve için lazım)
   await supabase
     .from('orders')
     .update({
-      payment_status:    'paid',
-      status:            'pending',          // Aşçı onayı bekliyor
-      iyzico_payment_id: result.paymentId,
+      payment_status:                   'paid',
+      status:                           'pending',
+      iyzico_payment_id:                result.paymentId,
+      iyzico_payment_transaction_id:    result.paymentTransactionId,
     })
     .eq('id', order.id)
 
-  // Alıcıya platform kredisi işle (referral bonus vb.) "” ileride eklenebilir
+  // Aşçıya yeni sipariş bildirimi
+  const { data: chefData } = await supabase
+    .from('chef_profiles')
+    .select('user_id')
+    .eq('id', order.chef_id)
+    .single()
 
-  // Başarı sayfasına yönlendir
+  if (chefData?.user_id) {
+    await supabase.from('notifications').insert({
+      user_id: chefData.user_id,
+      type:    'new_order',
+      title:   'Yeni Sipariş! 🎉',
+      message: `#${order.order_number} numaralı yeni bir sipariş geldi.`,
+      data:    { order_id: order.id },
+      is_read: false,
+    })
+  }
+
   return NextResponse.redirect(
     new URL(`/siparis-basari?order_id=${order.id}`, req.url)
   )
 }
 
-/**
- * GET /api/payments/callback
- * Bazı konfigürasyonlarda İyzico GET ile de dönebilir.
- */
 export async function GET(req: NextRequest) {
   const token = req.nextUrl.searchParams.get('token')
-  if (!token) {
-    return NextResponse.redirect(new URL('/odeme/hata', req.url))
-  }
+  if (!token) return NextResponse.redirect(new URL('/odeme/hata', req.url))
 
-  // POST handler'ı simüle et
   const mockForm = new FormData()
   mockForm.set('token', token)
-  const mockReq = new NextRequest(req.url, {
-    method: 'POST',
-    body: mockForm,
-  })
+  const mockReq = new NextRequest(req.url, { method: 'POST', body: mockForm })
   return POST(mockReq)
 }
-
-
