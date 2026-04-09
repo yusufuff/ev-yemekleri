@@ -13,6 +13,29 @@ function StatCard({ label, value, icon, color, sub }: any) {
   )
 }
 
+export const NAV_LINKS = [
+  ['Dashboard',    '/admin'],
+  ['Aşçılar',      '/admin/asciler'],
+  ['Kullanıcılar', '/admin/kullanicilar'],
+  ['Siparişler',   '/admin/siparisler'],
+  ['Ödemeler',     '/admin/odemeler'],
+  ['Üyelikler',    '/admin/uyelikler'],
+  ['Yöneticiler',  '/admin/yoneticiler'],
+]
+
+export function AdminNav() {
+  return (
+    <nav style={{ background:'#4A2C0E', padding:'0 24px', height:56, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+      <div style={{ fontFamily:"'Playfair Display',serif", fontWeight:900, color:'white', fontSize:18 }}>ANNEELİM · Admin</div>
+      <div style={{ display:'flex', gap:20 }}>
+        {NAV_LINKS.map(([l, h]) => (
+          <Link key={h} href={h} style={{ color:'rgba(255,255,255,0.7)', fontSize:13, textDecoration:'none', fontWeight:500 }}>{l}</Link>
+        ))}
+      </div>
+    </nav>
+  )
+}
+
 export default function AdminPage() {
   const [stats, setStats] = useState<any>(null)
   const [loading, setLoading] = useState(true)
@@ -21,43 +44,25 @@ export default function AdminPage() {
     fetch('/api/admin/stats').then(r => r.json()).then(d => { setStats(d); setLoading(false) }).catch(() => setLoading(false))
   }, [])
 
-  if (loading) return <div style={{ display:'flex', alignItems:'center', justifyContent:'center', minHeight:'100vh', color:'#8A7B6B' }}>Yükleniyor…</div>
+  if (loading) return <div style={{ display:'flex', alignItems:'center', justifyContent:'center', minHeight:'100vh', color:'#8A7B6B' }}>Yukleniyor...</div>
 
   const chart = stats?.chart ?? []
   const maxRevenue = Math.max(...chart.map((c: any) => c.revenue), 1)
 
   return (
     <div style={{ minHeight:'100vh', background:'#FAF6EF', fontFamily:"'DM Sans', sans-serif" }}>
-      {/* Admin navbar */}
-      <nav style={{ background:'#4A2C0E', padding:'0 24px', height:56, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-        <div style={{ fontFamily:"'Playfair Display',serif", fontWeight:900, color:'white', fontSize:18 }}>EV YEMEKLERİ · Admin</div>
-        <div style={{ display:'flex', gap:20 }}>
-          {[
-            ['Dashboard', '/admin'],
-            ['Aşçılar', '/admin/asciler'],
-            ['Kullanıcılar', '/admin/kullanicilar'],
-            ['Siparişler', '/admin/siparisler'],
-            ['Ödemeler', '/admin/odemeler'],
-            ['Üyelikler', '/admin/uyelikler'],
-          ].map(([l, h]) => (
-            <Link key={h} href={h} style={{ color:'rgba(255,255,255,0.7)', fontSize:13, textDecoration:'none', fontWeight:500 }}>{l}</Link>
-          ))}
-        </div>
-      </nav>
-
+      <AdminNav />
       <div style={{ maxWidth:1200, margin:'0 auto', padding:'28px 24px' }}>
         <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:24, fontWeight:900, color:'#4A2C0E', marginBottom:24 }}>Dashboard</h1>
 
-        {/* Stats */}
         <div style={{ display:'grid', gridTemplateColumns:'repeat(4, 1fr)', gap:16, marginBottom:28 }}>
-          <StatCard label="Toplam Kullanıcı"  value={stats?.total_users?.toLocaleString('tr-TR')}  icon="👥" color="#3B82F6" />
-          <StatCard label="Toplam Aşçı"       value={stats?.total_chefs}        icon="👩‍🍳" color="#E8622A" sub={`${stats?.pending_chefs} onay bekliyor`} />
+          <StatCard label="Toplam Kullanıcı"  value={stats?.total_users?.toLocaleString('tr-TR')} icon="👥" color="#3B82F6" />
+          <StatCard label="Toplam Aşçı"       value={stats?.total_chefs} icon="👩‍🍳" color="#E8622A" sub={`${stats?.pending_chefs} onay bekliyor`} />
           <StatCard label="Bu Hafta Sipariş"  value={stats?.total_orders?.toLocaleString('tr-TR')} icon="📦" color="#3D6B47" sub={`Bugün: ${stats?.today_orders}`} />
           <StatCard label="Haftalık Gelir"    value={`₺${stats?.week_revenue?.toLocaleString('tr-TR')}`} icon="💰" color="#F59E0B" sub={stats?.revenue_growth} />
         </div>
 
         <div style={{ display:'grid', gridTemplateColumns:'2fr 1fr', gap:20 }}>
-          {/* Grafik */}
           <div style={{ background:'white', borderRadius:16, padding:24, boxShadow:'0 2px 12px rgba(74,44,14,0.08)' }}>
             <div style={{ fontFamily:"'Playfair Display',serif", fontSize:17, fontWeight:700, color:'#4A2C0E', marginBottom:20 }}>Haftalık Gelir</div>
             <div style={{ display:'flex', alignItems:'flex-end', gap:10, height:160, marginBottom:10 }}>
@@ -71,15 +76,15 @@ export default function AdminPage() {
             </div>
           </div>
 
-          {/* Hızlı linkler */}
           <div style={{ background:'white', borderRadius:16, padding:24, boxShadow:'0 2px 12px rgba(74,44,14,0.08)', display:'flex', flexDirection:'column', gap:12 }}>
             <div style={{ fontFamily:"'Playfair Display',serif", fontSize:17, fontWeight:700, color:'#4A2C0E', marginBottom:4 }}>Hızlı Erişim</div>
             {[
-              ['👩‍🍳', 'Aşçıları Yönet',  '/admin/asciler',    '#FEF3EC', '#E8622A'],
-              ['👥', 'Kullanıcılar',       '/admin/kullanicilar','#EFF6FF', '#3B82F6'],
-              ['📦', 'Siparişler',         '/admin/siparisler', '#ECFDF5', '#3D6B47'],
-              ['💸', 'Ödemeler',           '/admin/odemeler',   '#FFFBEB', '#F59E0B'],
-              ['🏷️', 'Üyelik Yönetimi',   '/admin/uyelikler',  '#F5F3FF', '#8B5CF6'],
+              ['👩‍🍳', 'Aşçıları Yönet',   '/admin/asciler',      '#FEF3EC', '#E8622A'],
+              ['👥',   'Kullanıcılar',      '/admin/kullanicilar', '#EFF6FF', '#3B82F6'],
+              ['📦',   'Siparişler',        '/admin/siparisler',   '#ECFDF5', '#3D6B47'],
+              ['💸',   'Ödemeler',          '/admin/odemeler',     '#FFFBEB', '#F59E0B'],
+              ['🏷️',  'Üyelik Yönetimi',   '/admin/uyelikler',    '#F5F3FF', '#8B5CF6'],
+              ['🔑',   'Yöneticiler',       '/admin/yoneticiler',  '#FEE2E2', '#DC2626'],
             ].map(([icon, label, href, bg, color]) => (
               <Link key={href} href={href} style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 14px', background: bg, borderRadius:10, textDecoration:'none' }}>
                 <span style={{ fontSize:20 }}>{icon}</span>

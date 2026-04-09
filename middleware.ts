@@ -28,11 +28,6 @@ const AUTH_ROUTES = [
 ]
 
 // Admin email listesi - buraya platform yöneticilerinin emaillerini ekle
-const ADMIN_EMAILS = [
-  'admin@anneelim.com',
-  'info@anneelim.com',
-  'yusufagal06@gmail.com',
-]
 
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname
@@ -68,9 +63,14 @@ export async function middleware(request: NextRequest) {
       redirectUrl.searchParams.set('redirect', pathname)
       return NextResponse.redirect(redirectUrl)
     }
-    // Admin email kontrolü
-    const isAdmin = ADMIN_EMAILS.includes(user.email ?? '')
-    if (!isAdmin) {
+    // is_admin kolonu kontrolü
+    const { data: profile } = await supabase
+      .from('users')
+      .select('is_admin')
+      .eq('id', user.id)
+      .single()
+
+    if (!profile?.is_admin) {
       return NextResponse.redirect(new URL('/', request.url))
     }
   }
