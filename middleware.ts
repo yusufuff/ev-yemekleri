@@ -18,9 +18,20 @@ const CHEF_ONLY_ROUTES = [
   '/kazanc',
 ]
 
+const ADMIN_ROUTES = [
+  '/admin',
+]
+
 const AUTH_ROUTES = [
   '/giris',
   '/kayit',
+]
+
+// Admin email listesi - buraya platform yöneticilerinin emaillerini ekle
+const ADMIN_EMAILS = [
+  'admin@anneelim.com',
+  'info@anneelim.com',
+  'yusufagal06@gmail.com',
 ]
 
 export async function middleware(request: NextRequest) {
@@ -33,17 +44,11 @@ export async function middleware(request: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        getAll() {
-          return request.cookies.getAll()
-        },
+        getAll() { return request.cookies.getAll() },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
-          )
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
           supabaseResponse = NextResponse.next({ request })
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          )
+          cookiesToSet.forEach(({ name, value, options }) => supabaseResponse.cookies.set(name, value, options))
         },
       },
     }
@@ -52,8 +57,23 @@ export async function middleware(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
 
   const isProtected = PROTECTED_ROUTES.some(route => pathname.startsWith(route))
-  const isChefOnly = CHEF_ONLY_ROUTES.some(route => pathname.startsWith(route))
+  const isChefOnly  = CHEF_ONLY_ROUTES.some(route => pathname.startsWith(route))
+  const isAdminOnly = ADMIN_ROUTES.some(route => pathname.startsWith(route))
   const isAuthRoute = AUTH_ROUTES.some(route => pathname.startsWith(route))
+
+  // Admin route koruması
+  if (isAdminOnly) {
+    if (!user) {
+      const redirectUrl = new URL('/giris', request.url)
+      redirectUrl.searchParams.set('redirect', pathname)
+      return NextResponse.redirect(redirectUrl)
+    }
+    // Admin email kontrolü
+    const isAdmin = ADMIN_EMAILS.includes(user.email ?? '')
+    if (!isAdmin) {
+      return NextResponse.redirect(new URL('/', request.url))
+    }
+  }
 
   if (isProtected && !user) {
     const redirectUrl = new URL('/giris', request.url)
