@@ -1,17 +1,32 @@
 // @ts-nocheck
-import Iyzipay from 'iyzipay'
+import crypto from 'crypto'
 
-// ── İstemci singleton ──────────────────────────────────────────────────────
-let _iyzipay: Iyzipay | null = null
+const API_KEY    = process.env.IYZICO_API_KEY    ?? 'sandbox-kfx2yf81BXoqJY3lTssW5dwpzUfsklz0'
+const SECRET_KEY = process.env.IYZICO_SECRET_KEY ?? 'sandbox-HSgied94OYtlUAW5nkrKJlsUUCbRf9E3'
+const BASE_URL   = process.env.IYZICO_BASE_URL   ?? 'https://sandbox-api.iyzipay.com'
 
-export function getIyzipay(): Iyzipay {
-  if (_iyzipay) return _iyzipay
-  _iyzipay = new Iyzipay({
-    apiKey:    process.env.IYZICO_API_KEY    ?? 'sandbox-kfx2yf81BXoqJY3lTssW5dwpzUfsklz0',
-    secretKey: process.env.IYZICO_SECRET_KEY ?? 'sandbox-HSgied94OYtlUAW5nkrKJlsUUCbRf9E3',
-    uri:       process.env.IYZICO_BASE_URL   ?? 'https://sandbox-api.iyzipay.com',
+// ── HMAC Auth ──────────────────────────────────────────────────────────────
+function generateAuthHeader(body: string): string {
+  const randomKey = Math.random().toString(36).substring(2)
+  const hashStr   = API_KEY + randomKey + SECRET_KEY + body
+  const hash      = crypto.createHmac('sha256', SECRET_KEY).update(hashStr).digest('base64')
+  const authStr   = `apiKey:${API_KEY}&randomKey:${randomKey}&signature:${hash}`
+  const encoded   = Buffer.from(authStr).toString('base64')
+  return `IYZWSv2 ${encoded}`
+}
+
+async function iyzicoPost(path: string, body: object): Promise<any> {
+  const bodyStr = JSON.stringify(body)
+  const res = await fetch(`${BASE_URL}${path}`, {
+    method:  'POST',
+    headers: {
+      'Content-Type':  'application/json',
+      'Authorization': generateAuthHeader(bodyStr),
+      'x-iyzi-rnd':    Math.random().toString(36).substring(2),
+    },
+    body: bodyStr,
   })
-  return _iyzipay
+  return res.json()
 }
 
 // ── Kuruş dönüşümleri ──────────────────────────────────────────────────────
@@ -20,18 +35,17 @@ export function fromKurus(kurus: string): number { return parseInt(kurus) / 100 
 
 // ── Ödeme formu başlat ─────────────────────────────────────────────────────
 export interface InitPaymentParams {
-  orderId:     string
-  orderNumber: string
-  amount:      number
-  buyerId:     string
-  buyerName:   string
-  buyerPhone:  string
-  buyerEmail:  string
-  city:        string
-  address:     string
-  // Marketplace için sub-merchant key (opsiyonel - Marketplace aktifse dolu gelir)
-  subMerchantKey?: string
-  subMerchantPrice?: number // Aşçıya gidecek tutar
+  orderId:          string
+  orderNumber:      string
+  amount:           number
+  buyerId:          string
+  buyerName:        string
+  buyerPhone:       string
+  buyerEmail:       string
+  city:             string
+  address:          string
+  subMerchantKey?:  string
+  subMerchantPrice?: number
   items: {
     id:       string
     name:     string
@@ -44,25 +58,22 @@ export interface InitPaymentParams {
 export async function initCheckoutForm(
   params: InitPaymentParams
 ): Promise<{ success: boolean; token?: string; content?: string; error?: string }> {
-  const iyzipay = getIyzipay()
-
   const callbackUrl = process.env.IYZICO_CALLBACK_URL
-    ?? `${process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'}/api/payments/callback`
+    ?? `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.anneelim.com'}/api/payments/callback`
 
-  const request: Record<string, unknown> = {
-    locale:          Iyzipay.LOCALE.TR,
+  const body: any = {
+    locale:          'tr',
     conversationId:  params.orderId,
     price:           params.amount.toFixed(2),
     paidPrice:       params.amount.toFixed(2),
-    currency:        Iyzipay.CURRENCY.TRY,
+    currency:        'TRY',
     basketId:        params.orderNumber,
-    paymentGroup:    Iyzipay.PAYMENT_GROUP.PRODUCT,
+    paymentGroup:    'PRODUCT',
     callbackUrl,
     enabledInstallments: [1, 2, 3, 6, 9],
-
     buyer: {
       id:                  params.buyerId,
-      name:                params.buyerName.split(' ')[0] ?? 'Ad',
+      name:                params.buyerName.split(' ')[0] || 'Ad',
       surname:             params.buyerName.split(' ').slice(1).join(' ') || 'Soyad',
       gsmNumber:           params.buyerPhone.replace(/\s/g, ''),
       email:               params.buyerEmail || `${params.buyerId}@anneelim.com`,
@@ -74,156 +85,126 @@ export async function initCheckoutForm(
       city:                params.city,
       country:             'Turkey',
     },
-
-    shippingAddress: {
-      contactName: params.buyerName,
-      city:        params.city,
-      country:     'Turkey',
-      address:     params.address,
-    },
-
-    billingAddress: {
-      contactName: params.buyerName,
-      city:        params.city,
-      country:     'Turkey',
-      address:     params.address,
-    },
-
+    shippingAddress: { contactName: params.buyerName, city: params.city, country: 'Turkey', address: params.address },
+    billingAddress:  { contactName: params.buyerName, city: params.city, country: 'Turkey', address: params.address },
     basketItems: params.items.flatMap(item =>
-      Array.from({ length: item.quantity }, (_, qIdx) => ({
-        id:        `${item.id}-${qIdx}`,
+      Array.from({ length: item.quantity }, (_, i) => ({
+        id:        `${item.id}-${i}`,
         name:      item.name,
         category1: 'Yemek',
         category2: item.category,
-        itemType:  Iyzipay.BASKET_ITEM_TYPE.PHYSICAL,
+        itemType:  'PHYSICAL',
         price:     item.price.toFixed(2),
       }))
     ),
   }
 
-  // Marketplace aktifse sub-merchant bilgilerini ekle
   if (params.subMerchantKey && params.subMerchantPrice !== undefined) {
-    request.subMerchantKey   = params.subMerchantKey
-    request.subMerchantPrice = params.subMerchantPrice.toFixed(2)
+    body.subMerchantKey   = params.subMerchantKey
+    body.subMerchantPrice = params.subMerchantPrice.toFixed(2)
   }
 
-  return new Promise((resolve) => {
-    iyzipay.checkoutFormInitialize.create(request, (err: Error, result: any) => {
-      if (err) {
-        console.error('İyzico init error:', err)
-        return resolve({ success: false, error: err.message })
-      }
-      if (result.status !== 'success') {
-        console.error('İyzico error:', result.errorMessage, result.errorCode)
-        return resolve({ success: false, error: result.errorMessage ?? 'Ödeme başlatılamadı' })
-      }
-      resolve({ success: true, token: result.token, content: result.checkoutFormContent })
-    })
-  })
+  try {
+    const result = await iyzicoPost('/payment/iyzipos/checkoutform/initialize/auth/ecom', body)
+    if (result.status !== 'success') {
+      console.error('iyzico init error:', result.errorMessage, result.errorCode)
+      return { success: false, error: result.errorMessage ?? 'Ödeme başlatılamadı' }
+    }
+    return { success: true, token: result.token, content: result.checkoutFormContent }
+  } catch (e: any) {
+    console.error('iyzico fetch error:', e)
+    return { success: false, error: e.message }
+  }
 }
 
 // ── Ödeme sonucunu doğrula ─────────────────────────────────────────────────
 export async function retrieveCheckoutForm(
   token: string
 ): Promise<{ success: boolean; status?: string; paymentId?: string; paymentTransactionId?: string; error?: string }> {
-  const iyzipay = getIyzipay()
-
-  return new Promise((resolve) => {
-    iyzipay.checkoutForm.retrieve(
-      { locale: Iyzipay.LOCALE.TR, token },
-      (err: Error, result: any) => {
-        if (err) return resolve({ success: false, error: err.message })
-        const paid = result.paymentStatus === 'SUCCESS'
-        resolve({
-          success:               paid,
-          status:                result.paymentStatus,
-          paymentId:             result.paymentId,
-          paymentTransactionId:  result.paymentTransactionId,
-          error:                 paid ? undefined : result.errorMessage,
-        })
-      }
-    )
-  })
+  try {
+    const result = await iyzicoPost('/payment/iyzipos/checkoutform/auth/ecom/detail', {
+      locale: 'tr',
+      token,
+    })
+    const paid = result.paymentStatus === 'SUCCESS'
+    return {
+      success:              paid,
+      status:               result.paymentStatus,
+      paymentId:            result.paymentId,
+      paymentTransactionId: result.paymentTransactionId,
+      error:                paid ? undefined : result.errorMessage,
+    }
+  } catch (e: any) {
+    return { success: false, error: e.message }
+  }
 }
 
-// ── Sub-merchant kaydı (Marketplace) ───────────────────────────────────────
+// ── Sub-merchant kaydı ─────────────────────────────────────────────────────
 export interface SubMerchantParams {
-  referenceCode: string   // chef_id
-  name:          string   // Aşçı adı
-  iban:          string   // Aşçının IBAN'ı
-  identityNumber: string  // TC Kimlik
-  taxNumber?:    string
-  address:       string
-  city:          string
-  phone:         string
-  email:         string
+  referenceCode:  string
+  name:           string
+  iban:           string
+  identityNumber: string
+  taxNumber?:     string
+  address:        string
+  city:           string
+  phone:          string
+  email:          string
 }
 
 export async function createSubMerchant(
   params: SubMerchantParams
 ): Promise<{ success: boolean; subMerchantKey?: string; error?: string }> {
-  const iyzipay = getIyzipay()
-
-  const request = {
-    locale:          Iyzipay.LOCALE.TR,
-    conversationId:  params.referenceCode,
-    subMerchantExternalId: params.referenceCode,
-    subMerchantType: 'PERSONAL', // Bireysel aşçı
-    address:         params.address,
-    taxOffice:       'Vergi Dairesi',
-    taxNumber:       params.taxNumber ?? params.identityNumber,
-    legalCompanyTitle: params.name,
-    email:           params.email,
-    gsmNumber:       params.phone.replace(/\s/g, ''),
-    name:            params.name,
-    iban:            params.iban.replace(/\s/g, ''),
-    identityNumber:  params.identityNumber,
-    currency:        Iyzipay.CURRENCY.TRY,
-    city:            params.city,
-    country:         'Turkey',
-    contactName:     params.name.split(' ')[0] ?? params.name,
-    contactSurname:  params.name.split(' ').slice(1).join(' ') || params.name,
-  }
-
-  return new Promise((resolve) => {
-    iyzipay.subMerchant.create(request, (err: Error, result: any) => {
-      if (err) {
-        console.error('Sub-merchant create error:', err)
-        return resolve({ success: false, error: err.message })
-      }
-      if (result.status !== 'success') {
-        console.error('Sub-merchant error:', result.errorMessage)
-        return resolve({ success: false, error: result.errorMessage ?? 'Sub-merchant oluşturulamadı' })
-      }
-      resolve({ success: true, subMerchantKey: result.subMerchantKey })
+  try {
+    const result = await iyzicoPost('/onboarding/submerchant', {
+      locale:               'tr',
+      conversationId:       params.referenceCode,
+      subMerchantExternalId: params.referenceCode,
+      subMerchantType:      'PERSONAL',
+      address:              params.address,
+      taxOffice:            'Vergi Dairesi',
+      taxNumber:            params.taxNumber ?? params.identityNumber,
+      legalCompanyTitle:    params.name,
+      email:                params.email,
+      gsmNumber:            params.phone.replace(/\s/g, ''),
+      name:                 params.name,
+      iban:                 params.iban.replace(/\s/g, ''),
+      identityNumber:       params.identityNumber,
+      currency:             'TRY',
+      city:                 params.city,
+      country:              'Turkey',
+      contactName:          params.name.split(' ')[0] ?? params.name,
+      contactSurname:       params.name.split(' ').slice(1).join(' ') || params.name,
     })
-  })
+
+    if (result.status !== 'success') {
+      console.error('Sub-merchant error:', result.errorMessage, result.errorCode)
+      return { success: false, error: result.errorMessage ?? 'Sub-merchant oluşturulamadı' }
+    }
+    return { success: true, subMerchantKey: result.subMerchantKey }
+  } catch (e: any) {
+    console.error('Sub-merchant fetch error:', e)
+    return { success: false, error: e.message }
+  }
 }
 
 // ── Ödeme onaylama (escrow → aşçı) ────────────────────────────────────────
 export async function approvePayment(
   paymentTransactionId: string
 ): Promise<{ success: boolean; error?: string }> {
-  const iyzipay = getIyzipay()
-
-  return new Promise((resolve) => {
-    iyzipay.approval.create(
-      {
-        locale:               Iyzipay.LOCALE.TR,
-        conversationId:       paymentTransactionId,
-        paymentTransactionId,
-      },
-      (err: Error, result: any) => {
-        if (err) {
-          console.error('Approve error:', err)
-          return resolve({ success: false, error: err.message })
-        }
-        if (result.status !== 'success') {
-          console.error('Approve failed:', result.errorMessage)
-          return resolve({ success: false, error: result.errorMessage })
-        }
-        resolve({ success: true })
-      }
-    )
-  })
+  try {
+    const result = await iyzicoPost('/payment/iyzipos/approve', {
+      locale:               'tr',
+      conversationId:       paymentTransactionId,
+      paymentTransactionId,
+    })
+    if (result.status !== 'success') {
+      console.error('Approve failed:', result.errorMessage)
+      return { success: false, error: result.errorMessage }
+    }
+    return { success: true }
+  } catch (e: any) {
+    console.error('Approve fetch error:', e)
+    return { success: false, error: e.message }
+  }
 }
