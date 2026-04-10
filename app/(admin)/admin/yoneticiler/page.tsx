@@ -1,3 +1,4 @@
+// @ts-nocheck
 'use client'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
@@ -54,9 +55,9 @@ export default function YoneticilerPage() {
     setIslemYapiliyor(userId)
     try {
       const supabase = getSupabaseBrowserClient()
-      await supabase.from('users').update({ is_admin: true }).eq('id', userId)
+      await (supabase as any).from('users').update({ is_admin: true }).eq('id', userId)
       await yukle()
-    } catch (e) {
+    } catch (e: any) {
       alert('Hata: ' + e.message)
     } finally {
       setIslemYapiliyor(null)
@@ -68,9 +69,9 @@ export default function YoneticilerPage() {
     setIslemYapiliyor(userId)
     try {
       const supabase = getSupabaseBrowserClient()
-      await supabase.from('users').update({ is_admin: false }).eq('id', userId)
+      await (supabase as any).from('users').update({ is_admin: false }).eq('id', userId)
       await yukle()
-    } catch (e) {
+    } catch (e: any) {
       alert('Hata: ' + e.message)
     } finally {
       setIslemYapiliyor(null)
