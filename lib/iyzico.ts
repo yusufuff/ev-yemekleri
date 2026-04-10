@@ -1,10 +1,8 @@
 // @ts-nocheck
 import crypto from 'crypto'
 
-git add .
-git commit -m "fix: iyzico key hardcode kaldirildi"
-git push
-vercel --prod
+const API_KEY    = process.env.IYZICO_API_KEY    ?? ''
+const SECRET_KEY = process.env.IYZICO_SECRET_KEY ?? ''
 const BASE_URL   = process.env.IYZICO_BASE_URL   ?? 'https://sandbox-api.iyzipay.com'
 
 // ── HMAC Auth ──────────────────────────────────────────────────────────────
