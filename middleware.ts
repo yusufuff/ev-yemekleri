@@ -58,20 +58,27 @@ export async function middleware(request: NextRequest) {
 
   // Admin route koruması
   if (isAdminOnly) {
-    if (!user) {
-      const redirectUrl = new URL('/giris', request.url)
-      redirectUrl.searchParams.set('redirect', pathname)
-      return NextResponse.redirect(redirectUrl)
-    }
-    // is_admin kolonu kontrolü
-    const { data: profile } = await supabase
-      .from('users')
-      .select('is_admin')
-      .eq('id', user.id)
-      .single()
+    // /admin/giris sayfasına izin ver
+    if (pathname === '/admin/giris') return supabaseResponse
 
-    if (!profile?.is_admin) {
-      return NextResponse.redirect(new URL('/', request.url))
+    if (!user) {
+      return NextResponse.redirect(new URL('/admin/giris', request.url))
+    }
+
+    // Önce admin cookie kontrolü
+    const adminToken = request.cookies.get('admin_token')?.value
+
+    // Cookie yoksa is_admin kontrolü yap
+    if (!adminToken) {
+      const { data: profile } = await supabase
+        .from('users')
+        .select('is_admin')
+        .eq('id', user.id)
+        .single()
+
+      if (!profile?.is_admin) {
+        return NextResponse.redirect(new URL('/admin/giris', request.url))
+      }
     }
   }
 
