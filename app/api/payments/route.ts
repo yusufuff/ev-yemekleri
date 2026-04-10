@@ -1,11 +1,4 @@
 ﻿// @ts-nocheck
-/**
- * POST /api/payments
- * Verilen order_id için İyzico Checkout Form başlatır.
- * Sipariş daha önce /api/orders ile oluşturulmuş olmalı.
- *
- * GET /api/payments/callback (ayrı dosyada)
- */
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { getSupabaseServerClient, getCurrentUser } from '@/lib/supabase/server'
@@ -18,28 +11,25 @@ const schema = z.object({
 export async function POST(req: NextRequest) {
   const user = await getCurrentUser() as any
   if (!user) {
-    return NextResponse.json({ error: 'Giriş yapmanız gerekiyor.' }, { status: 401 })
+    return NextResponse.json({ error: 'Giris yapmaniz gerekiyor.' }, { status: 401 })
   }
 
   const body   = await req.json()
   const parsed = schema.safeParse(body)
   if (!parsed.success) {
-    return NextResponse.json({ error: 'Geçersiz sipariş ID.' }, { status: 400 })
+    return NextResponse.json({ error: 'Gecersiz siparis ID.' }, { status: 400 })
   }
 
   const { order_id } = parsed.data
   const supabase = await getSupabaseServerClient()
 
-  // Siparişi çek (RLS buyer_id = user.id kontrolü yapar)
+  // Siparisi cek
   const { data: order, error: orderErr } = await supabase
     .from('orders')
     .select(`
       *,
       order_items (item_name, item_price, quantity, notes),
-      chef_profiles!inner (
-        id,
-        users!inner (full_name)
-      )
+      chef_profiles!inner (id, iyzico_sub_merchant_key, users!inner (full_name))
     `)
     .eq('id', order_id)
     .eq('buyer_id', user.id)
@@ -47,48 +37,60 @@ export async function POST(req: NextRequest) {
     .single()
 
   if (orderErr || !order) {
-    return NextResponse.json({ error: 'Sipariş bulunamadı.' }, { status: 404 })
+    return NextResponse.json({ error: 'Siparis bulunamadi.' }, { status: 404 })
   }
 
-  // Kullanıcı bilgilerini çek
+  // Kullanici bilgilerini cek
   const { data: profile } = await supabase
     .from('users')
     .select('full_name, phone')
     .eq('id', user.id)
     .single()
 
-  // Teslimat adresi
-  const addr = order.delivery_address as any
-  const city    = addr?.city    ?? 'Adana'
-  const address = addr?.full_address ?? 'Türkiye'
+  // Auth'dan email al
+  const { data: authData } = await supabase.auth.admin.getUserById(user.id)
+  const buyerEmail = authData?.user?.email ?? `${user.id.slice(0, 8)}@anneelim.com`
 
-  // İyzico'yu başlat
+  // Teslimat adresi
+  const addr    = order.delivery_address as any
+  const city    = addr?.city ?? 'Istanbul'
+  const address = addr?.full_address ?? 'Turkiye'
+
+  // Sub-merchant key
+  const chefProfile      = order.chef_profiles as any
+  const subMerchantKey   = chefProfile?.iyzico_sub_merchant_key ?? null
+  const totalAmount      = Number(order.total_amount)
+
+  // iyzico baslat
   const result = await initCheckoutForm({
-    orderId:     order.id,
-    orderNumber: order.order_number,
-    amount:      Number(order.total_amount),
-    buyerId:     user.id,
-    buyerName:   profile?.full_name ?? 'Kullanıcı',
-    buyerPhone:  profile?.phone ?? '+905550000000',
-    buyerEmail:  `${user.id.slice(0, 8)}@evyemekleri.com`,
+    orderId:          order.id,
+    orderNumber:      order.order_number,
+    amount:           totalAmount,
+    buyerId:          user.id,
+    buyerName:        profile?.full_name ?? 'Kullanici',
+    buyerPhone:       profile?.phone ?? '+905550000000',
+    buyerEmail,
     city,
     address,
+    // Marketplace - sub-merchant varsa ekle
+    subMerchantKey:   subMerchantKey ?? undefined,
+    subMerchantPrice: subMerchantKey ? totalAmount : undefined,
     items: (order.order_items ?? []).map((item: any) => ({
       id:       item.menu_item_id ?? item.id ?? 'item',
       name:     item.item_name,
       price:    Number(item.item_price),
-      category: 'Ev Yemeği',
+      category: 'Ev Yemegi',
       quantity: item.quantity,
     })),
   })
 
   if (!result.success) {
     return NextResponse.json({
-      error: result.error ?? 'Ödeme başlatılamadı. Lütfen tekrar deneyin.'
+      error: result.error ?? 'Odeme baslatılamadi. Lutfen tekrar deneyin.'
     }, { status: 502 })
   }
 
-  // Token'ı siparişe kaydet (callback'te doğrulama için)
+  // Token'i siparise kaydet
   await supabase
     .from('orders')
     .update({ iyzico_token: result.token })
@@ -102,6 +104,3 @@ export async function POST(req: NextRequest) {
     token:                 result.token,
   })
 }
-
-
-
