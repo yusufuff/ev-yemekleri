@@ -6,11 +6,11 @@ const PROTECTED_ROUTES = [
   '/favorilerim',
   '/adreslerim',
   '/profil',
-  '/odeme',
   '/bildirimler',
   '/mesajlar',
   '/dashboard',
   '/kazanc',
+  '/odeme',
 ]
 
 const CHEF_ONLY_ROUTES = [
@@ -50,6 +50,11 @@ export async function middleware(request: NextRequest) {
   )
 
   const { data: { user } } = await supabase.auth.getUser()
+
+  // Odeme callback ve basari sayfasini koru - her zaman izin ver
+  if (pathname.startsWith('/siparis-basari') || pathname.startsWith('/odeme/callback') || pathname.startsWith('/api/payments')) {
+    return supabaseResponse
+  }
 
   const isProtected = PROTECTED_ROUTES.some(route => pathname.startsWith(route))
   const isChefOnly  = CHEF_ONLY_ROUTES.some(route => pathname.startsWith(route))
