@@ -24,8 +24,8 @@ export async function POST(req: NextRequest) {
     const { data: chef, error: chefErr } = await supabase
       .from('chef_profiles')
       .select(`
-        id, iban, iyzico_sub_merchant_key,
-        users!inner (full_name, phone, email),
+        id, iban, iyzico_sub_merchant_key, user_id,
+        users!inner (full_name, phone),
         chef_billing_info (tc_kimlik, address, city)
       `)
       .eq('id', chef_id)
@@ -34,6 +34,10 @@ export async function POST(req: NextRequest) {
     if (chefErr || !chef) {
       return NextResponse.json({ error: 'Aşçı bulunamadı' }, { status: 404 })
     }
+
+    // Email'i auth'dan al
+    const { data: authUser } = await supabase.auth.admin.getUserById(chef.user_id)
+    const chefEmail = authUser?.user?.email ?? `${chef.id}@anneelim.com`
 
     // Zaten sub-merchant kaydı varsa
     if (chef.iyzico_sub_merchant_key) {
@@ -60,7 +64,7 @@ export async function POST(req: NextRequest) {
       address:        billing.address ?? 'Türkiye',
       city:           billing.city ?? 'İstanbul',
       phone:          user.phone ?? '+905550000000',
-      email:          user.email ?? `${chef.id}@anneelim.com`,
+      email:          chefEmail,
     })
 
     if (!result.success) {
