@@ -1,8 +1,8 @@
 // @ts-nocheck
 import crypto from 'crypto'
 
-const API_KEY    = process.env.IYZICO_API_KEY    ?? ''
-const SECRET_KEY = process.env.IYZICO_SECRET_KEY ?? ''
+const API_KEY    = process.env.IYZICO_API_KEY    ?? 'sandbox-kfx2yf81BXoqJY3lTssW5dwpzUfsklz0'
+const SECRET_KEY = process.env.IYZICO_SECRET_KEY ?? 'sandbox-HSgied94OYtlUAW5nkrKJlsUUCbRf9E3'
 const BASE_URL   = process.env.IYZICO_BASE_URL   ?? 'https://sandbox-api.iyzipay.com'
 
 // ── HMAC Auth ──────────────────────────────────────────────────────────────
@@ -89,14 +89,22 @@ export async function initCheckoutForm(
     shippingAddress: { contactName: params.buyerName, city: params.city, country: 'Turkey', address: params.address },
     billingAddress:  { contactName: params.buyerName, city: params.city, country: 'Turkey', address: params.address },
     basketItems: params.items.flatMap(item =>
-      Array.from({ length: item.quantity }, (_, i) => ({
-        id:        `${item.id}-${i}`,
-        name:      item.name,
-        category1: 'Yemek',
-        category2: item.category,
-        itemType:  'PHYSICAL',
-        price:     item.price.toFixed(2),
-      }))
+      Array.from({ length: item.quantity }, (_, i) => {
+        const basketItem: any = {
+          id:        `${item.id}-${i}`,
+          name:      item.name,
+          category1: 'Yemek',
+          category2: item.category,
+          itemType:  'PHYSICAL',
+          price:     item.price.toFixed(2),
+        }
+        // Marketplace modunda her item'a subMerchantKey gerekiyor
+        if (params.subMerchantKey) {
+          basketItem.subMerchantKey   = params.subMerchantKey
+          basketItem.subMerchantPrice = item.price.toFixed(2)
+        }
+        return basketItem
+      })
     ),
   }
 
