@@ -21,30 +21,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Email veya şifre hatalı.' }, { status: 401 })
     }
 
-    // Kullanıcının is_admin olup olmadığını kontrol et
-    const { data: user } = await supabase
-      .from('users')
-      .select('id, full_name, is_admin')
-      .eq('is_admin', true)
-      .limit(50)
+    // admin_users tablosunda var mı kontrol et
+    const { data: adminUser } = await supabase
+      .from('admin_users')
+      .select('id, full_name, email')
+      .eq('email', email.toLowerCase().trim())
+      .single()
 
-    // Email'i auth'dan bul
-    const { data: authUsers } = await supabase.auth.admin.listUsers()
-    const authUser = authUsers?.users?.find(u => u.email === email)
-
-    if (!authUser) {
-      return NextResponse.json({ error: 'Email veya şifre hatalı.' }, { status: 401 })
-    }
-
-    // is_admin kontrolü
-    const isAdmin = user?.some(u => u.id === authUser.id)
-    if (!isAdmin) {
+    if (!adminUser) {
       return NextResponse.json({ error: 'Bu hesabın admin yetkisi yok.' }, { status: 403 })
     }
 
     // Cookie set et
-    const response = NextResponse.json({ success: true })
-    response.cookies.set('admin_token', Buffer.from(`${email}:${Date.now()}`).toString('base64'), {
+    const response = NextResponse.json({ success: true, name: adminUser.full_name })
+    response.cookies.set('admin_token', Buffer.from(`${email}:${adminUser.id}:${Date.now()}`).toString('base64'), {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       maxAge: 60 * 60 * 8, // 8 saat
