@@ -1,7 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { getSupabaseBrowserClient } from '@/lib/supabase/client'
 
 const NAV_LINKS = [
   ['Dashboard',    '/admin'],
@@ -13,180 +12,87 @@ const NAV_LINKS = [
   ['Yöneticiler',  '/admin/yoneticiler'],
 ]
 
-export default function YoneticilerPage() {
-  const [yoneticiler, setYoneticiler] = useState([])
-  const [tumKullanicilar, setTumKullanicilar] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [aramaMetni, setAramaMetni] = useState('')
-  const [islemYapiliyor, setIslemYapiliyor] = useState(null)
-
-  useEffect(() => { yukle() }, [])
-
-  const yukle = async () => {
-    try {
-      const supabase = getSupabaseBrowserClient()
-
-      const { data: adminler } = await supabase
-        .from('users')
-        .select('id, full_name, phone, created_at')
-        .eq('is_admin', true)
-        .order('created_at', { ascending: false })
-
-      setYoneticiler(adminler ?? [])
-
-      const { data: kullanicilar } = await supabase
-        .from('users')
-        .select('id, full_name, phone')
-        .eq('is_admin', false)
-        .order('full_name', { ascending: true })
-        .limit(100)
-
-      setTumKullanicilar(kullanicilar ?? [])
-    } catch (e) {
-      console.error(e)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const yetkiVer = async (userId: string) => {
-    if (!confirm('Bu kullanıcıya admin yetkisi vermek istediğinize emin misiniz?')) return
-    setIslemYapiliyor(userId)
-    try {
-      const supabase = getSupabaseBrowserClient()
-      await supabase.from('users').update({ is_admin: true }).eq('id', userId)
-      await yukle()
-    } catch (e) {
-      alert('Hata: ' + e.message)
-    } finally {
-      setIslemYapiliyor(null)
-    }
-  }
-
-  const yetkiKaldir = async (userId: string) => {
-    if (!confirm('Bu yöneticinin yetkisini kaldırmak istediğinize emin misiniz?')) return
-    setIslemYapiliyor(userId)
-    try {
-      const supabase = getSupabaseBrowserClient()
-      await supabase.from('users').update({ is_admin: false }).eq('id', userId)
-      await yukle()
-    } catch (e) {
-      alert('Hata: ' + e.message)
-    } finally {
-      setIslemYapiliyor(null)
-    }
-  }
-
-  const filtreliKullanicilar = tumKullanicilar.filter(k =>
-    k.full_name?.toLowerCase().includes(aramaMetni.toLowerCase()) ||
-    k.phone?.includes(aramaMetni)
+function AdminNav() {
+  return (
+    <nav style={{ background:'#4A2C0E', padding:'0 24px', height:56, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+      <div style={{ fontFamily:"'Playfair Display',serif", fontWeight:900, color:'white', fontSize:18 }}>ANNEELİM · Admin</div>
+      <div style={{ display:'flex', gap:20 }}>
+        {NAV_LINKS.map(([l, h]) => (
+          <Link key={h} href={h} style={{ color:'rgba(255,255,255,0.7)', fontSize:13, textDecoration:'none', fontWeight:500 }}>{l}</Link>
+        ))}
+      </div>
+    </nav>
   )
+}
 
-  const formatTarih = (tarih: string) =>
-    new Date(tarih).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })
+function StatCard({ label, value, icon, color, sub }: any) {
+  return (
+    <div style={{ background:'white', borderRadius:14, padding:20, boxShadow:'0 2px 12px rgba(74,44,14,0.08)', borderTop:`3px solid ${color}`, position:'relative' }}>
+      <div style={{ position:'absolute', right:16, top:16, fontSize:24, opacity:0.12 }}>{icon}</div>
+      <div style={{ fontSize:11, color:'#8A7B6B', fontWeight:600, textTransform:'uppercase', letterSpacing:0.5, marginBottom:6 }}>{label}</div>
+      <div style={{ fontFamily:"'Playfair Display',serif", fontSize:28, fontWeight:700, color:'#4A2C0E' }}>{value}</div>
+      {sub && <div style={{ fontSize:12, color:'#3D6B47', fontWeight:600, marginTop:4 }}>{sub}</div>}
+    </div>
+  )
+}
+
+export default function AdminPage() {
+  const [stats, setStats] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetch('/api/admin/stats').then(r => r.json()).then(d => { setStats(d); setLoading(false) }).catch(() => setLoading(false))
+  }, [])
+
+  if (loading) return <div style={{ display:'flex', alignItems:'center', justifyContent:'center', minHeight:'100vh', color:'#8A7B6B' }}>Yukleniyor...</div>
+
+  const chart = stats?.chart ?? []
+  const maxRevenue = Math.max(...chart.map((c: any) => c.revenue), 1)
 
   return (
     <div style={{ minHeight:'100vh', background:'#FAF6EF', fontFamily:"'DM Sans', sans-serif" }}>
-      <nav style={{ background:'#4A2C0E', padding:'0 24px', height:56, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-        <div style={{ fontFamily:"'Playfair Display',serif", fontWeight:900, color:'white', fontSize:18 }}>ANNEELİM · Admin</div>
-        <div style={{ display:'flex', gap:20 }}>
-          {NAV_LINKS.map(([l, h]) => (
-            <Link key={h} href={h} style={{ color: h === '/admin/yoneticiler' ? 'white' : 'rgba(255,255,255,0.7)', fontSize:13, textDecoration:'none', fontWeight: h === '/admin/yoneticiler' ? 700 : 500 }}>{l}</Link>
-          ))}
-        </div>
-      </nav>
+      <AdminNav />
+      <div style={{ maxWidth:1200, margin:'0 auto', padding:'28px 24px' }}>
+        <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:24, fontWeight:900, color:'#4A2C0E', marginBottom:24 }}>Dashboard</h1>
 
-      <div style={{ maxWidth:1000, margin:'0 auto', padding:'28px 24px' }}>
-        <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:24, fontWeight:900, color:'#4A2C0E', marginBottom:8 }}>Yöneticiler</h1>
-        <p style={{ fontSize:13, color:'#8A7B6B', marginBottom:24 }}>Admin paneline erişim yetkisi olan kullanıcılar</p>
-
-        {/* Mevcut Yöneticiler */}
-        <div style={{ background:'white', borderRadius:16, padding:24, boxShadow:'0 2px 12px rgba(74,44,14,0.08)', marginBottom:24 }}>
-          <div style={{ fontFamily:"'Playfair Display',serif", fontSize:17, fontWeight:700, color:'#4A2C0E', marginBottom:16 }}>
-            Mevcut Yöneticiler ({yoneticiler.length})
-          </div>
-
-          {loading ? (
-            <div style={{ color:'#8A7B6B', textAlign:'center', padding:24 }}>Yükleniyor...</div>
-          ) : yoneticiler.length === 0 ? (
-            <div style={{ color:'#8A7B6B', textAlign:'center', padding:24 }}>Yönetici bulunamadı</div>
-          ) : (
-            <table style={{ width:'100%', borderCollapse:'collapse' }}>
-              <thead>
-                <tr>
-                  {['Ad Soyad', 'Telefon', 'Eklenme Tarihi', 'İşlem'].map(h => (
-                    <th key={h} style={{ fontSize:11, textTransform:'uppercase', letterSpacing:0.5, color:'#8A7B6B', padding:'10px 14px', textAlign:'left', borderBottom:'1px solid #E8E0D4' }}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {yoneticiler.map(y => (
-                  <tr key={y.id}>
-                    <td style={{ padding:'14px', borderBottom:'1px solid rgba(232,224,212,0.4)' }}>
-                      <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-                        <div style={{ width:36, height:36, borderRadius:'50%', background:'#FEE2E2', display:'flex', alignItems:'center', justifyContent:'center', fontSize:14, fontWeight:700, color:'#DC2626' }}>
-                          {y.full_name?.charAt(0) ?? '?'}
-                        </div>
-                        <span style={{ fontWeight:600, fontSize:14, color:'#4A2C0E' }}>{y.full_name ?? '-'}</span>
-                      </div>
-                    </td>
-                    <td style={{ padding:'14px', borderBottom:'1px solid rgba(232,224,212,0.4)', fontSize:13, color:'#8A7B6B' }}>{y.phone ?? '-'}</td>
-                    <td style={{ padding:'14px', borderBottom:'1px solid rgba(232,224,212,0.4)', fontSize:13, color:'#8A7B6B' }}>{formatTarih(y.created_at)}</td>
-                    <td style={{ padding:'14px', borderBottom:'1px solid rgba(232,224,212,0.4)' }}>
-                      <button
-                        onClick={() => yetkiKaldir(y.id)}
-                        disabled={islemYapiliyor === y.id}
-                        style={{ padding:'6px 14px', background:'#FEE2E2', color:'#DC2626', border:'none', borderRadius:8, fontSize:12, fontWeight:700, cursor:'pointer' }}
-                      >
-                        {islemYapiliyor === y.id ? 'İşleniyor...' : 'Yetkiyi Kaldır'}
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(4, 1fr)', gap:16, marginBottom:28 }}>
+          <StatCard label="Toplam Kullanıcı" value={stats?.total_users?.toLocaleString('tr-TR')} icon="👥" color="#3B82F6" />
+          <StatCard label="Toplam Aşçı"      value={stats?.total_chefs} icon="👩‍🍳" color="#E8622A" sub={`${stats?.pending_chefs} onay bekliyor`} />
+          <StatCard label="Bu Hafta Sipariş" value={stats?.total_orders?.toLocaleString('tr-TR')} icon="📦" color="#3D6B47" sub={`Bugün: ${stats?.today_orders}`} />
+          <StatCard label="Haftalık Gelir"   value={`₺${stats?.week_revenue?.toLocaleString('tr-TR')}`} icon="💰" color="#F59E0B" sub={stats?.revenue_growth} />
         </div>
 
-        {/* Yeni Yönetici Ekle */}
-        <div style={{ background:'white', borderRadius:16, padding:24, boxShadow:'0 2px 12px rgba(74,44,14,0.08)' }}>
-          <div style={{ fontFamily:"'Playfair Display',serif", fontSize:17, fontWeight:700, color:'#4A2C0E', marginBottom:16 }}>
-            Yönetici Ekle
-          </div>
-
-          <input
-            value={aramaMetni}
-            onChange={e => setAramaMetni(e.target.value)}
-            placeholder="Kullanıcı adı veya telefon ara..."
-            style={{ width:'100%', padding:'10px 14px', border:'1.5px solid #E8E0D4', borderRadius:8, fontSize:13, fontFamily:'inherit', marginBottom:16, boxSizing:'border-box' }}
-          />
-
-          {aramaMetni.length > 0 && (
-            <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
-              {filtreliKullanicilar.length === 0 ? (
-                <div style={{ color:'#8A7B6B', fontSize:13, textAlign:'center', padding:16 }}>Kullanıcı bulunamadı</div>
-              ) : filtreliKullanicilar.slice(0, 10).map(k => (
-                <div key={k.id} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 14px', background:'#FAF6EF', borderRadius:10 }}>
-                  <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-                    <div style={{ width:36, height:36, borderRadius:'50%', background:'#FEF3EC', display:'flex', alignItems:'center', justifyContent:'center', fontSize:14, fontWeight:700, color:'#E8622A' }}>
-                      {k.full_name?.charAt(0) ?? '?'}
-                    </div>
-                    <div>
-                      <div style={{ fontWeight:600, fontSize:14, color:'#4A2C0E' }}>{k.full_name ?? 'İsimsiz'}</div>
-                      <div style={{ fontSize:12, color:'#8A7B6B' }}>{k.phone ?? '-'}</div>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => yetkiVer(k.id)}
-                    disabled={islemYapiliyor === k.id}
-                    style={{ padding:'8px 16px', background:'#E8622A', color:'white', border:'none', borderRadius:8, fontSize:12, fontWeight:700, cursor:'pointer' }}
-                  >
-                    {islemYapiliyor === k.id ? 'İşleniyor...' : '+ Yönetici Yap'}
-                  </button>
+        <div style={{ display:'grid', gridTemplateColumns:'2fr 1fr', gap:20 }}>
+          <div style={{ background:'white', borderRadius:16, padding:24, boxShadow:'0 2px 12px rgba(74,44,14,0.08)' }}>
+            <div style={{ fontFamily:"'Playfair Display',serif", fontSize:17, fontWeight:700, color:'#4A2C0E', marginBottom:20 }}>Haftalık Gelir</div>
+            <div style={{ display:'flex', alignItems:'flex-end', gap:10, height:160, marginBottom:10 }}>
+              {chart.map((c: any) => (
+                <div key={c.day} style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', gap:4 }}>
+                  <div style={{ fontSize:10, color:'#8A7B6B' }}>₺{(c.revenue/1000).toFixed(1)}k</div>
+                  <div style={{ width:'100%', background:'#E8622A', borderRadius:'4px 4px 0 0', height:`${(c.revenue/maxRevenue)*100}%`, opacity:0.8 }} />
+                  <div style={{ fontSize:11, color:'#8A7B6B', fontWeight:600 }}>{c.day}</div>
                 </div>
               ))}
             </div>
-          )}
+          </div>
+
+          <div style={{ background:'white', borderRadius:16, padding:24, boxShadow:'0 2px 12px rgba(74,44,14,0.08)', display:'flex', flexDirection:'column', gap:12 }}>
+            <div style={{ fontFamily:"'Playfair Display',serif", fontSize:17, fontWeight:700, color:'#4A2C0E', marginBottom:4 }}>Hızlı Erişim</div>
+            {[
+              ['👩‍🍳', 'Aşçıları Yönet',  '/admin/asciler',      '#FEF3EC', '#E8622A'],
+              ['👥',   'Kullanıcılar',     '/admin/kullanicilar', '#EFF6FF', '#3B82F6'],
+              ['📦',   'Siparişler',       '/admin/siparisler',   '#ECFDF5', '#3D6B47'],
+              ['💸',   'Ödemeler',         '/admin/odemeler',     '#FFFBEB', '#F59E0B'],
+              ['🏷️',  'Üyelik Yönetimi',  '/admin/uyelikler',    '#F5F3FF', '#8B5CF6'],
+              ['🔑',   'Yöneticiler',      '/admin/yoneticiler',  '#FEE2E2', '#DC2626'],
+            ].map(([icon, label, href, bg, color]) => (
+              <Link key={href} href={href} style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 14px', background: bg, borderRadius:10, textDecoration:'none' }}>
+                <span style={{ fontSize:20 }}>{icon}</span>
+                <span style={{ fontWeight:600, fontSize:13, color:'#4A2C0E' }}>{label}</span>
+                <span style={{ marginLeft:'auto', color, fontWeight:700, fontSize:13 }}>→</span>
+              </Link>
+            ))}
+          </div>
         </div>
       </div>
     </div>
