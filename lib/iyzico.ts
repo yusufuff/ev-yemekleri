@@ -6,23 +6,24 @@ const SECRET_KEY = process.env.IYZICO_SECRET_KEY ?? 'sandbox-HSgied94OYtlUAW5nkr
 const BASE_URL   = process.env.IYZICO_BASE_URL   ?? 'https://sandbox-api.iyzipay.com'
 
 // ── HMAC Auth ──────────────────────────────────────────────────────────────
-function generateAuthHeader(body: string): string {
-  const randomKey = Math.random().toString(36).substring(2)
-  const hashStr   = API_KEY + randomKey + SECRET_KEY + body
-  const hash      = crypto.createHmac('sha1', SECRET_KEY).update(hashStr).digest('base64')
-  const authStr   = `apiKey:${API_KEY}&randomKey:${randomKey}&signature:${hash}`
-  const encoded   = Buffer.from(authStr).toString('base64')
-  return `IYZWSv2 ${encoded}`
+function generateAuthHeader(path: string, body: string): string {
+  const randomKey   = Date.now().toString() + Math.random().toString(36).substring(2)
+  const payload     = randomKey + path + body
+  const signature   = crypto.createHmac('sha256', SECRET_KEY).update(payload).digest('hex')
+  const authStr     = `apiKey:${API_KEY}&randomKey:${randomKey}&signature:${signature}`
+  const encoded     = Buffer.from(authStr).toString('base64')
+  return { authorization: `IYZWSv2 ${encoded}`, randomKey }
 }
 
 async function iyzicoPost(path: string, body: object): Promise<any> {
   const bodyStr = JSON.stringify(body)
+  const { authorization, randomKey } = generateAuthHeader(path, bodyStr)
   const res = await fetch(`${BASE_URL}${path}`, {
     method:  'POST',
     headers: {
       'Content-Type':  'application/json',
-      'Authorization': generateAuthHeader(bodyStr),
-      'x-iyzi-rnd':    Math.random().toString(36).substring(2),
+      'Authorization': authorization,
+      'x-iyzi-rnd':    randomKey,
     },
     body: bodyStr,
   })
