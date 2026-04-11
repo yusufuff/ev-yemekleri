@@ -136,11 +136,14 @@ export async function retrieveCheckoutForm(
       token,
     })
     const paid = result.paymentStatus === 'SUCCESS'
+    const paymentTransactionId = result.paymentTransactionId
+      ?? result.itemTransactions?.[0]?.paymentTransactionId
+      ?? null
     return {
       success:              paid,
       status:               result.paymentStatus,
       paymentId:            result.paymentId,
-      paymentTransactionId: result.paymentTransactionId,
+      paymentTransactionId,
       error:                paid ? undefined : result.errorMessage,
     }
   } catch (e: any) {
