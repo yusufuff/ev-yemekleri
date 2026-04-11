@@ -205,7 +205,7 @@ export async function approvePayment(
   paymentTransactionId: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const result = await iyzicoPost('/payment/iyzipos/approve', {
+    const result = await iyzicoPost('/payment/iyzipos/item/approve', {
       locale:               'tr',
       conversationId:       paymentTransactionId,
       paymentTransactionId,
