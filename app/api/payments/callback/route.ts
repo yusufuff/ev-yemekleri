@@ -9,8 +9,13 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
-async function handleCallback(token: string, reqUrl: string) {
-  if (!token) return NextResponse.redirect(new URL('/odeme/hata?reason=no_token', reqUrl))
+function redirect303(url: string, req: NextRequest) {
+  const res = NextResponse.redirect(new URL(url, req.url), { status: 303 })
+  return res
+}
+
+async function handleCallback(token: string, req: NextRequest) {
+  if (!token) return redirect303('/odeme/hata?reason=no_token', req)
 
   const result = await retrieveCheckoutForm(token)
 
@@ -20,7 +25,7 @@ async function handleCallback(token: string, reqUrl: string) {
     .eq('iyzico_token', token)
     .single()
 
-  if (!order) return NextResponse.redirect(new URL('/odeme/hata?reason=order_not_found', reqUrl))
+  if (!order) return redirect303('/odeme/hata?reason=order_not_found', req)
 
   if (!result.success) {
     await supabase.from('orders').update({
@@ -29,14 +34,14 @@ async function handleCallback(token: string, reqUrl: string) {
       cancelled_at:        new Date().toISOString(),
       cancellation_reason: `iyzico: ${result.error ?? 'Odeme reddedildi'}`,
     }).eq('id', order.id)
-    return NextResponse.redirect(new URL(`/odeme/hata?order_id=${order.id}&reason=payment_failed`, reqUrl))
+    return redirect303(`/odeme/hata?order_id=${order.id}&reason=payment_failed`, req)
   }
 
   await supabase.from('orders').update({
-    payment_status:               'paid',
-    status:                       'pending',
-    iyzico_payment_id:            result.paymentId,
-    iyzico_payment_transaction_id: result.paymentTransactionId,
+    payment_status:                'paid',
+    status:                        'pending',
+    iyzico_payment_id:             result.paymentId,
+    iyzico_payment_transaction_id: result.paymentTransactionId ?? null,
   }).eq('id', order.id)
 
   const { data: chefData } = await supabase
@@ -53,16 +58,16 @@ async function handleCallback(token: string, reqUrl: string) {
     })
   }
 
-  return NextResponse.redirect(new URL(`/siparis-basari?order_id=${order.id}`, reqUrl))
+  return redirect303(`/siparis-basari?order_id=${order.id}`, req)
 }
 
 export async function POST(req: NextRequest) {
   const form  = await req.formData()
   const token = form.get('token')?.toString() ?? ''
-  return handleCallback(token, req.url)
+  return handleCallback(token, req)
 }
 
 export async function GET(req: NextRequest) {
   const token = req.nextUrl.searchParams.get('token') ?? ''
-  return handleCallback(token, req.url)
+  return handleCallback(token, req)
 }
