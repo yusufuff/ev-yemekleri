@@ -69,8 +69,8 @@ export async function POST(req: NextRequest) {
     buyerEmail,
     city,
     address,
-    subMerchantKey:   subMerchantKey ?? undefined,
-    subMerchantPrice: subMerchantKey ? totalAmount : undefined,
+    subMerchantKey:   undefined,
+    subMerchantPrice: undefined,
     items: (order.order_items ?? []).map((item: any) => ({
       id:       item.menu_item_id ?? 'item',
       name:     item.item_name,
