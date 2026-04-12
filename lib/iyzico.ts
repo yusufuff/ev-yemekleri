@@ -98,10 +98,10 @@ export async function initCheckoutForm(
           itemType:  'PHYSICAL',
           price:     item.price.toFixed(2),
         }
-        // Marketplace modunda her item'a subMerchantKey gerekiyor
+        // Her satır tek bir adet temsil eder, subMerchantPrice = item.price
         if (params.subMerchantKey) {
           basketItem.subMerchantKey   = params.subMerchantKey
-          basketItem.subMerchantPrice = (item.price * item.quantity).toFixed(2)
+          basketItem.subMerchantPrice = item.price.toFixed(2)
         }
         return basketItem
       })
