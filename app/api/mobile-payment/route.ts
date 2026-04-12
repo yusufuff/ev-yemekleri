@@ -73,9 +73,8 @@ export async function GET(req: NextRequest) {
 
   await adminClient.from('orders').update({ iyzico_token: result.token }).eq('id', order.id)
 
-  // Debug: token ve content'i goster
-  return NextResponse.json({
-    token: result.token,
-    content_preview: result.content?.slice(0, 1000)
-  })
+  return NextResponse.redirect(
+    'https://sandbox-static.iyzipay.com/checkoutform/initialize/auth/ecom?token=' + result.token,
+    { status: 302 }
+  )
 }
