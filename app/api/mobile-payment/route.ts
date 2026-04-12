@@ -40,7 +40,7 @@ export async function GET(req: NextRequest) {
     .single()
 
   const { data: authData } = await adminClient.auth.admin.getUserById(order.buyer_id)
-  const buyerEmail = authData?.user?.email ?? `${order.buyer_id.slice(0, 8)}@anneelim.com`
+  const buyerEmail = authData?.user?.email ?? (order.buyer_id.slice(0, 8) + '@anneelim.com')
 
   const addr = order.delivery_address as any
   const totalAmount = Number(order.total_amount)
@@ -68,32 +68,14 @@ export async function GET(req: NextRequest) {
   })
 
   if (!result.success) {
-    return new NextResponse(`<h1>Hata: ${result.error}</h1>`, { headers: { 'Content-Type': 'text/html' } })
+    return new NextResponse('<h1>Hata: ' + result.error + '</h1>', { headers: { 'Content-Type': 'text/html' } })
   }
 
   await adminClient.from('orders').update({ iyzico_token: result.token }).eq('id', order.id)
 
-  // iyzico form HTML'ini tam sayfa olarak döndür
-  const html = `<!DOCTYPE html>
-<html lang="tr">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Guvenli Odeme</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: -apple-system, sans-serif; background: #FAF6EF; padding: 16px; }
-    .form-wrap { max-width: 500px; margin: 0 auto; }
-  </style>
-</head>
-<body>
-  <div class="form-wrap">
-    ${result.content}
-  </div>
-</body>
-</html>`
-
-  return new NextResponse(html, {
-    headers: { 'Content-Type': 'text/html; charset=utf-8' }
-  })
+  // iyzico hosted sayfasina redirect
+  return NextResponse.redirect(
+    'https://sandbox-static.iyzipay.com/checkoutform/index.html?token=' + result.token,
+    { status: 302 }
+  )
 }
