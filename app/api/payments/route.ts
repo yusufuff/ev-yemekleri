@@ -16,7 +16,7 @@ async function getUserFromRequest(req: NextRequest) {
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!,
     )
-    const { data, error } = await supabase.auth.getUser(token)
+    const { data, error } = await adminClient.auth.getUser(token)
     if (!error && data?.user) return data.user
   }
 
