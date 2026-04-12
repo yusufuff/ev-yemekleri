@@ -12,9 +12,9 @@ async function getUserFromRequest(req: NextRequest) {
   const authHeader = req.headers.get('authorization') ?? ''
   if (authHeader.startsWith('Bearer ')) {
     const token = authHeader.slice(7)
-    const supabase = createClient(
+    const adminClient = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
     )
     const { data, error } = await supabase.auth.getUser(token)
     if (!error && data?.user) return data.user
