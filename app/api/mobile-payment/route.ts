@@ -8,7 +8,7 @@ export async function GET(req: NextRequest) {
   const order_id = searchParams.get('order_id')
 
   if (!order_id) {
-    return new NextResponse('<h1>Gecersiz siparis</h1>', { headers: { 'Content-Type': 'text/html' } })
+    return NextResponse.json({ error: 'Gecersiz siparis' })
   }
 
   const adminClient = createClient(
@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
     .single()
 
   if (!order) {
-    return new NextResponse('<h1>Siparis bulunamadi</h1>', { headers: { 'Content-Type': 'text/html' } })
+    return NextResponse.json({ error: 'Siparis bulunamadi' })
   }
 
   const { data: chefProfile } = await adminClient
@@ -68,14 +68,14 @@ export async function GET(req: NextRequest) {
   })
 
   if (!result.success) {
-    return new NextResponse('<h1>Hata: ' + result.error + '</h1>', { headers: { 'Content-Type': 'text/html' } })
+    return NextResponse.json({ error: result.error })
   }
 
   await adminClient.from('orders').update({ iyzico_token: result.token }).eq('id', order.id)
 
-  // iyzico hosted sayfasina redirect
-  return NextResponse.redirect(
-    'https://sandbox-static.iyzipay.com/checkoutform/index.html?token=' + result.token,
-    { status: 302 }
-  )
+  // Debug: token ve content'i goster
+  return NextResponse.json({
+    token: result.token,
+    content_preview: result.content?.slice(0, 1000)
+  })
 }
