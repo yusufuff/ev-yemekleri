@@ -62,10 +62,13 @@ export async function initCheckoutForm(
   const callbackUrl = process.env.IYZICO_CALLBACK_URL
     ?? `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.anneelim.com'}/api/payments/callback`
 
+  // Basket toplamı (teslimat hariç)
+  const basketTotal = params.items.reduce((sum, item) => sum + item.price * item.quantity, 0)
+
   const body: any = {
     locale:          'tr',
     conversationId:  params.orderId,
-    price:           params.amount.toFixed(2),
+    price:           basketTotal.toFixed(2),
     paidPrice:       params.amount.toFixed(2),
     currency:        'TRY',
     basketId:        params.orderNumber,
@@ -110,7 +113,7 @@ export async function initCheckoutForm(
 
   if (params.subMerchantKey && params.subMerchantPrice !== undefined) {
     body.subMerchantKey   = params.subMerchantKey
-    body.subMerchantPrice = params.subMerchantPrice.toFixed(2)
+    body.subMerchantPrice = basketTotal.toFixed(2)
   }
 
   try {
