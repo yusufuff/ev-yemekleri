@@ -101,7 +101,7 @@ export async function initCheckoutForm(
         // Marketplace modunda her item'a subMerchantKey gerekiyor
         if (params.subMerchantKey) {
           basketItem.subMerchantKey   = params.subMerchantKey
-          basketItem.subMerchantPrice = item.price.toFixed(2)
+          basketItem.subMerchantPrice = (item.price * item.quantity).toFixed(2)
         }
         return basketItem
       })
