@@ -8,7 +8,7 @@ export async function GET(req: NextRequest) {
   const order_id = searchParams.get('order_id')
 
   if (!order_id) {
-    return NextResponse.json({ error: 'Gecersiz siparis' })
+    return new NextResponse('<h1>Gecersiz siparis</h1>', { headers: { 'Content-Type': 'text/html' } })
   }
 
   const adminClient = createClient(
@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
     .single()
 
   if (!order) {
-    return NextResponse.json({ error: 'Siparis bulunamadi' })
+    return new NextResponse('<h1>Siparis bulunamadi</h1>', { headers: { 'Content-Type': 'text/html' } })
   }
 
   const { data: chefProfile } = await adminClient
@@ -68,14 +68,30 @@ export async function GET(req: NextRequest) {
   })
 
   if (!result.success) {
-    return NextResponse.json({ error: result.error })
+    return new NextResponse('<h1>Hata: ' + result.error + '</h1>', { headers: { 'Content-Type': 'text/html' } })
   }
 
   await adminClient.from('orders').update({ iyzico_token: result.token }).eq('id', order.id)
 
-  // Debug: token ve content'i goster
-  return NextResponse.json({
-    token: result.token,
-    content_preview: result.content?.slice(0, 1000)
+  const html = `<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>Guvenli Odeme</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #FAF6EF; font-family: -apple-system, sans-serif; }
+    #iyzipay-checkout-form { padding: 16px; }
+  </style>
+</head>
+<body>
+  <div id="iyzipay-checkout-form" class="responsive"></div>
+  ${result.content}
+</body>
+</html>`
+
+  return new NextResponse(html, {
+    headers: { 'Content-Type': 'text/html; charset=utf-8' }
   })
 }
