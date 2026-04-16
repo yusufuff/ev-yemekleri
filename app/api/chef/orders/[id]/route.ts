@@ -13,12 +13,12 @@ const VALID_TRANSITIONS: Record<string, string[]> = {
 }
 
 const STATUS_MESSAGES: Record<string, { title: string; body: string; type: string }> = {
-  confirmed:         { title: 'Siparisín Onaylandi!', body: 'Asci siparisini hazirlamaya basliyor.', type: 'order_confirmed' },
-  preparing:         { title: 'Siparisín Hazirlaniyor', body: 'Asci yemegini hazirliyor, az kaldi!', type: 'order_preparing' },
-  on_way:            { title: 'Siparisín Yolda!', body: 'Asci siparisini teslim etmek uzere.', type: 'order_on_way' },
-  delivered_pending: { title: 'Siparisín Kapida!', body: 'Siparisín teslim edildi. Lutfen onayla.', type: 'order_delivered_pending' },
-  delivered:         { title: 'Siparisín Teslim Edildi!', body: 'Afiyet olsun! Degerlendirme yapmayi unutma.', type: 'order_delivered' },
-  cancelled:         { title: 'Siparisín Iptal Edildi', body: 'Siparisín iptal edildi.', type: 'order_cancelled' },
+  confirmed:         { title: 'Siparisn Onaylandi!', body: 'Asci siparisini hazirlamaya basliyor.', type: 'order_confirmed' },
+  preparing:         { title: 'Siparisn Hazirlaniyor', body: 'Asci yemegini hazirliyor, az kaldi!', type: 'order_preparing' },
+  on_way:            { title: 'Siparisn Yolda!', body: 'Asci siparisini teslim etmek uzere.', type: 'order_on_way' },
+  delivered_pending: { title: 'Siparisn Kapida!', body: 'Siparisn teslim edildi. Lutfen onayla.', type: 'order_delivered_pending' },
+  delivered:         { title: 'Siparisn Teslim Edildi!', body: 'Afiyet olsun! Degerlendirme yapmayi unutma.', type: 'order_delivered' },
+  cancelled:         { title: 'Siparisn Iptal Edildi', body: 'Siparisn iptal edildi.', type: 'order_cancelled' },
 }
 
 async function pushGonder(userId: string, title: string, body: string) {
@@ -93,25 +93,23 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     return NextResponse.json({ error: 'Guncelleme basarisiz.' }, { status: 500 })
   }
 
-  // Bildirim gönder
+  // Bildirim gonder
   const msg = STATUS_MESSAGES[status]
   if (msg) {
-    // Alıcıya bildirim (tüm durum değişikliklerinde)
+    // Aliciya bildirim (tum durum degisikliklerinde)
     if (order.buyer_id) {
-      // Notifications tablosuna kaydet
       await supabaseAdmin.from('notifications').insert({
-        user_id:  order.buyer_id,
-        type:     msg.type,
-        title:    msg.title,
-        message:  msg.body,
-        data:     { order_id: params.id, order_number: order.order_number },
-        is_read:  false,
+        user_id: order.buyer_id,
+        type:    msg.type,
+        title:   msg.title,
+        body:    msg.body,
+        data:    { order_id: params.id, order_number: order.order_number },
+        is_read: false,
       })
-      // Push bildirim
       pushGonder(order.buyer_id, msg.title, msg.body)
     }
 
-    // Aşçıya bildirim — sadece alıcı teslim aldığında
+    // Asciya bildirim - sadece alici teslim aldiginda
     if (status === 'delivered' && order.chef_id) {
       const { data: chefProfile } = await supabaseAdmin
         .from('chef_profiles')
@@ -121,12 +119,12 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
       if (chefProfile?.user_id) {
         await supabaseAdmin.from('notifications').insert({
-          user_id:  chefProfile.user_id,
-          type:     'payout_completed',
-          title:    'Odeme Hesabiniza Aktarildi!',
-          message:  `#${order.order_number} siparisi teslim alindi. Odeme hesabiniza aktarilacak.`,
-          data:     { order_id: params.id },
-          is_read:  false,
+          user_id: chefProfile.user_id,
+          type:    'payout_completed',
+          title:   'Odeme Hesabiniza Aktarildi!',
+          body:    `#${order.order_number} siparisi teslim alindi. Odeme hesabiniza aktarilacak.`,
+          data:    { order_id: params.id },
+          is_read: false,
         })
         pushGonder(chefProfile.user_id, 'Odeme Aktarildi!', `#${order.order_number} siparisi icin odeme hesabiniza aktarilacak.`)
       }

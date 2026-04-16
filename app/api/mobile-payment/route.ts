@@ -46,6 +46,24 @@ export async function GET(req: NextRequest) {
   const totalAmount = Number(order.total_amount)
   const subMerchantKey = chefProfile?.iyzico_sub_merchant_key ?? null
 
+  // Basket items — order_items bossa fallback kullan
+  const orderItems = order.order_items ?? []
+  const basketItems = orderItems.length > 0
+    ? orderItems.map((item: any) => ({
+        id:       item.menu_item_id ?? ('item-' + Math.random().toString(36).slice(2, 8)),
+        name:     item.item_name ?? 'Yemek',
+        price:    Number(item.item_price) || totalAmount,
+        category: 'Ev Yemegi',
+        quantity: item.quantity ?? 1,
+      }))
+    : [{
+        id:       order.id,
+        name:     'Siparis #' + order.order_number,
+        price:    totalAmount,
+        category: 'Ev Yemegi',
+        quantity: 1,
+      }]
+
   const result = await initCheckoutForm({
     orderId:          order.id,
     orderNumber:      order.order_number,
@@ -58,13 +76,7 @@ export async function GET(req: NextRequest) {
     address:          addr?.full_address ?? 'Turkiye',
     subMerchantKey:   subMerchantKey ?? undefined,
     subMerchantPrice: subMerchantKey ? totalAmount : undefined,
-    items: (order.order_items ?? []).map((item: any) => ({
-      id:       item.menu_item_id ?? 'item',
-      name:     item.item_name,
-      price:    Number(item.item_price),
-      category: 'Ev Yemegi',
-      quantity: item.quantity,
-    })),
+    items:            basketItems,
   })
 
   if (!result.success) {
