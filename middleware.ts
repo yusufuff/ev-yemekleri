@@ -27,8 +27,6 @@ const AUTH_ROUTES = [
   '/kayit',
 ]
 
-// Admin email listesi - buraya platform yöneticilerinin emaillerini ekle
-
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname
 
@@ -51,7 +49,6 @@ export async function middleware(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
 
-  // Odeme callback ve basari sayfasini koru - her zaman izin ver
   if (pathname.startsWith('/siparis-basari') || pathname.startsWith('/odeme/callback') || pathname.startsWith('/api/payments')) {
     return supabaseResponse
   }
@@ -61,29 +58,12 @@ export async function middleware(request: NextRequest) {
   const isAdminOnly = ADMIN_ROUTES.some(route => pathname.startsWith(route))
   const isAuthRoute = AUTH_ROUTES.some(route => pathname.startsWith(route))
 
-  // Admin route koruması
+  // Admin route korumasi
   if (isAdminOnly) {
-    // /admin/giris sayfasına izin ver
     if (pathname === '/admin/giris') return supabaseResponse
-
-    if (!user) {
-      return NextResponse.redirect(new URL('/admin/giris', request.url))
-    }
-
-    // Önce admin cookie kontrolü
     const adminToken = request.cookies.get('admin_token')?.value
-
-    // Cookie yoksa is_admin kontrolü yap
     if (!adminToken) {
-      const { data: profile } = await supabase
-        .from('users')
-        .select('is_admin')
-        .eq('id', user.id)
-        .single()
-
-      if (!profile?.is_admin) {
-        return NextResponse.redirect(new URL('/admin/giris', request.url))
-      }
+      return NextResponse.redirect(new URL('/admin/giris', request.url))
     }
   }
 
