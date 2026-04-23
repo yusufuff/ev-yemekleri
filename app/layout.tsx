@@ -1,4 +1,4 @@
-import type { Metadata, Viewport } from 'next'
+
 import { DM_Sans } from 'next/font/google'
 import '@/styles/globals.css'
 import { CartProvider } from '@/hooks/useCart'
@@ -6,7 +6,16 @@ import { PWAProvider } from '@/components/pwa/PWAPrompt'
 import { PublicNavbar } from '@/components/layout/PublicNavbar'
 import { ToastProvider } from '@/components/ui/Toast'
 import NotificationPermission from '@/components/NotificationPermission'
+import * as Sentry from '@sentry/nextjs';
+import type { Metadata } from 'next';
 
+export function generateMetadata(): Metadata {
+  return {
+    other: {
+      ...Sentry.getTraceData()
+    }
+  };
+}
 const dmSans = DM_Sans({
   subsets: ['latin'],
   variable: '--font-dm-sans',
