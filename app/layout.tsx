@@ -1,4 +1,5 @@
-
+import type { Metadata, Viewport } from 'next'
+import * as Sentry from '@sentry/nextjs'
 import { DM_Sans } from 'next/font/google'
 import '@/styles/globals.css'
 import { CartProvider } from '@/hooks/useCart'
