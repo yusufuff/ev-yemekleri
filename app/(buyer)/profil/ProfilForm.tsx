@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { getSupabaseBrowserClient } from '@/lib/supabase/client'
 
-export default function ProfilForm({ user, chefData }) {
+export default function ProfilForm({ user, chefData, isAdmin }) {
   const router = useRouter()
   const [form, setForm] = useState({
     full_name: user.full_name,
@@ -66,15 +66,7 @@ export default function ProfilForm({ user, chefData }) {
           const supabase = getSupabaseBrowserClient() as any
           const { data: { user: authUser } } = await supabase.auth.getUser()
           if (!authUser) return
-
-          // PostGIS formatında kaydet
-          await supabase
-            .rpc('update_chef_location', {
-              p_user_id: authUser.id,
-              p_lat: lat,
-              p_lng: lng
-            })
-
+          await supabase.rpc('update_chef_location', { p_user_id: authUser.id, p_lat: lat, p_lng: lng })
           setLocationSaved(true)
           setTimeout(() => setLocationSaved(false), 3000)
         } catch (e) {
@@ -144,7 +136,6 @@ export default function ProfilForm({ user, chefData }) {
         <div style={{ background: 'white', borderRadius: 16, padding: 24, boxShadow: '0 2px 12px rgba(74,44,14,0.08)' }}>
           <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 17, fontWeight: 700, color: '#4A2C0E', marginBottom: 16 }}>Aşçı Ayarları</div>
 
-          {/* Konum Güncelle */}
           <div style={{ marginBottom: 16 }}>
             <label style={{ fontSize: 12, fontWeight: 600, color: '#7A4A20', display: 'block', marginBottom: 5 }}>Konum</label>
             <button onClick={konumuGuncelle} disabled={locating} style={{
@@ -210,6 +201,12 @@ export default function ProfilForm({ user, chefData }) {
       <Link href="/adreslerim" style={{ display: 'block', width: '100%', padding: '12px 0', background: 'white', color: '#4A2C0E', border: '1.5px solid #E8E0D4', borderRadius: 10, fontSize: 14, fontWeight: 600, textAlign: 'center', textDecoration: 'none' }}>
         📍 Kayıtlı Adreslerim
       </Link>
+
+      {isAdmin && (
+        <Link href="/admin" style={{ display: 'block', width: '100%', padding: '12px 0', background: '#4A2C0E', color: 'white', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 700, textAlign: 'center', textDecoration: 'none' }}>
+          🔑 Admin Paneli
+        </Link>
+      )}
 
       <button onClick={cikisYap} style={{ width: '100%', padding: '12px 0', background: '#FEE2E2', color: '#DC2626', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
         🚪 Çıkış Yap

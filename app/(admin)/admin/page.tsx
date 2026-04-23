@@ -10,6 +10,7 @@ const NAV_LINKS = [
   ['Ödemeler',     '/admin/odemeler'],
   ['Üyelikler',    '/admin/uyelikler'],
   ['Yöneticiler',  '/admin/yoneticiler'],
+  ['Yemek Fotoları', '/admin/yemekler'],
 ]
 
 function AdminNav() {

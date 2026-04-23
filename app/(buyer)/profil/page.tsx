@@ -40,6 +40,13 @@ export default async function ProfilPage() {
     chefProfile = cp
   }
 
+  const { data: adminUser } = await supabase
+    .from('admin_users')
+    .select('id')
+    .eq('email', (user.email ?? '').toLowerCase())
+    .single()
+  const isAdmin = !!adminUser
+
   const userData = {
     id: user.id,
     email: user.email ?? '',
@@ -61,7 +68,7 @@ export default async function ProfilPage() {
         <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: 26, fontWeight: 900, color: '#4A2C0E', marginBottom: 20 }}>
           Profil & Ayarlar
         </h1>
-        <ProfilForm user={userData} chefData={chefData} />
+        <ProfilForm user={userData} chefData={chefData} isAdmin={isAdmin} />
         <div style={{ marginTop: 16 }}>
           <SifreForm />
         </div>
