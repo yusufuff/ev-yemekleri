@@ -31,7 +31,7 @@ export default function ProfilForm({ user, chefData, isAdmin }) {
   const [adresSaved, setAdresSaved] = useState(false)
   const isChef = user.role === 'chef'
   const displayName = form.full_name || user.full_name || 'Isim girilmemis'
-  const inputStyle = { width: '100%', padding: '10px 14px', border: '1.5px solid #E8E0D4', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', boxSizing: 'border-box', color: '#4A2C0E' }
+  const inputStyle = { width: '100%', padding: '10px 14px', border: '1.5px solid #E8E0D4', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', boxSizing: 'border-box' as const, color: '#4A2C0E' }
   const labelIcon = (label) => label === 'Ev' ? '🏠' : label === 'Is' ? '💼' : '📍'
 
   useEffect(() => { if (adreslerAcik) adresleriYukle() }, [adreslerAcik])
@@ -220,7 +220,7 @@ export default function ProfilForm({ user, chefData, isAdmin }) {
           </div>
           <div style={{ marginBottom: 12 }}>
             <label style={{ fontSize: 12, fontWeight: 600, color: '#7A4A20', display: 'block', marginBottom: 5 }}>Biyografi</label>
-            <textarea value={chefForm.bio} onChange={e => setChefForm(p => ({ ...p, bio: e.target.value }))} rows={3} style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #E8E0D4', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', resize: 'none', boxSizing: 'border-box' }} />
+            <textarea value={chefForm.bio} onChange={e => setChefForm(p => ({ ...p, bio: e.target.value }))} rows={3} style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #E8E0D4', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', resize: 'none', boxSizing: 'border-box' as const }} />
           </div>
           <div style={{ marginBottom: 12 }}>
             <label style={{ fontSize: 12, fontWeight: 600, color: '#7A4A20', display: 'block', marginBottom: 5 }}>IBAN</label>
