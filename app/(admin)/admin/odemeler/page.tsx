@@ -45,7 +45,8 @@ export default function AdminOdemeler() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ payout_id: id, action }),
     })
-    const d = await res.json()
+    const text = await res.text()
+const d = text ? JSON.parse(text) : {}
     if (res.ok) {
       setPayouts(prev => prev.filter(p => p.id !== id))
       showToast(d.message ?? 'Islem tamamlandi')
