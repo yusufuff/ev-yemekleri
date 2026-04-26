@@ -39,7 +39,7 @@ export default function ProfilForm({ user, chefData, isAdmin }) {
   const adresleriYukle = async () => {
     setAdresYukleniyor(true)
     try {
-      const supabase = getSupabaseBrowserClient()
+      const supabase = getSupabaseBrowserClient() as any
       const { data } = await supabase.from('addresses').select('*').eq('user_id', user.id).order('is_default', { ascending: false })
       setAdresler(data ?? [])
     } catch (e) { console.log(e) }
@@ -50,7 +50,7 @@ export default function ProfilForm({ user, chefData, isAdmin }) {
     if (!adresForm.full_address.trim()) { alert('Adres bos olamaz'); return }
     setAdresSaving(true)
     try {
-      const supabase = getSupabaseBrowserClient()
+      const supabase = getSupabaseBrowserClient() as any
       if (adresDuzenleId) {
         await supabase.from('addresses').update({ label: adresForm.label, full_address: adresForm.full_address, city: adresForm.city }).eq('id', adresDuzenleId)
       } else {
@@ -68,13 +68,13 @@ export default function ProfilForm({ user, chefData, isAdmin }) {
 
   const adresSil = async (id) => {
     if (!confirm('Bu adresi silmek istiyor musunuz?')) return
-    const supabase = getSupabaseBrowserClient()
+    const supabase = getSupabaseBrowserClient() as any
     await supabase.from('addresses').delete().eq('id', id)
     await adresleriYukle()
   }
 
   const varsayilanYap = async (id) => {
-    const supabase = getSupabaseBrowserClient()
+    const supabase = getSupabaseBrowserClient() as any
     await supabase.from('addresses').update({ is_default: false }).eq('user_id', user.id)
     await supabase.from('addresses').update({ is_default: true }).eq('id', id)
     await adresleriYukle()
@@ -114,7 +114,7 @@ export default function ProfilForm({ user, chefData, isAdmin }) {
     if (sifreForm.yeni !== sifreForm.tekrar) { setSifreHata('Sifreler eslesmiyor'); return }
     setSifreSaving(true)
     try {
-      const supabase = getSupabaseBrowserClient()
+      const supabase = getSupabaseBrowserClient() as any
       const { error } = await supabase.auth.updateUser({ password: sifreForm.yeni })
       if (error) { setSifreHata(error.message.includes('different from the old password') ? 'Yeni sifre eski sifreden farkli olmali' : 'Hata: ' + error.message); return }
       setSifreSaved(true)
@@ -129,7 +129,7 @@ export default function ProfilForm({ user, chefData, isAdmin }) {
     setLocating(true)
     navigator.geolocation.getCurrentPosition(async pos => {
       try {
-        const supabase = getSupabaseBrowserClient()
+        const supabase = getSupabaseBrowserClient() as any
         const { data: { user: authUser } } = await supabase.auth.getUser()
         if (!authUser) return
         await supabase.rpc('update_chef_location', { p_user_id: authUser.id, p_lat: pos.coords.latitude, p_lng: pos.coords.longitude })
