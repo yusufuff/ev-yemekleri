@@ -18,7 +18,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     const { data: cp, error } = await supabase
       .from('chef_profiles')
       .select('*')
-      .eq('id', params.id)
+      .or(`id.eq.${params.id},user_id.eq.${params.id}`)
       .single()
 
     if (error || !cp) {
