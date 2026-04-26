@@ -3,25 +3,30 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 
 const NAV_LINKS = [
-  ['Dashboard',    '/admin'],
-  ['Aşçılar',      '/admin/asciler'],
-  ['Kullanıcılar', '/admin/kullanicilar'],
-  ['Siparişler',   '/admin/siparisler'],
-  ['Ödemeler',     '/admin/odemeler'],
-  ['Üyelikler',    '/admin/uyelikler'],
-  ['Yöneticiler',  '/admin/yoneticiler'],
-  ['Yemek Fotoları', '/admin/yemekler'],
+  ['Dashboard',      '/admin'],
+  ['Asciler',        '/admin/asciler'],
+  ['Kullanicilar',   '/admin/kullanicilar'],
+  ['Siparisler',     '/admin/siparisler'],
+  ['Odemeler',       '/admin/odemeler'],
+  ['Uyelikler',      '/admin/uyelikler'],
+  ['Yoneticiler',    '/admin/yoneticiler'],
+  ['Yemek Fotolari', '/admin/yemekler'],
 ]
 
 function AdminNav() {
   return (
     <nav style={{ background:'#4A2C0E', padding:'0 24px', height:56, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-      <div style={{ fontFamily:"'Playfair Display',serif", fontWeight:900, color:'white', fontSize:18 }}>ANNEELİM · Admin</div>
-      
-      <div style={{ display:'flex', gap:20 }}>
+      <div style={{ fontFamily:"'Playfair Display',serif", fontWeight:900, color:'white', fontSize:18 }}>ANNEELIM - Admin</div>
+      <div style={{ display:'flex', alignItems:'center', gap:16 }}>
         {NAV_LINKS.map(([l, h]) => (
           <Link key={h} href={h} style={{ color:'rgba(255,255,255,0.7)', fontSize:13, textDecoration:'none', fontWeight:500 }}>{l}</Link>
         ))}
+        <button
+          onClick={async () => { await fetch('/api/auth/signout', { method: 'POST' }); window.location.href = '/' }}
+          style={{ color:'white', fontSize:13, fontWeight:700, background:'#DC2626', border:'none', cursor:'pointer', borderRadius:8, padding:'6px 14px', marginLeft:8 }}
+        >
+          Cikis
+        </button>
       </div>
     </nav>
   )
@@ -58,15 +63,15 @@ export default function AdminPage() {
         <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:24, fontWeight:900, color:'#4A2C0E', marginBottom:24 }}>Dashboard</h1>
 
         <div style={{ display:'grid', gridTemplateColumns:'repeat(4, 1fr)', gap:16, marginBottom:28 }}>
-          <StatCard label="Toplam Kullanıcı" value={stats?.total_users?.toLocaleString('tr-TR')} icon="👥" color="#3B82F6" />
-          <StatCard label="Toplam Aşçı"      value={stats?.total_chefs} icon="👩‍🍳" color="#E8622A" sub={`${stats?.pending_chefs} onay bekliyor`} />
-          <StatCard label="Bu Hafta Sipariş" value={stats?.total_orders?.toLocaleString('tr-TR')} icon="📦" color="#3D6B47" sub={`Bugün: ${stats?.today_orders}`} />
-          <StatCard label="Haftalık Gelir"   value={`₺${stats?.week_revenue?.toLocaleString('tr-TR')}`} icon="💰" color="#F59E0B" sub={stats?.revenue_growth} />
+          <StatCard label="Toplam Kullanici" value={stats?.total_users?.toLocaleString('tr-TR')} icon="👥" color="#3B82F6" />
+          <StatCard label="Toplam Asci"      value={stats?.total_chefs} icon="👩‍🍳" color="#E8622A" sub={`${stats?.pending_chefs} onay bekliyor`} />
+          <StatCard label="Bu Hafta Siparis" value={stats?.total_orders?.toLocaleString('tr-TR')} icon="📦" color="#3D6B47" sub={`Bugun: ${stats?.today_orders}`} />
+          <StatCard label="Haftalik Gelir"   value={`₺${stats?.week_revenue?.toLocaleString('tr-TR')}`} icon="💰" color="#F59E0B" sub={stats?.revenue_growth} />
         </div>
 
         <div style={{ display:'grid', gridTemplateColumns:'2fr 1fr', gap:20 }}>
           <div style={{ background:'white', borderRadius:16, padding:24, boxShadow:'0 2px 12px rgba(74,44,14,0.08)' }}>
-            <div style={{ fontFamily:"'Playfair Display',serif", fontSize:17, fontWeight:700, color:'#4A2C0E', marginBottom:20 }}>Haftalık Gelir</div>
+            <div style={{ fontFamily:"'Playfair Display',serif", fontSize:17, fontWeight:700, color:'#4A2C0E', marginBottom:20 }}>Haftalik Gelir</div>
             <div style={{ display:'flex', alignItems:'flex-end', gap:10, height:160, marginBottom:10 }}>
               {chart.map((c: any) => (
                 <div key={c.day} style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', gap:4 }}>
@@ -79,14 +84,14 @@ export default function AdminPage() {
           </div>
 
           <div style={{ background:'white', borderRadius:16, padding:24, boxShadow:'0 2px 12px rgba(74,44,14,0.08)', display:'flex', flexDirection:'column', gap:12 }}>
-            <div style={{ fontFamily:"'Playfair Display',serif", fontSize:17, fontWeight:700, color:'#4A2C0E', marginBottom:4 }}>Hızlı Erişim</div>
+            <div style={{ fontFamily:"'Playfair Display',serif", fontSize:17, fontWeight:700, color:'#4A2C0E', marginBottom:4 }}>Hizli Erisim</div>
             {[
-              ['👩‍🍳', 'Aşçıları Yönet',  '/admin/asciler',      '#FEF3EC', '#E8622A'],
-              ['👥',   'Kullanıcılar',     '/admin/kullanicilar', '#EFF6FF', '#3B82F6'],
-              ['📦',   'Siparişler',       '/admin/siparisler',   '#ECFDF5', '#3D6B47'],
-              ['💸',   'Ödemeler',         '/admin/odemeler',     '#FFFBEB', '#F59E0B'],
-              ['🏷️',  'Üyelik Yönetimi',  '/admin/uyelikler',    '#F5F3FF', '#8B5CF6'],
-              ['🔑',   'Yöneticiler',      '/admin/yoneticiler',  '#FEE2E2', '#DC2626'],
+              ['👩‍🍳', 'Ascilari Yonet',  '/admin/asciler',      '#FEF3EC', '#E8622A'],
+              ['👥',   'Kullanicilar',    '/admin/kullanicilar', '#EFF6FF', '#3B82F6'],
+              ['📦',   'Siparisler',      '/admin/siparisler',   '#ECFDF5', '#3D6B47'],
+              ['💸',   'Odemeler',        '/admin/odemeler',     '#FFFBEB', '#F59E0B'],
+              ['🏷️',  'Uyelik Yonetimi', '/admin/uyelikler',    '#F5F3FF', '#8B5CF6'],
+              ['🔑',   'Yoneticiler',     '/admin/yoneticiler',  '#FEE2E2', '#DC2626'],
             ].map(([icon, label, href, bg, color]) => (
               <Link key={href} href={href} style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 14px', background: bg, borderRadius:10, textDecoration:'none' }}>
                 <span style={{ fontSize:20 }}>{icon}</span>
