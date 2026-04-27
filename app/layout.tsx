@@ -8,6 +8,7 @@ import { PublicNavbar } from '@/components/layout/PublicNavbar'
 import { ToastProvider } from '@/components/ui/Toast'
 import NotificationPermission from '@/components/NotificationPermission'
 import CerezBanner from '@/components/CerezBanner'
+import DuyuruBanner from '@/components/DuyuruBanner'
 
 const dmSans = DM_Sans({
   subsets: ['latin'],
@@ -70,6 +71,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <CartProvider>
           <ToastProvider>
             <PWAProvider>
+              <DuyuruBanner />
               <PublicNavbar />
               <NotificationPermission />
               {children}
