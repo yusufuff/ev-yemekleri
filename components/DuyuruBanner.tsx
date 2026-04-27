@@ -17,7 +17,6 @@ export default function DuyuruBanner() {
         .from('app_settings')
         .select('key, value')
         .in('key', ['duyuru_aktif', 'duyuru_mesaj', 'duyuru_renk'])
-
       if (!data) return
       const m = Object.fromEntries(data.map((d: any) => [d.key, d.value]))
       if (m.duyuru_aktif === 'true' && m.duyuru_mesaj) {
@@ -30,40 +29,62 @@ export default function DuyuruBanner() {
   if (!duyuru || kapali) return null
 
   return (
-    <div style={{
-      display: 'flex',
-      justifyContent: 'center',
-      padding: '12px 20px',
-      background: '#FAF6EF',
-    }}>
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 12,
-        background: 'white',
-        border: `2px solid ${duyuru.renk}`,
-        borderRadius: 50,
-        padding: '12px 20px',
-        boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
-        maxWidth: 600,
-        width: '100%',
-      }}>
-        <div style={{
-          width: 36, height: 36, borderRadius: '50%',
-          background: duyuru.renk,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 16, flexShrink: 0,
-        }}>📢</div>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontWeight: 600, fontSize: 14, color: '#4A2C0E' }}>{duyuru.mesaj}</div>
+    <>
+      <style>{`
+        @keyframes duyuruFloat {
+          0%, 100% { transform: translateY(0); }
+          33% { transform: translateY(-8px); }
+          66% { transform: translateY(-16px); }
+        }
+        @keyframes duyuruPulse {
+          0%, 100% { box-shadow: 0 0 0 0 rgba(232,98,42,0.4); }
+          50% { box-shadow: 0 0 0 14px rgba(232,98,42,0); }
+        }
+        .duyuru-wrap {
+          display: flex;
+          justify-content: center;
+          padding: 16px 20px 8px;
+          background: transparent;
+        }
+        .duyuru-balon {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          border-radius: 50px;
+          padding: 14px 24px;
+          font-size: 14px;
+          font-weight: 700;
+          color: white;
+          cursor: default;
+          position: relative;
+          animation: duyuruFloat 3s ease-in-out infinite, duyuruPulse 2s ease-in-out infinite;
+        }
+        .duyuru-kapat {
+          background: rgba(255,255,255,0.25);
+          border: none;
+          border-radius: 50%;
+          width: 24px;
+          height: 24px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          color: white;
+          font-size: 14px;
+          margin-left: 4px;
+          flex-shrink: 0;
+        }
+        .duyuru-kapat:hover {
+          background: rgba(255,255,255,0.4);
+        }
+      `}</style>
+      <div className="duyuru-wrap">
+        <div className="duyuru-balon" style={{ background: duyuru.renk }}>
+          <span style={{ fontSize: 18 }}>📢</span>
+          <span>{duyuru.mesaj}</span>
+          <button className="duyuru-kapat" onClick={() => setKapali(true)}>✕</button>
         </div>
-        <button
-          onClick={() => setKapali(true)}
-          style={{ background: 'none', border: 'none', color: '#8A7B6B', cursor: 'pointer', fontSize: 18, flexShrink: 0, lineHeight: 1 }}
-        >
-          ✕
-        </button>
       </div>
-    </div>
+    </>
   )
 }
