@@ -11,15 +11,18 @@ const NAV_LINKS = [
   ['Uyelikler',      '/admin/uyelikler'],
   ['Yoneticiler',    '/admin/yoneticiler'],
   ['Yemek Fotolari', '/admin/yemekler'],
+  ['Destek',         '/admin/destek'],
+  ['Blog',           '/admin/blog'],
+  ['Kampanya',       '/admin/kampanya'],
 ]
 
 function AdminNav() {
   return (
     <nav style={{ background:'#4A2C0E', padding:'0 24px', height:56, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
       <div style={{ fontFamily:"'Playfair Display',serif", fontWeight:900, color:'white', fontSize:18 }}>ANNEELIM - Admin</div>
-      <div style={{ display:'flex', alignItems:'center', gap:16 }}>
+      <div style={{ display:'flex', alignItems:'center', gap:14, flexWrap:'wrap' }}>
         {NAV_LINKS.map(([l, h]) => (
-          <Link key={h} href={h} style={{ color:'rgba(255,255,255,0.7)', fontSize:13, textDecoration:'none', fontWeight:500 }}>{l}</Link>
+          <Link key={h} href={h} style={{ color:'rgba(255,255,255,0.7)', fontSize:12, textDecoration:'none', fontWeight:500 }}>{l}</Link>
         ))}
         <button
           onClick={async () => { await fetch('/api/auth/signout', { method: 'POST' }); window.location.href = '/' }}
@@ -56,6 +59,19 @@ export default function AdminPage() {
   const chart = stats?.chart ?? []
   const maxRevenue = Math.max(...chart.map((c: any) => c.revenue), 1)
 
+  const HIZLI_ERISIM = [
+    ['👩‍🍳', 'Ascilari Yonet',  '/admin/asciler',      '#FEF3EC', '#E8622A'],
+    ['👥',   'Kullanicilar',    '/admin/kullanicilar', '#EFF6FF', '#3B82F6'],
+    ['📦',   'Siparisler',      '/admin/siparisler',   '#ECFDF5', '#3D6B47'],
+    ['💸',   'Odemeler',        '/admin/odemeler',     '#FFFBEB', '#F59E0B'],
+    ['🏷️',  'Uyelik Yonetimi', '/admin/uyelikler',    '#F5F3FF', '#8B5CF6'],
+    ['🔑',   'Yoneticiler',     '/admin/yoneticiler',  '#FEE2E2', '#DC2626'],
+    ['🖼️',  'Yemek Fotolari',  '/admin/yemekler',     '#F0FDF4', '#16A34A'],
+    ['🎉',   'Kampanya',        '/admin/kampanya',     '#FFF7ED', '#EA580C'],
+    ['✍️',   'Blog',            '/admin/blog',         '#F0F9FF', '#0284C7'],
+    ['🆘',   'Destek',          '/admin/destek',       '#FFF1F2', '#E11D48'],
+  ]
+
   return (
     <div style={{ minHeight:'100vh', background:'#FAF6EF', fontFamily:"'DM Sans', sans-serif" }}>
       <AdminNav />
@@ -83,18 +99,11 @@ export default function AdminPage() {
             </div>
           </div>
 
-          <div style={{ background:'white', borderRadius:16, padding:24, boxShadow:'0 2px 12px rgba(74,44,14,0.08)', display:'flex', flexDirection:'column', gap:12 }}>
+          <div style={{ background:'white', borderRadius:16, padding:24, boxShadow:'0 2px 12px rgba(74,44,14,0.08)', display:'flex', flexDirection:'column', gap:10, overflowY:'auto', maxHeight:500 }}>
             <div style={{ fontFamily:"'Playfair Display',serif", fontSize:17, fontWeight:700, color:'#4A2C0E', marginBottom:4 }}>Hizli Erisim</div>
-            {[
-              ['👩‍🍳', 'Ascilari Yonet',  '/admin/asciler',      '#FEF3EC', '#E8622A'],
-              ['👥',   'Kullanicilar',    '/admin/kullanicilar', '#EFF6FF', '#3B82F6'],
-              ['📦',   'Siparisler',      '/admin/siparisler',   '#ECFDF5', '#3D6B47'],
-              ['💸',   'Odemeler',        '/admin/odemeler',     '#FFFBEB', '#F59E0B'],
-              ['🏷️',  'Uyelik Yonetimi', '/admin/uyelikler',    '#F5F3FF', '#8B5CF6'],
-              ['🔑',   'Yoneticiler',     '/admin/yoneticiler',  '#FEE2E2', '#DC2626'],
-            ].map(([icon, label, href, bg, color]) => (
-              <Link key={href} href={href} style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 14px', background: bg, borderRadius:10, textDecoration:'none' }}>
-                <span style={{ fontSize:20 }}>{icon}</span>
+            {HIZLI_ERISIM.map(([icon, label, href, bg, color]) => (
+              <Link key={href} href={href} style={{ display:'flex', alignItems:'center', gap:12, padding:'11px 14px', background: bg, borderRadius:10, textDecoration:'none' }}>
+                <span style={{ fontSize:18 }}>{icon}</span>
                 <span style={{ fontWeight:600, fontSize:13, color:'#4A2C0E' }}>{label}</span>
                 <span style={{ marginLeft:'auto', color, fontWeight:700, fontSize:13 }}>→</span>
               </Link>
