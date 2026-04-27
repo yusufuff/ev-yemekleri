@@ -7,6 +7,7 @@ import { PWAProvider } from '@/components/pwa/PWAPrompt'
 import { PublicNavbar } from '@/components/layout/PublicNavbar'
 import { ToastProvider } from '@/components/ui/Toast'
 import NotificationPermission from '@/components/NotificationPermission'
+import CerezBanner from '@/components/CerezBanner'
 
 const dmSans = DM_Sans({
   subsets: ['latin'],
@@ -72,6 +73,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <PublicNavbar />
               <NotificationPermission />
               {children}
+              <CerezBanner />
               <footer style={{ borderTop: '1px solid #E8E0D4', padding: '24px', textAlign: 'center', background: '#FAF6EF', marginTop: '40px' }}>
                 <div style={{ display: 'flex', justifyContent: 'center', gap: '24px', flexWrap: 'wrap', marginBottom: '12px' }}>
                   <a href="/gizlilik-politikasi" style={{ fontSize: '13px', color: '#8A7B6B', textDecoration: 'none' }}>Gizlilik Politikası</a>
