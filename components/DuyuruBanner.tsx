@@ -31,24 +31,39 @@ export default function DuyuruBanner() {
 
   return (
     <div style={{
-      background: duyuru.renk,
-      color: 'white',
-      padding: '10px 20px',
       display: 'flex',
-      alignItems: 'center',
       justifyContent: 'center',
-      gap: '12px',
-      fontSize: '13px',
-      fontWeight: 600,
-      position: 'relative',
+      padding: '12px 20px',
+      background: '#FAF6EF',
     }}>
-      <span>📢 {duyuru.mesaj}</span>
-      <button
-        onClick={() => setKapali(true)}
-        style={{ position: 'absolute', right: 16, background: 'none', border: 'none', color: 'white', cursor: 'pointer', fontSize: 18, lineHeight: 1 }}
-      >
-        ✕
-      </button>
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 12,
+        background: 'white',
+        border: `2px solid ${duyuru.renk}`,
+        borderRadius: 50,
+        padding: '12px 20px',
+        boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
+        maxWidth: 600,
+        width: '100%',
+      }}>
+        <div style={{
+          width: 36, height: 36, borderRadius: '50%',
+          background: duyuru.renk,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 16, flexShrink: 0,
+        }}>📢</div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontWeight: 600, fontSize: 14, color: '#4A2C0E' }}>{duyuru.mesaj}</div>
+        </div>
+        <button
+          onClick={() => setKapali(true)}
+          style={{ background: 'none', border: 'none', color: '#8A7B6B', cursor: 'pointer', fontSize: 18, flexShrink: 0, lineHeight: 1 }}
+        >
+          ✕
+        </button>
+      </div>
     </div>
   )
 }
