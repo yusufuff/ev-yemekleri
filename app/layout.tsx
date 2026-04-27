@@ -23,20 +23,20 @@ export const viewport: Viewport = {
 }
 
 export const metadata: Metadata = {
-  title:       { default: 'EV YEMEKLERİ', template: '%s — EV YEMEKLERİ' },
-  description: 'Mahallendeki ev aşçılarından taze, sıcak yemek sipariş et.',
+  title:       { default: 'Anneelim', template: '%s – Anneelim' },
+  description: 'Mahallendeki ev aşçılarından taze, sıcak yemek siparişi et.',
   keywords:    ['ev yemeği', 'yemek siparişi', 'ev aşçısı', 'Türkiye'],
   manifest:    '/manifest.json',
   appleWebApp: {
     capable:    true,
-    title:      'Ev Yemekleri',
+    title:      'Anneelim',
     statusBarStyle: 'default',
   },
   formatDetection: { telephone: false },
   openGraph: {
     type:        'website',
     locale:      'tr_TR',
-    title:       'EV YEMEKLERİ',
+    title:       'Anneelim',
     description: 'Yakınındaki ev aşçılarından taze yemek siparişi.',
     images: [{ url: '/icons/og-image.png', width: 1200, height: 630 }],
   },
@@ -72,6 +72,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <PublicNavbar />
               <NotificationPermission />
               {children}
+              <footer style={{ borderTop: '1px solid #E8E0D4', padding: '24px', textAlign: 'center', background: '#FAF6EF', marginTop: '40px' }}>
+                <div style={{ display: 'flex', justifyContent: 'center', gap: '24px', flexWrap: 'wrap', marginBottom: '12px' }}>
+                  <a href="/gizlilik-politikasi" style={{ fontSize: '13px', color: '#8A7B6B', textDecoration: 'none' }}>Gizlilik Politikası</a>
+                  <a href="/kullanim-kosullari" style={{ fontSize: '13px', color: '#8A7B6B', textDecoration: 'none' }}>Kullanım Koşulları</a>
+                  <a href="/kvkk" style={{ fontSize: '13px', color: '#8A7B6B', textDecoration: 'none' }}>KVKK</a>
+                  <a href="/sss" style={{ fontSize: '13px', color: '#8A7B6B', textDecoration: 'none' }}>SSS</a>
+                  <a href="/hakkimizda" style={{ fontSize: '13px', color: '#8A7B6B', textDecoration: 'none' }}>Hakkımızda</a>
+                </div>
+                <p style={{ fontSize: '12px', color: '#aaa', margin: 0 }}>© 2026 Anneelim. Tüm hakları saklıdır.</p>
+              </footer>
             </PWAProvider>
           </ToastProvider>
         </CartProvider>
