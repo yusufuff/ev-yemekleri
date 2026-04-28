@@ -1,6 +1,25 @@
 'use client'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { createClient } from '@supabase/supabase-js'
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
+
+const BADGE_META: Record<string, { label: string; bg: string; color: string }> = {
+  new:     { label: '🌱 Yeni',      bg: '#F3F4F6', color: '#6B7280' },
+  trusted: { label: '⭐ Güvenilir', bg: '#D1FAE5', color: '#059669' },
+  master:  { label: '🏅 Usta',      bg: '#FEF3C7', color: '#D97706' },
+  chef:    { label: '👑 Şef',       bg: '#FEF3C7', color: '#B45309' },
+}
+
+const STATUS_META: Record<string, { label: string; bg: string; color: string }> = {
+  pending:  { label: '⏳ Onay Bekliyor', bg: '#FEF3C7', color: '#D97706' },
+  approved: { label: '✅ Onaylı',        bg: '#ECFDF5', color: '#059669' },
+  rejected: { label: '❌ Reddedildi',    bg: '#FEE2E2', color: '#DC2626' },
+}
 
 const NAV_LINKS = [
   ['Dashboard',      '/admin'],
@@ -16,101 +35,133 @@ const NAV_LINKS = [
   ['Kampanya',       '/admin/kampanya'],
 ]
 
-function AdminNav() {
-  return (
-    <nav style={{ background:'#4A2C0E', padding:'0 24px', height:56, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-      <div style={{ fontFamily:"'Playfair Display',serif", fontWeight:900, color:'white', fontSize:18 }}>ANNEELIM - Admin</div>
-      <div style={{ display:'flex', alignItems:'center', gap:14, flexWrap:'wrap' }}>
-        {NAV_LINKS.map(([l, h]) => (
-          <Link key={h} href={h} style={{ color:'rgba(255,255,255,0.7)', fontSize:12, textDecoration:'none', fontWeight:500 }}>{l}</Link>
-        ))}
-        <button
-          onClick={async () => { await fetch('/api/auth/signout', { method: 'POST' }); window.location.href = '/' }}
-          style={{ color:'white', fontSize:13, fontWeight:700, background:'#DC2626', border:'none', cursor:'pointer', borderRadius:8, padding:'6px 14px', marginLeft:8 }}
-        >
-          Cikis
-        </button>
-      </div>
-    </nav>
-  )
-}
-
-function StatCard({ label, value, icon, color, sub }: any) {
-  return (
-    <div style={{ background:'white', borderRadius:14, padding:20, boxShadow:'0 2px 12px rgba(74,44,14,0.08)', borderTop:`3px solid ${color}`, position:'relative' }}>
-      <div style={{ position:'absolute', right:16, top:16, fontSize:24, opacity:0.12 }}>{icon}</div>
-      <div style={{ fontSize:11, color:'#8A7B6B', fontWeight:600, textTransform:'uppercase', letterSpacing:0.5, marginBottom:6 }}>{label}</div>
-      <div style={{ fontFamily:"'Playfair Display',serif", fontSize:28, fontWeight:700, color:'#4A2C0E' }}>{value}</div>
-      {sub && <div style={{ fontSize:12, color:'#3D6B47', fontWeight:600, marginTop:4 }}>{sub}</div>}
-    </div>
-  )
-}
-
-export default function AdminPage() {
-  const [stats, setStats] = useState<any>(null)
+export default function AdminAscilerPage() {
+  const [chefs, setChefs] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [actionLoading, setActionLoading] = useState<string | null>(null)
+
+  const loadChefs = () => {
+    fetch('/api/admin/chefs').then(r => r.json()).then(d => { setChefs(d.chefs ?? []); setLoading(false) })
+  }
 
   useEffect(() => {
-    fetch('/api/admin/stats').then(r => r.json()).then(d => { setStats(d); setLoading(false) }).catch(() => setLoading(false))
+    loadChefs()
+    const kanal = supabase
+      .channel('admin-asciler')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'chef_profiles' }, () => loadChefs())
+      .subscribe()
+    return () => { supabase.removeChannel(kanal) }
   }, [])
 
-  if (loading) return <div style={{ display:'flex', alignItems:'center', justifyContent:'center', minHeight:'100vh', color:'#8A7B6B' }}>Yukleniyor...</div>
+  const updateStatus = async (chefId: string, status: string) => {
+    setActionLoading(chefId)
+    try {
+      await fetch('/api/admin/chefs', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chef_id: chefId, verification_status: status }),
+      })
+      setChefs(prev => prev.map(c => c.id === chefId ? { ...c, verification_status: status, pending_approval: false } : c))
+    } finally {
+      setActionLoading(null)
+    }
+  }
 
-  const chart = stats?.chart ?? []
-  const maxRevenue = Math.max(...chart.map((c: any) => c.revenue), 1)
+  const updateBadge = async (chefId: string, badge: string) => {
+    setActionLoading(chefId + badge)
+    try {
+      await fetch('/api/admin/chefs', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chef_id: chefId, badge }),
+      })
+      setChefs(prev => prev.map(c => c.id === chefId ? { ...c, badge } : c))
+    } finally {
+      setActionLoading(null)
+    }
+  }
 
-  const HIZLI_ERISIM = [
-    ['👩‍🍳', 'Ascilari Yonet',  '/admin/asciler',      '#FEF3EC', '#E8622A'],
-    ['👥',   'Kullanicilar',    '/admin/kullanicilar', '#EFF6FF', '#3B82F6'],
-    ['📦',   'Siparisler',      '/admin/siparisler',   '#ECFDF5', '#3D6B47'],
-    ['💸',   'Odemeler',        '/admin/odemeler',     '#FFFBEB', '#F59E0B'],
-    ['🏷️',  'Uyelik Yonetimi', '/admin/uyelikler',    '#F5F3FF', '#8B5CF6'],
-    ['🔑',   'Yoneticiler',     '/admin/yoneticiler',  '#FEE2E2', '#DC2626'],
-    ['🖼️',  'Yemek Fotolari',  '/admin/yemekler',     '#F0FDF4', '#16A34A'],
-    ['🎉',   'Kampanya',        '/admin/kampanya',     '#FFF7ED', '#EA580C'],
-    ['✍️',   'Blog',            '/admin/blog',         '#F0F9FF', '#0284C7'],
-    ['🆘',   'Destek',          '/admin/destek',       '#FFF1F2', '#E11D48'],
-  ]
+  const pendingCount = chefs.filter(c => c.pending_approval || c.verification_status === 'pending').length
 
   return (
-    <div style={{ minHeight:'100vh', background:'#FAF6EF', fontFamily:"'DM Sans', sans-serif" }}>
-      <AdminNav />
-      <div style={{ maxWidth:1200, margin:'0 auto', padding:'28px 24px' }}>
-        <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:24, fontWeight:900, color:'#4A2C0E', marginBottom:24 }}>Dashboard</h1>
-
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(4, 1fr)', gap:16, marginBottom:28 }}>
-          <StatCard label="Toplam Kullanici" value={stats?.total_users?.toLocaleString('tr-TR')} icon="👥" color="#3B82F6" />
-          <StatCard label="Toplam Asci"      value={stats?.total_chefs} icon="👩‍🍳" color="#E8622A" sub={`${stats?.pending_chefs} onay bekliyor`} />
-          <StatCard label="Bu Hafta Siparis" value={stats?.total_orders?.toLocaleString('tr-TR')} icon="📦" color="#3D6B47" sub={`Bugun: ${stats?.today_orders}`} />
-          <StatCard label="Haftalik Gelir"   value={`₺${stats?.week_revenue?.toLocaleString('tr-TR')}`} icon="💰" color="#F59E0B" sub={stats?.revenue_growth} />
+    <div style={{ minHeight: '100vh', background: '#FAF6EF', fontFamily: "'DM Sans', sans-serif" }}>
+      <nav style={{ background: '#4A2C0E', padding: '0 24px', height: 56, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ fontFamily: "'Playfair Display',serif", fontWeight: 900, color: 'white', fontSize: 18 }}>ANNEELIM - Admin</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+          {NAV_LINKS.map(([l, h]) => (
+            <Link key={h} href={h} style={{ color: h === '/admin/asciler' ? 'white' : 'rgba(255,255,255,0.7)', fontSize: 12, textDecoration: 'none', fontWeight: h === '/admin/asciler' ? 700 : 500 }}>{l}</Link>
+          ))}
         </div>
+      </nav>
 
-        <div style={{ display:'grid', gridTemplateColumns:'2fr 1fr', gap:20 }}>
-          <div style={{ background:'white', borderRadius:16, padding:24, boxShadow:'0 2px 12px rgba(74,44,14,0.08)' }}>
-            <div style={{ fontFamily:"'Playfair Display',serif", fontSize:17, fontWeight:700, color:'#4A2C0E', marginBottom:20 }}>Haftalik Gelir</div>
-            <div style={{ display:'flex', alignItems:'flex-end', gap:10, height:160, marginBottom:10 }}>
-              {chart.map((c: any) => (
-                <div key={c.day} style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', gap:4 }}>
-                  <div style={{ fontSize:10, color:'#8A7B6B' }}>₺{(c.revenue/1000).toFixed(1)}k</div>
-                  <div style={{ width:'100%', background:'#E8622A', borderRadius:'4px 4px 0 0', height:`${(c.revenue/maxRevenue)*100}%`, opacity:0.8 }} />
-                  <div style={{ fontSize:11, color:'#8A7B6B', fontWeight:600 }}>{c.day}</div>
-                </div>
-              ))}
+      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '28px 24px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+          <div>
+            <h1 style={{ fontFamily: "'Playfair Display',serif", fontSize: 24, fontWeight: 900, color: '#4A2C0E', margin: 0 }}>Aşçılar</h1>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
+              <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#3D6B47', animation: 'pulse 2s infinite' }} />
+              <span style={{ fontSize: 13, color: '#3D6B47', fontWeight: 600 }}>Gerçek zamanlı izleniyor</span>
+              {pendingCount > 0 && (
+                <span style={{ fontSize: 13, color: '#D97706', fontWeight: 600 }}>· ⚠️ {pendingCount} aşçı onay bekliyor</span>
+              )}
             </div>
           </div>
-
-          <div style={{ background:'white', borderRadius:16, padding:24, boxShadow:'0 2px 12px rgba(74,44,14,0.08)', display:'flex', flexDirection:'column', gap:10, overflowY:'auto', maxHeight:500 }}>
-            <div style={{ fontFamily:"'Playfair Display',serif", fontSize:17, fontWeight:700, color:'#4A2C0E', marginBottom:4 }}>Hizli Erisim</div>
-            {HIZLI_ERISIM.map(([icon, label, href, bg, color]) => (
-              <Link key={href} href={href} style={{ display:'flex', alignItems:'center', gap:12, padding:'11px 14px', background: bg, borderRadius:10, textDecoration:'none' }}>
-                <span style={{ fontSize:18 }}>{icon}</span>
-                <span style={{ fontWeight:600, fontSize:13, color:'#4A2C0E' }}>{label}</span>
-                <span style={{ marginLeft:'auto', color, fontWeight:700, fontSize:13 }}>→</span>
-              </Link>
-            ))}
-          </div>
         </div>
+
+        {loading ? <div style={{ textAlign: 'center', padding: 48, color: '#8A7B6B' }}>Yükleniyor...</div> : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {chefs.map(chef => {
+              const status = STATUS_META[chef.verification_status ?? 'pending']
+              const badge = BADGE_META[chef.badge ?? 'new']
+              const isPending = chef.pending_approval || chef.verification_status === 'pending'
+              return (
+                <div key={chef.id} style={{ background: 'white', borderRadius: 16, padding: 20, boxShadow: '0 2px 12px rgba(74,44,14,0.08)', border: isPending ? '2px solid #F59E0B' : '1px solid rgba(232,224,212,0.6)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+                    <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'linear-gradient(135deg,#FDE68A,#F59E0B)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, flexShrink: 0 }}>👩‍🍳</div>
+                    <div style={{ flex: 1, minWidth: 200 }}>
+                      <div style={{ fontWeight: 700, fontSize: 16, color: '#4A2C0E' }}>{chef.full_name}</div>
+                      <div style={{ fontSize: 12, color: '#8A7B6B', marginTop: 2 }}>{chef.phone}</div>
+                      <div style={{ display: 'flex', gap: 8, marginTop: 6, flexWrap: 'wrap' }}>
+                        <span style={{ background: status.bg, color: status.color, fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 10 }}>{status.label}</span>
+                        <span style={{ background: badge.bg, color: badge.color, fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 10 }}>{badge.label}</span>
+                        <span style={{ fontSize: 11, color: '#8A7B6B' }}>⭐ {chef.avg_rating ?? '-'} · {chef.total_orders} sipariş</span>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                      {(isPending || chef.verification_status !== 'approved') && (
+                        <button onClick={() => updateStatus(chef.id, 'approved')} disabled={actionLoading === chef.id}
+                          style={{ padding: '8px 16px', background: '#ECFDF5', color: '#059669', border: '1.5px solid #059669', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                          ✅ Onayla
+                        </button>
+                      )}
+                      {chef.verification_status === 'approved' && (
+                        <button onClick={() => updateStatus(chef.id, 'rejected')} disabled={actionLoading === chef.id}
+                          style={{ padding: '8px 16px', background: '#FEE2E2', color: '#DC2626', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                          🚫 Askıya Al
+                        </button>
+                      )}
+                      {chef.verification_status === 'rejected' && (
+                        <button onClick={() => updateStatus(chef.id, 'approved')}
+                          style={{ padding: '8px 16px', background: '#ECFDF5', color: '#059669', border: '1.5px solid #059669', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                          ✅ Tekrar Onayla
+                        </button>
+                      )}
+                      <select value={chef.badge ?? 'new'} onChange={e => updateBadge(chef.id, e.target.value)}
+                        style={{ padding: '8px 12px', border: '1.5px solid #E8E0D4', borderRadius: 8, fontSize: 12, fontFamily: 'inherit', cursor: 'pointer', color: '#4A2C0E' }}>
+                        <option value="new">🌱 Yeni Aşçı</option>
+                        <option value="trusted">⭐ Güvenilir</option>
+                        <option value="master">🏅 Usta Eller</option>
+                        <option value="chef">👑 Ev Şefi</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
       </div>
+      <style>{`@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }`}</style>
     </div>
   )
 }

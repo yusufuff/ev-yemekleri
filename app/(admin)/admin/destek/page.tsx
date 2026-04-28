@@ -46,6 +46,13 @@ export default function AdminDestek() {
 
   useEffect(() => {
     yukle()
+
+    const kanal = supabase
+      .channel('admin-destek')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'support_tickets' }, () => yukle())
+      .subscribe()
+
+    return () => { supabase.removeChannel(kanal) }
   }, [filter])
 
   const yukle = async () => {

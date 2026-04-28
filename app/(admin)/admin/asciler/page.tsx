@@ -24,7 +24,14 @@ export default function AdminAscilerPage() {
     fetch('/api/admin/chefs').then(r => r.json()).then(d => { setChefs(d.chefs ?? []); setLoading(false) })
   }
 
-  useEffect(() => { loadChefs() }, [])
+  useEffect(() => {
+  loadChefs()
+  const kanal = supabase
+    .channel('admin-asciler')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'chef_profiles' }, () => loadChefs())
+    .subscribe()
+  return () => { supabase.removeChannel(kanal) }
+}, [])
 
   const updateStatus = async (chefId: string, status: string) => {
     setActionLoading(chefId)
