@@ -1,7 +1,7 @@
 ﻿// @ts-nocheck
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
-
+import { createClient } from '@supabase/supabase-js'
 export async function GET(request: NextRequest) {
   const response = NextResponse.next()
 
@@ -63,8 +63,13 @@ const pendingOrders = pendingOrdersData ?? []
     // Tüm buyer ID'lerini topla
     const allOrders = [...(todayOrders ?? []), ...(activeOrders ?? [])]
     const buyerIds = Array.from(new Set(allOrders.map(o => o.buyer_id).filter(Boolean)))
+    const supabaseAdmin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      { auth: { autoRefreshToken: false, persistSession: false } }
+    )
     const { data: buyers } = buyerIds.length > 0
-      ? await supabase.from('users').select('id, full_name').in('id', buyerIds)
+      ? await supabaseAdmin.from('users').select('id, full_name').in('id', buyerIds)
       : { data: [] }
 
     const buyerMap = Object.fromEntries((buyers ?? []).map(b => [b.id, b.full_name]))
