@@ -22,6 +22,7 @@ export default function DashboardClient({ initialData }) {
   const [isOpen, setIsOpen] = useState(initialData?.is_open ?? true)
   const [guncelleniyor, setGuncelleniyor] = useState(null)
   const [abonelik, setAbonelik] = useState<any>(null)
+  const [kampanya, setKampanya] = useState<any>(null)
 
   useEffect(() => {
     const supabase = getSupabaseBrowserClient()
@@ -40,6 +41,13 @@ export default function DashboardClient({ initialData }) {
         .eq('chef_id', cpId)
         .single()
       setAbonelik(abone ?? null)
+
+      const { data: ayarlar } = await supabase.from('app_settings').select('key, value')
+        .in('key', ['kampanya_aktif', 'kampanya_bitis', 'kampanya_sart'])
+      if (ayarlar) {
+        const m = Object.fromEntries(ayarlar.map((d: any) => [d.key, d.value]))
+        setKampanya({ aktif: m.kampanya_aktif === 'true', bitis: m.kampanya_bitis ?? '', sart: m.kampanya_sart ?? '' })
+      }
     })
   }, [])
 
@@ -52,8 +60,7 @@ export default function DashboardClient({ initialData }) {
         body: JSON.stringify({ status }),
       })
       const json = await res.json()
-if (!res.ok) { console.error(`Hata: ${json.error}`); return }
-
+      if (!res.ok) { console.error(`Hata: ${json.error}`); return }
       setData(prev => {
         if (!prev) return prev
         const guncelle = orders => (orders ?? []).map(o => o.id === orderId ? { ...o, status } : o)
@@ -99,7 +106,6 @@ if (!res.ok) { console.error(`Hata: ${json.error}`); return }
 
   const stats = data?.stats ?? {}
 
-  // Üyelik banner hesapla
   const kalanGun = abonelik?.expires_at
     ? Math.ceil((new Date(abonelik.expires_at).getTime() - Date.now()) / 86400000)
     : null
@@ -149,6 +155,22 @@ if (!res.ok) { console.error(`Hata: ${json.error}`); return }
           </div>
         )}
 
+        {/* Kampanya Banner */}
+        {kampanya?.aktif && (
+          <div style={{ background: 'linear-gradient(135deg, #3D6B47, #2D5438)', borderRadius: 12, padding: '14px 20px', marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+            <div>
+              <div style={{ fontWeight: 700, color: 'white', fontSize: 14 }}>🎉 Ücretsiz Üyelik Kampanyası!</div>
+              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.8)', marginTop: 2 }}>
+                {kampanya.sart || 'Sosyal medyada paylaş, 1 ay ücretsiz üyelik kazan!'}
+                {kampanya.bitis && ` · ${new Date(kampanya.bitis).toLocaleDateString('tr-TR')} tarihine kadar`}
+              </div>
+            </div>
+            <Link href="/paylasim" style={{ padding: '8px 16px', background: 'white', color: '#3D6B47', borderRadius: 8, fontSize: 12, fontWeight: 700, textDecoration: 'none', whiteSpace: 'nowrap', flexShrink: 0 }}>
+              Hemen Paylaş →
+            </Link>
+          </div>
+        )}
+
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
           <div>
             <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: 26, fontWeight: 900, color: '#4A2C0E', margin: 0 }}>Aşçı Paneli</h1>
@@ -190,14 +212,10 @@ if (!res.ok) { console.error(`Hata: ${json.error}`); return }
                   <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 700, color: '#E8622A' }}>₺{order.total_amount}</div>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
-  <a href={`/mesajlar?order_id=${order.id}`} style={{
-    padding: '6px 14px', background: '#EFF6FF', color: '#3b82f6',
-    borderRadius: 8, fontSize: 12, fontWeight: 700, textDecoration: 'none',
-    border: '1px solid #BFDBFE',
-  }}>
-    💬 Alıcıya Yaz
-  </a>
-</div>
+                  <a href={`/mesajlar?order_id=${order.id}`} style={{ padding: '6px 14px', background: '#EFF6FF', color: '#3b82f6', borderRadius: 8, fontSize: 12, fontWeight: 700, textDecoration: 'none', border: '1px solid #BFDBFE' }}>
+                    💬 Alıcıya Yaz
+                  </a>
+                </div>
                 <div style={{ display: 'flex', gap: 8 }}>
                   <button onClick={() => updateOrderStatus(order.id, 'confirmed')} disabled={guncelleniyor === order.id}
                     style={{ flex: 1, padding: '8px 0', background: '#ECFDF5', color: '#3D6B47', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer', opacity: guncelleniyor === order.id ? 0.7 : 1 }}>
@@ -205,7 +223,6 @@ if (!res.ok) { console.error(`Hata: ${json.error}`); return }
                   </button>
                   <button onClick={() => updateOrderStatus(order.id, 'cancelled')}
                     style={{ padding: '8px 14px', background: '#FEE2E2', color: '#DC2626', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>❌</button>
-                  
                 </div>
               </div>
             ))}
