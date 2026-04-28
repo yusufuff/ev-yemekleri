@@ -63,13 +63,13 @@ const CARD_COLORS = [
 ]
 
 function YemekKart({ yemek }: { yemek: any }) {
-  const { ekle, items } = useCart()
+  const { addItem, items } = useCart()
   const [eklendi, setEklendi] = useState(false)
   const inCart = items?.find((c: any) => c.menu_item_id === yemek.id)
   const ind = yemek.indirim > 0 ? Math.round(yemek.fiyat * (1 - yemek.indirim / 100)) : yemek.fiyat
 
   const handleEkle = () => {
-    ekle?.({
+    addItem({
       menu_item_id: yemek.id,
       chef_id: yemek.asci_id,
       chef_name: yemek.asci_ad,
