@@ -1,37 +1,56 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
+import { createClient } from '@supabase/supabase-js'
 
 const BADGE_META: Record<string, { label: string; bg: string; color: string }> = {
-  new:     { label: 'ğŸŒ± Yeni',      bg: '#F3F4F6', color: '#6B7280' },
-  trusted: { label: 'â­ GÃ¼venilir', bg: '#D1FAE5', color: '#059669' },
-  master:  { label: 'ğŸ… Usta',      bg: '#FEF3C7', color: '#D97706' },
-  chef:    { label: 'ğŸ‘‘ Åef',       bg: '#FEF3C7', color: '#B45309' },
+  new:     { label: '🌱 Yeni',      bg: '#F3F4F6', color: '#6B7280' },
+  trusted: { label: '⭐ Güvenilir', bg: '#D1FAE5', color: '#059669' },
+  master:  { label: '🏅 Usta',      bg: '#FEF3C7', color: '#D97706' },
+  chef:    { label: '👑 Şef',       bg: '#FEF3C7', color: '#B45309' },
 }
 
 const STATUS_META: Record<string, { label: string; bg: string; color: string }> = {
-  pending:  { label: 'â³ Onay Bekliyor', bg: '#FEF3C7', color: '#D97706' },
-  approved: { label: 'âœ… OnaylÄ±',        bg: '#ECFDF5', color: '#059669' },
-  rejected: { label: 'âŒ Reddedildi',    bg: '#FEE2E2', color: '#DC2626' },
+  pending:  { label: '⏳ Onay Bekliyor', bg: '#FEF3C7', color: '#D97706' },
+  approved: { label: '✅ Onaylı',        bg: '#ECFDF5', color: '#059669' },
+  rejected: { label: '❌ Reddedildi',    bg: '#FEE2E2', color: '#DC2626' },
 }
+
+const NAV_LINKS = [
+  ['Dashboard',      '/admin'],
+  ['Asciler',        '/admin/asciler'],
+  ['Kullanicilar',   '/admin/kullanicilar'],
+  ['Siparisler',     '/admin/siparisler'],
+  ['Odemeler',       '/admin/odemeler'],
+  ['Uyelikler',      '/admin/uyelikler'],
+  ['Yoneticiler',    '/admin/yoneticiler'],
+  ['Yemek Fotolari', '/admin/yemekler'],
+  ['Destek',         '/admin/destek'],
+  ['Blog',           '/admin/blog'],
+  ['Kampanya',       '/admin/kampanya'],
+]
 
 export default function AdminAscilerPage() {
   const [chefs, setChefs] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
+  const supabase = useRef(createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  ))
 
   const loadChefs = () => {
     fetch('/api/admin/chefs').then(r => r.json()).then(d => { setChefs(d.chefs ?? []); setLoading(false) })
   }
 
   useEffect(() => {
-  loadChefs()
-  const kanal = supabase
-    .channel('admin-asciler')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'chef_profiles' }, () => loadChefs())
-    .subscribe()
-  return () => { supabase.removeChannel(kanal) }
-}, [])
+    loadChefs()
+    const kanal = supabase.current
+      .channel('admin-asciler')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'chef_profiles' }, () => loadChefs())
+      .subscribe()
+    return () => { supabase.current.removeChannel(kanal) }
+  }, [])
 
   const updateStatus = async (chefId: string, status: string) => {
     setActionLoading(chefId)
@@ -64,85 +83,74 @@ export default function AdminAscilerPage() {
   const pendingCount = chefs.filter(c => c.pending_approval || c.verification_status === 'pending').length
 
   return (
-    <div style={{ minHeight:'100vh', background:'#FAF6EF', fontFamily:"'DM Sans', sans-serif" }}>
-      <nav style={{ background:'#4A2C0E', padding:'0 24px', height:56, display:'flex', alignItems:'center', gap:24 }}>
-        <Link href="/admin" style={{ fontFamily:"'Playfair Display',serif", fontWeight:900, color:'white', fontSize:18, textDecoration:'none' }}>EV YEMEKLERÄ° Â· Admin</Link>
-        {[['Dashboard','/admin'],['AÅŸÃ§Ä±lar','/admin/asciler'],['KullanÄ±cÄ±lar','/admin/kullanicilar'],['SipariÅŸler','/admin/siparisler'],['Ã–demeler','/admin/odemeler']].map(([l,h])=>(
-          <Link key={h} href={h} style={{ color: h==='/admin/asciler' ? 'white' : 'rgba(255,255,255,0.7)', fontSize:13, textDecoration:'none', fontWeight: h==='/admin/asciler' ? 700 : 400 }}>{l}</Link>
-        ))}
+    <div style={{ minHeight: '100vh', background: '#FAF6EF', fontFamily: "'DM Sans', sans-serif" }}>
+      <nav style={{ background: '#4A2C0E', padding: '0 24px', height: 56, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ fontFamily: "'Playfair Display',serif", fontWeight: 900, color: 'white', fontSize: 18 }}>ANNEELIM - Admin</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+          {NAV_LINKS.map(([l, h]) => (
+            <Link key={h} href={h} style={{ color: h === '/admin/asciler' ? 'white' : 'rgba(255,255,255,0.7)', fontSize: 12, textDecoration: 'none', fontWeight: h === '/admin/asciler' ? 700 : 500 }}>{l}</Link>
+          ))}
+        </div>
       </nav>
 
-      <div style={{ maxWidth:1200, margin:'0 auto', padding:'28px 24px' }}>
-        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20 }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '28px 24px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
           <div>
-            <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:24, fontWeight:900, color:'#4A2C0E', margin:0 }}>AÅŸÃ§Ä±lar</h1>
-            {pendingCount > 0 && (
-              <div style={{ fontSize:13, color:'#D97706', fontWeight:600, marginTop:4 }}>
-                âš ï¸ {pendingCount} aÅŸÃ§Ä± onay bekliyor
-              </div>
-            )}
+            <h1 style={{ fontFamily: "'Playfair Display',serif", fontSize: 24, fontWeight: 900, color: '#4A2C0E', margin: 0 }}>Aşçılar</h1>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
+              <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#3D6B47', animation: 'pulse 2s infinite' }} />
+              <span style={{ fontSize: 13, color: '#3D6B47', fontWeight: 600 }}>Gerçek zamanlı izleniyor</span>
+              {pendingCount > 0 && (
+                <span style={{ fontSize: 13, color: '#D97706', fontWeight: 600 }}>· ⚠️ {pendingCount} aşçı onay bekliyor</span>
+              )}
+            </div>
           </div>
         </div>
 
-        {loading ? <div style={{ textAlign:'center', padding:48, color:'#8A7B6B' }}>YÃ¼kleniyorâ€¦</div> : (
-          <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+        {loading ? <div style={{ textAlign: 'center', padding: 48, color: '#8A7B6B' }}>Yükleniyor...</div> : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {chefs.map(chef => {
               const status = STATUS_META[chef.verification_status ?? 'pending']
               const badge = BADGE_META[chef.badge ?? 'new']
               const isPending = chef.pending_approval || chef.verification_status === 'pending'
               return (
-                <div key={chef.id} style={{ background:'white', borderRadius:16, padding:20, boxShadow:'0 2px 12px rgba(74,44,14,0.08)', border: isPending ? '2px solid #F59E0B' : '1px solid rgba(232,224,212,0.6)' }}>
-                  <div style={{ display:'flex', alignItems:'center', gap:16, flexWrap:'wrap' }}>
-                    {/* Avatar */}
-                    <div style={{ width:48, height:48, borderRadius:'50%', background:'linear-gradient(135deg,#FDE68A,#F59E0B)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:24, flexShrink:0 }}>ğŸ‘©â€ğŸ³</div>
-
-                    {/* Bilgiler */}
-                    <div style={{ flex:1, minWidth:200 }}>
-                      <div style={{ fontWeight:700, fontSize:16, color:'#4A2C0E' }}>{chef.full_name}</div>
-                      <div style={{ fontSize:12, color:'#8A7B6B', marginTop:2 }}>{chef.phone}</div>
-                      <div style={{ display:'flex', gap:8, marginTop:6, flexWrap:'wrap' }}>
-                        <span style={{ background:status.bg, color:status.color, fontSize:11, fontWeight:700, padding:'2px 8px', borderRadius:10 }}>{status.label}</span>
-                        <span style={{ background:badge.bg, color:badge.color, fontSize:11, fontWeight:700, padding:'2px 8px', borderRadius:10 }}>{badge.label}</span>
-                        <span style={{ fontSize:11, color:'#8A7B6B' }}>â­ {chef.avg_rating ?? '-'} Â· {chef.total_orders} sipariÅŸ</span>
+                <div key={chef.id} style={{ background: 'white', borderRadius: 16, padding: 20, boxShadow: '0 2px 12px rgba(74,44,14,0.08)', border: isPending ? '2px solid #F59E0B' : '1px solid rgba(232,224,212,0.6)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+                    <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'linear-gradient(135deg,#FDE68A,#F59E0B)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, flexShrink: 0 }}>👩‍🍳</div>
+                    <div style={{ flex: 1, minWidth: 200 }}>
+                      <div style={{ fontWeight: 700, fontSize: 16, color: '#4A2C0E' }}>{chef.full_name}</div>
+                      <div style={{ fontSize: 12, color: '#8A7B6B', marginTop: 2 }}>{chef.phone}</div>
+                      <div style={{ display: 'flex', gap: 8, marginTop: 6, flexWrap: 'wrap' }}>
+                        <span style={{ background: status.bg, color: status.color, fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 10 }}>{status.label}</span>
+                        <span style={{ background: badge.bg, color: badge.color, fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 10 }}>{badge.label}</span>
+                        <span style={{ fontSize: 11, color: '#8A7B6B' }}>⭐ {chef.avg_rating ?? '-'} · {chef.total_orders} sipariş</span>
                       </div>
                     </div>
-
-                    {/* Aksiyonlar */}
-                    <div style={{ display:'flex', gap:8, flexWrap:'wrap', alignItems:'center' }}>
-                      {/* Onay/Red butonlarÄ± */}
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
                       {(isPending || chef.verification_status !== 'approved') && (
-                        <button
-                          onClick={() => updateStatus(chef.id, 'approved')}
-                          disabled={actionLoading === chef.id}
-                          style={{ padding:'8px 16px', background:'#ECFDF5', color:'#059669', border:'1.5px solid #059669', borderRadius:8, fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>
-                          âœ… Onayla
+                        <button onClick={() => updateStatus(chef.id, 'approved')} disabled={actionLoading === chef.id}
+                          style={{ padding: '8px 16px', background: '#ECFDF5', color: '#059669', border: '1.5px solid #059669', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                          ✅ Onayla
                         </button>
                       )}
                       {chef.verification_status === 'approved' && (
-                        <button
-                          onClick={() => updateStatus(chef.id, 'rejected')}
-                          disabled={actionLoading === chef.id}
-                          style={{ padding:'8px 16px', background:'#FEE2E2', color:'#DC2626', border:'none', borderRadius:8, fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>
-                          ğŸš« AskÄ±ya Al
+                        <button onClick={() => updateStatus(chef.id, 'rejected')} disabled={actionLoading === chef.id}
+                          style={{ padding: '8px 16px', background: '#FEE2E2', color: '#DC2626', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                          🚫 Askıya Al
                         </button>
                       )}
                       {chef.verification_status === 'rejected' && (
-                        <button
-                          onClick={() => updateStatus(chef.id, 'approved')}
-                          style={{ padding:'8px 16px', background:'#ECFDF5', color:'#059669', border:'1.5px solid #059669', borderRadius:8, fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>
-                          âœ… Tekrar Onayla
+                        <button onClick={() => updateStatus(chef.id, 'approved')}
+                          style={{ padding: '8px 16px', background: '#ECFDF5', color: '#059669', border: '1.5px solid #059669', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                          ✅ Tekrar Onayla
                         </button>
                       )}
-
-                      {/* Rozet gÃ¼ncelle */}
-                      <select
-                        value={chef.badge ?? 'new'}
-                        onChange={e => updateBadge(chef.id, e.target.value)}
-                        style={{ padding:'8px 12px', border:'1.5px solid #E8E0D4', borderRadius:8, fontSize:12, fontFamily:'inherit', cursor:'pointer', color:'#4A2C0E' }}>
-                        <option value="new">ğŸŒ± Yeni AÅŸÃ§Ä±</option>
-                        <option value="trusted">â­ GÃ¼venilir</option>
-                        <option value="master">ğŸ… Usta Eller</option>
-                        <option value="chef">ğŸ‘‘ Ev Åefi</option>
+                      <select value={chef.badge ?? 'new'} onChange={e => updateBadge(chef.id, e.target.value)}
+                        style={{ padding: '8px 12px', border: '1.5px solid #E8E0D4', borderRadius: 8, fontSize: 12, fontFamily: 'inherit', cursor: 'pointer', color: '#4A2C0E' }}>
+                        <option value="new">🌱 Yeni Aşçı</option>
+                        <option value="trusted">⭐ Güvenilir</option>
+                        <option value="master">🏅 Usta Eller</option>
+                        <option value="chef">👑 Ev Şefi</option>
                       </select>
                     </div>
                   </div>
@@ -152,6 +160,7 @@ export default function AdminAscilerPage() {
           </div>
         )}
       </div>
+      <style>{`@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }`}</style>
     </div>
   )
 }
