@@ -17,7 +17,6 @@ const PUBLIC_LINKS = [
 ]
 
 const AUTH_LINKS = [
- 
   { href: '/siparislerim', label: 'Siparişlerim', roles: ['buyer','chef','admin'] },
   { href: '/mesajlar',     label: 'Mesajlar',     roles: ['buyer','chef','admin'], badge: true },
   { href: '/favorilerim',  label: 'Favoriler',    roles: ['buyer','admin']        },
@@ -34,7 +33,25 @@ export function PublicNavbar() {
   const [loaded, setLoaded] = useState(false)
   const [unreadCount, setUnreadCount] = useState(0)
   const [unreadMessages, setUnreadMessages] = useState(0)
+  const [duyuru, setDuyuru] = useState<{aktif: boolean; mesaj: string; renk: string} | null>(null)
   const channelRef = useRef(null)
+
+  useEffect(() => {
+    // Duyuru baloncuğunu çek
+    const supabase = getSupabaseBrowserClient()
+    supabase.from('app_settings').select('key, value')
+      .in('key', ['duyuru_aktif', 'duyuru_mesaj', 'duyuru_renk'])
+      .then(({ data }) => {
+        if (data) {
+          const m = Object.fromEntries(data.map((d: any) => [d.key, d.value]))
+          setDuyuru({
+            aktif: m.duyuru_aktif === 'true',
+            mesaj: m.duyuru_mesaj ?? '',
+            renk: m.duyuru_renk ?? '#E8622A',
+          })
+        }
+      })
+  }, [])
 
   useEffect(() => {
     if (hidden) { setLoaded(true); return }
@@ -42,70 +59,31 @@ export function PublicNavbar() {
 
     supabase.auth.getUser().then(({ data }) => {
       if (!data?.user) { setLoaded(true); return }
-
       const userId = data.user.id
-
-      supabase
-        .from('users')
-        .select('role, full_name')
-        .eq('id', userId)
-        .single()
+      supabase.from('users').select('role, full_name').eq('id', userId).single()
         .then(({ data: profile }) => {
-          setUser({
-            id: userId,
-            full_name: profile?.full_name || data.user.email?.split('@')[0],
-            role: profile?.role ?? 'buyer',
-          })
+          setUser({ id: userId, full_name: profile?.full_name || data.user.email?.split('@')[0], role: profile?.role ?? 'buyer' })
           setLoaded(true)
-
-          // Okunmamış bildirim sayısı
-          supabase
-            .from('notifications')
-            .select('id', { count: 'exact' })
-            .eq('user_id', userId)
-            .eq('is_read', false)
+          supabase.from('notifications').select('id', { count: 'exact' }).eq('user_id', userId).eq('is_read', false)
             .then(({ count }) => setUnreadCount(count ?? 0))
-
-          // Okunmamış mesaj sayısı
-          supabase
-            .from('messages')
-            .select('id', { count: 'exact' })
-            .eq('recipient_id', userId)
-            .eq('is_read', false)
+          supabase.from('messages').select('id', { count: 'exact' }).eq('recipient_id', userId).eq('is_read', false)
             .then(({ count }) => setUnreadMessages(count ?? 0))
 
-          // Realtime
           if (channelRef.current) supabase.removeChannel(channelRef.current)
-
-          channelRef.current = supabase
-            .channel(`navbar-notif-${userId}`)
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${userId}` },
-              () => { setUnreadCount(prev => prev + 1) }
-            )
-            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'notifications', filter: `user_id=eq.${userId}` },
-              () => {
-                supabase.from('notifications').select('id', { count: 'exact' }).eq('user_id', userId).eq('is_read', false)
-                  .then(({ count }) => setUnreadCount(count ?? 0))
-              }
-            )
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `recipient_id=eq.${userId}` },
-              () => { setUnreadMessages(prev => prev + 1) }
-            )
-            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages', filter: `recipient_id=eq.${userId}` },
-              () => {
-                supabase.from('messages').select('id', { count: 'exact' }).eq('recipient_id', userId).eq('is_read', false)
-                  .then(({ count }) => setUnreadMessages(count ?? 0))
-              }
-            )
+          channelRef.current = supabase.channel(`navbar-notif-${userId}`)
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${userId}` }, () => setUnreadCount(prev => prev + 1))
+            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'notifications', filter: `user_id=eq.${userId}` }, () => {
+              supabase.from('notifications').select('id', { count: 'exact' }).eq('user_id', userId).eq('is_read', false).then(({ count }) => setUnreadCount(count ?? 0))
+            })
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `recipient_id=eq.${userId}` }, () => setUnreadMessages(prev => prev + 1))
+            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages', filter: `recipient_id=eq.${userId}` }, () => {
+              supabase.from('messages').select('id', { count: 'exact' }).eq('recipient_id', userId).eq('is_read', false).then(({ count }) => setUnreadMessages(count ?? 0))
+            })
             .subscribe()
         })
     })
 
-    return () => {
-      if (channelRef.current) {
-        getSupabaseBrowserClient().removeChannel(channelRef.current)
-      }
-    }
+    return () => { if (channelRef.current) getSupabaseBrowserClient().removeChannel(channelRef.current) }
   }, [hidden])
 
   useEffect(() => {
@@ -129,22 +107,30 @@ export function PublicNavbar() {
   const mobileNav = [
     { href: '/',             icon: '🏠', label: 'Ana Sayfa' },
     { href: '/kesif',        icon: '🗺️', label: 'Keşfet'   },
-    ...(user
-      ? [
-          { href: '/siparislerim', icon: '📦', label: 'Siparişler' },
-          { href: '/bildirimler',  icon: '🔔', label: 'Bildirimler', badge: unreadCount },
-          { href: '/profil',       icon: '👤', label: 'Profil'     },
-        ]
-      : [
-          { href: '/giris',  icon: '🔑', label: 'Giriş' },
-          { href: '/kayit',  icon: '✨', label: 'Kayıt' },
-        ]
-    ),
+    ...(user ? [
+      { href: '/siparislerim', icon: '📦', label: 'Siparişler' },
+      { href: '/bildirimler',  icon: '🔔', label: 'Bildirimler', badge: unreadCount },
+      { href: '/profil',       icon: '👤', label: 'Profil'     },
+    ] : [
+      { href: '/giris',  icon: '🔑', label: 'Giriş' },
+      { href: '/kayit',  icon: '✨', label: 'Kayıt' },
+    ]),
   ]
 
   return (
     <>
-      <nav style={{ background:'white', borderBottom:'1px solid #E8E0D4', position:'sticky', top:0, zIndex:50 }}>
+      {/* Duyuru baloncuğu */}
+      {duyuru?.aktif && duyuru.mesaj && (
+        <div style={{
+          background: duyuru.renk, color: 'white', textAlign: 'center',
+          padding: '8px 16px', fontSize: 13, fontWeight: 700,
+          animation: 'pulse 2s infinite',
+        }}>
+          📢 {duyuru.mesaj}
+        </div>
+      )}
+
+      <nav style={{ background:'white', borderBottom:'1px solid #E8E0D4', position:'sticky', top: duyuru?.aktif && duyuru.mesaj ? 37 : 0, zIndex:50 }}>
         <div style={{ maxWidth:1152, margin:'0 auto', padding:'0 24px', height:56, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
           <Link href="/" style={{ fontFamily:"'Playfair Display',serif", fontWeight:900, fontSize:20, color:'#4A2C0E', textDecoration:'none' }}>
             EV YEMEKLERİ
@@ -172,11 +158,7 @@ export function PublicNavbar() {
           </div>
 
           <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-            <Link href="/ara" className="mobile-only" style={{
-              display:'flex', alignItems:'center', justifyContent:'center',
-              width:36, height:36, borderRadius:10, background:'#F3EDE4',
-              textDecoration:'none', fontSize:18,
-            }}>🔍</Link>
+            <Link href="/ara" className="mobile-only" style={{ display:'flex', alignItems:'center', justifyContent:'center', width:36, height:36, borderRadius:10, background:'#F3EDE4', textDecoration:'none', fontSize:18 }}>🔍</Link>
 
             {loaded && user && (
               <Link href="/bildirimler" style={{ position:'relative', display:'flex', alignItems:'center', justifyContent:'center', width:36, height:36, borderRadius:10, background:'#F3EDE4', textDecoration:'none', fontSize:18 }}>
@@ -218,29 +200,18 @@ export function PublicNavbar() {
       </nav>
 
       {/* Mobil alt nav */}
-      <nav style={{
-        position:'fixed', bottom:0, left:0, right:0, zIndex:200,
-        background:'white', borderTop:'1px solid #E8E0D4',
-        display:'flex', alignItems:'center',
-        paddingBottom:'env(safe-area-inset-bottom, 0px)',
-      }} className="mobile-bottom-nav">
+      <nav style={{ position:'fixed', bottom:0, left:0, right:0, zIndex:200, background:'white', borderTop:'1px solid #E8E0D4', display:'flex', alignItems:'center', paddingBottom:'env(safe-area-inset-bottom, 0px)' }} className="mobile-bottom-nav">
         {mobileNav.map(item => {
           const isActive = item.href === '/' ? pathname === '/' : pathname?.startsWith(item.href)
           return (
-            <Link key={item.href} href={item.href} style={{
-              flex:1, display:'flex', flexDirection:'column', alignItems:'center',
-              justifyContent:'center', padding:'8px 4px', textDecoration:'none', gap:2,
-              position:'relative',
-            }}>
+            <Link key={item.href} href={item.href} style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'8px 4px', textDecoration:'none', gap:2, position:'relative' }}>
               <span style={{ fontSize:20 }}>{item.icon}</span>
               {item.badge > 0 && (
                 <div style={{ position:'absolute', top:4, right:'50%', marginRight:-18, background:'#E8622A', color:'white', fontSize:9, fontWeight:700, width:16, height:16, borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center' }}>
                   {item.badge > 9 ? '9+' : item.badge}
                 </div>
               )}
-              <span style={{ fontSize:10, fontWeight: isActive ? 700 : 500, color: isActive ? '#E8622A' : '#8A7B6B' }}>
-                {item.label}
-              </span>
+              <span style={{ fontSize:10, fontWeight: isActive ? 700 : 500, color: isActive ? '#E8622A' : '#8A7B6B' }}>{item.label}</span>
               {isActive && <div style={{ width:4, height:4, borderRadius:'50%', background:'#E8622A', marginTop:2 }} />}
             </Link>
           )
@@ -248,6 +219,7 @@ export function PublicNavbar() {
       </nav>
 
       <style>{`
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.85} }
         @media (max-width: 767px) {
           .hidden-mobile { display: none !important; }
           .mobile-only   { display: flex !important; }
