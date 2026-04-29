@@ -48,7 +48,7 @@ export default async function BlogPage() {
               <div style={{ background: 'white', borderRadius: 20, overflow: 'hidden', boxShadow: '0 2px 16px rgba(74,44,14,0.08)', border: '1px solid rgba(232,224,212,0.4)', marginBottom: 24, display: 'flex', flexWrap: 'wrap' }}>
                 <div style={{ minWidth: 200, flex: '1 1 200px', minHeight: 200, background: CATEGORY_COLORS[0], display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 80, overflow: 'hidden' }}>
                   {yazilar[0].cover_image
-                    ? <img src={yazilar[0].cover_image} alt={yazilar[0].title} style={{ width: '100%', height: '100%', objectFit: 'cover', minHeight: 200 }} />
+                    ? <img src={yazilar[0].cover_image} alt={yazilar[0].title} style={{ width: '100%', height: 200, objectFit: 'cover', display: 'block' }} />
                     : '📝'
                   }
                 </div>
@@ -80,7 +80,7 @@ export default async function BlogPage() {
                     <div style={{ background: 'white', borderRadius: 16, overflow: 'hidden', boxShadow: '0 2px 12px rgba(74,44,14,0.07)', border: '1px solid rgba(232,224,212,0.4)', height: '100%', display: 'flex', flexDirection: 'column' }}>
                       <div style={{ height: 160, background: CATEGORY_COLORS[i % CATEGORY_COLORS.length], display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 52, overflow: 'hidden' }}>
                         {post.cover_image
-                          ? <img src={post.cover_image} alt={post.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          ? <img src={post.cover_image} alt={post.title} style={{ width: '100%', height: 160, objectFit: 'cover', display: 'block' }} />
                           : '📝'
                         }
                       </div>
