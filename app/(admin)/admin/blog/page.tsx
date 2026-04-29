@@ -1,12 +1,6 @@
 'use client'
 // @ts-nocheck
-import { useState, useEffect } from 'react'
-import { createClient } from '@supabase/supabase-js'
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+import { useState, useEffect, useRef } from 'react'
 
 const bos = { title: '', slug: '', excerpt: '', content: '', cover_image: '', tags: '', status: 'draft' }
 
@@ -17,14 +11,40 @@ export default function AdminBlog() {
   const [duzenleme, setDuzenleme] = useState<string | null>(null)
   const [saving, setSaving]       = useState(false)
   const [goster, setGoster]       = useState(false)
+  const [yukleniyor, setYukleniyor] = useState(false)
+  const fileRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => { yukle() }, [])
 
   const yukle = async () => {
     setLoading(true)
-    const { data } = await supabase.from('blog_posts').select('*').order('created_at', { ascending: false })
-    setYazilar(data ?? [])
+    const res = await fetch('/api/admin/blog')
+    const d = await res.json()
+    setYazilar(d.posts ?? [])
     setLoading(false)
+  }
+
+  const fotografYukle = async (e: any) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setYukleniyor(true)
+    try {
+      const { createClient } = await import('@supabase/supabase-js')
+      const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      )
+      const ext = file.name.split('.').pop()
+      const fileName = `blog-${Date.now()}.${ext}`
+      const { data, error } = await supabase.storage.from('food-photos').upload(fileName, file, { upsert: true })
+      if (error) throw error
+      const { data: urlData } = supabase.storage.from('food-photos').getPublicUrl(fileName)
+      setForm((p: any) => ({ ...p, cover_image: urlData.publicUrl }))
+    } catch (err) {
+      alert('Fotoğraf yüklenemedi!')
+    } finally {
+      setYukleniyor(false)
+    }
   }
 
   const kaydet = async () => {
@@ -37,16 +57,16 @@ export default function AdminBlog() {
       updated_at: new Date().toISOString(),
     }
     if (duzenleme) {
-      await supabase.from('blog_posts').update(payload).eq('id', duzenleme)
+      await fetch('/api/admin/blog', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: duzenleme, ...payload }) })
     } else {
-      await supabase.from('blog_posts').insert({ ...payload, author_id: (await supabase.auth.getUser()).data.user?.id })
+      await fetch('/api/admin/blog', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
     }
     setSaving(false); setForm(bos); setDuzenleme(null); setGoster(false); yukle()
   }
 
   const sil = async (id: string) => {
     if (!confirm('Bu yazıyı silmek istiyor musunuz?')) return
-    await supabase.from('blog_posts').delete().eq('id', id)
+    await fetch('/api/admin/blog', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) })
     yukle()
   }
 
@@ -70,6 +90,7 @@ export default function AdminBlog() {
       {goster && (
         <div style={{ background: 'white', borderRadius: 16, padding: 24, boxShadow: '0 2px 12px rgba(74,44,14,0.08)', marginBottom: 24 }}>
           <h2 style={{ fontFamily: "'Playfair Display',serif", fontSize: 18, fontWeight: 700, color: '#4A2C0E', marginBottom: 16 }}>{duzenleme ? 'Yazıyı Düzenle' : 'Yeni Yazı'}</h2>
+          
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
             <div>
               <label style={{ fontSize: 12, fontWeight: 700, color: '#8A7B6B', display: 'block', marginBottom: 4 }}>Başlık *</label>
@@ -80,20 +101,34 @@ export default function AdminBlog() {
               <input value={form.slug} onChange={e => setForm((p: any) => ({ ...p, slug: e.target.value }))} placeholder="otomatik-olusturulur" style={inp} />
             </div>
           </div>
+
           <div style={{ marginBottom: 12 }}>
             <label style={{ fontSize: 12, fontWeight: 700, color: '#8A7B6B', display: 'block', marginBottom: 4 }}>Özet</label>
             <input value={form.excerpt} onChange={e => setForm((p: any) => ({ ...p, excerpt: e.target.value }))} style={inp} />
           </div>
+
           <div style={{ marginBottom: 12 }}>
             <label style={{ fontSize: 12, fontWeight: 700, color: '#8A7B6B', display: 'block', marginBottom: 4 }}>İçerik *</label>
-            <textarea value={form.content} onChange={e => setForm((p: any) => ({ ...p, content: e.target.value }))} rows={8}
-              style={{ ...inp, resize: 'vertical' }} />
+            <textarea value={form.content} onChange={e => setForm((p: any) => ({ ...p, content: e.target.value }))} rows={8} style={{ ...inp, resize: 'vertical' }} />
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 16 }}>
-            <div>
-              <label style={{ fontSize: 12, fontWeight: 700, color: '#8A7B6B', display: 'block', marginBottom: 4 }}>Kapak Görseli URL</label>
-              <input value={form.cover_image} onChange={e => setForm((p: any) => ({ ...p, cover_image: e.target.value }))} style={inp} />
+
+          {/* Kapak Görseli */}
+          <div style={{ marginBottom: 12 }}>
+            <label style={{ fontSize: 12, fontWeight: 700, color: '#8A7B6B', display: 'block', marginBottom: 4 }}>Kapak Görseli</label>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <input value={form.cover_image} onChange={e => setForm((p: any) => ({ ...p, cover_image: e.target.value }))} placeholder="URL girin veya fotoğraf yükleyin" style={{ ...inp, flex: 1 }} />
+              <input ref={fileRef} type="file" accept="image/*" onChange={fotografYukle} style={{ display: 'none' }} />
+              <button onClick={() => fileRef.current?.click()} disabled={yukleniyor}
+                style={{ padding: '10px 16px', borderRadius: 8, background: yukleniyor ? '#E8E0D4' : '#4A2C0E', color: 'white', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13, fontFamily: 'inherit', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                {yukleniyor ? '⏳ Yükleniyor...' : '📷 Fotoğraf Yükle'}
+              </button>
             </div>
+            {form.cover_image && (
+              <img src={form.cover_image} alt="kapak" style={{ marginTop: 8, height: 80, borderRadius: 8, objectFit: 'cover', border: '1px solid #E8E0D4' }} />
+            )}
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
             <div>
               <label style={{ fontSize: 12, fontWeight: 700, color: '#8A7B6B', display: 'block', marginBottom: 4 }}>Etiketler (virgülle)</label>
               <input value={form.tags} onChange={e => setForm((p: any) => ({ ...p, tags: e.target.value }))} placeholder="yemek, tarif, saglik" style={inp} />
@@ -106,6 +141,7 @@ export default function AdminBlog() {
               </select>
             </div>
           </div>
+
           <div style={{ display: 'flex', gap: 10 }}>
             <button onClick={kaydet} disabled={saving}
               style={{ padding: '10px 24px', borderRadius: 10, background: '#E8622A', color: 'white', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14, fontFamily: 'inherit', opacity: saving ? 0.6 : 1 }}>
@@ -137,8 +173,13 @@ export default function AdminBlog() {
               {yazilar.map(y => (
                 <tr key={y.id} style={{ borderBottom: '1px solid #FAF6EF' }}>
                   <td style={{ padding: '12px 16px' }}>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: '#4A2C0E' }}>{y.title}</div>
-                    <div style={{ fontSize: 11, color: '#8A7B6B' }}>/{y.slug}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      {y.cover_image && <img src={y.cover_image} alt="" style={{ width: 36, height: 36, borderRadius: 6, objectFit: 'cover' }} />}
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: '#4A2C0E' }}>{y.title}</div>
+                        <div style={{ fontSize: 11, color: '#8A7B6B' }}>/{y.slug}</div>
+                      </div>
+                    </div>
                   </td>
                   <td style={{ padding: '12px 16px' }}>
                     <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 20, background: y.status === 'published' ? '#ECFDF5' : '#F5F5F5', color: y.status === 'published' ? '#3D6B47' : '#8A7B6B' }}>
