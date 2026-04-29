@@ -46,10 +46,10 @@ export default async function BlogPage() {
             {/* Öne çıkan yazı */}
             <Link href={`/blog/${yazilar[0].slug}`} style={{ textDecoration: 'none' }}>
               <div style={{ background: 'white', borderRadius: 20, overflow: 'hidden', boxShadow: '0 2px 16px rgba(74,44,14,0.08)', border: '1px solid rgba(232,224,212,0.4)', marginBottom: 24, display: 'flex', flexWrap: 'wrap' }}>
-                <div style={{ minWidth: 200, flex: '1 1 200px', minHeight: 200, background: CATEGORY_COLORS[0], display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 80, overflow: 'hidden' }}>
+                <div style={{ minWidth: 200, flex: '1 1 200px', minHeight: 200, background: CATEGORY_COLORS[0], overflow: 'hidden', position: 'relative' }}>
                   {yazilar[0].cover_image
-                    ? <img src={yazilar[0].cover_image} alt={yazilar[0].title} style={{ width: '100%', height: 200, objectFit: 'cover', display: 'block' }} />
-                    : '📝'
+                    ? <img src={yazilar[0].cover_image} alt={yazilar[0].title} style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', top: 0, left: 0 }} />
+                    : <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', fontSize: 80 }}>📝</div>
                   }
                 </div>
                 <div style={{ flex: '2 1 300px', padding: '28px 32px' }}>
@@ -78,10 +78,10 @@ export default async function BlogPage() {
                 {yazilar.slice(1).map((post: any, i: number) => (
                   <Link key={post.id} href={`/blog/${post.slug}`} style={{ textDecoration: 'none' }}>
                     <div style={{ background: 'white', borderRadius: 16, overflow: 'hidden', boxShadow: '0 2px 12px rgba(74,44,14,0.07)', border: '1px solid rgba(232,224,212,0.4)', height: '100%', display: 'flex', flexDirection: 'column' }}>
-                      <div style={{ height: 160, background: CATEGORY_COLORS[i % CATEGORY_COLORS.length], display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 52, overflow: 'hidden' }}>
+                      <div style={{ height: 160, background: CATEGORY_COLORS[i % CATEGORY_COLORS.length], overflow: 'hidden', position: 'relative', flexShrink: 0 }}>
                         {post.cover_image
-                          ? <img src={post.cover_image} alt={post.title} style={{ width: '100%', height: 160, objectFit: 'cover', display: 'block' }} />
-                          : '📝'
+                          ? <img src={post.cover_image} alt={post.title} style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', top: 0, left: 0 }} />
+                          : <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', fontSize: 52 }}>📝</div>
                         }
                       </div>
                       <div style={{ padding: 16, flex: 1, display: 'flex', flexDirection: 'column' }}>
