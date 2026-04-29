@@ -1,28 +1,28 @@
-import type { Metadata } from 'next'
+'use client'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
-
-export const metadata: Metadata = {
-  title: 'Blog & Tarifler – EV YEMEKLERİ',
-  description: 'Ev yemekleri tarifleri, mutfak ipuçları ve aşçı hikayeleri.',
-}
-
-export const dynamic = 'force-dynamic'
-export const revalidate = 0
 
 const CATEGORY_COLORS = ['#FEF3C7', '#ECFDF5', '#EFF6FF', '#F3E8FF', '#FEF0EB', '#F5EDD8']
 
-export default async function BlogPage() {
-  let yazilar: any[] = []
+export default function BlogPage() {
+  const [yazilar, setYazilar] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
 
-  try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'https://anneelim.com'}/api/admin/blog`, {
-      cache: 'no-store',
-    })
-    const d = await res.json()
-    yazilar = (d.posts ?? []).filter((p: any) => p.status === 'published')
-  } catch (e) {
-    yazilar = []
-  }
+  useEffect(() => {
+    fetch('/api/admin/blog')
+      .then(r => r.json())
+      .then(d => {
+        setYazilar((d.posts ?? []).filter((p: any) => p.status === 'published'))
+        setLoading(false)
+      })
+      .catch(() => setLoading(false))
+  }, [])
+
+  if (loading) return (
+    <div style={{ minHeight: '100vh', background: '#FAF6EF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ color: '#8A7B6B', fontSize: 14 }}>Yükleniyor...</div>
+    </div>
+  )
 
   return (
     <div style={{ minHeight: '100vh', background: '#FAF6EF', fontFamily: "'DM Sans', sans-serif", paddingBottom: 80 }}>
@@ -43,15 +43,18 @@ export default async function BlogPage() {
           </div>
         ) : (
           <>
+            {/* Öne çıkan yazı */}
             <Link href={`/blog/${yazilar[0].slug}`} style={{ textDecoration: 'none' }}>
               <div style={{ background: 'white', borderRadius: 20, overflow: 'hidden', boxShadow: '0 2px 16px rgba(74,44,14,0.08)', border: '1px solid rgba(232,224,212,0.4)', marginBottom: 24, display: 'flex', flexWrap: 'wrap' }}>
-                <div style={{ minWidth: 200, flex: '1 1 200px', minHeight: 200, background: CATEGORY_COLORS[0], display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 80 }}>
-                  📝
-                </div>
-                <div style={{ flex: '2 1 300px', padding: '28px 32px' }}>
+                {yazilar[0].cover_image ? (
+                  <img src={yazilar[0].cover_image} alt={yazilar[0].title} style={{ width: 280, height: 220, objectFit: 'cover', display: 'block', flexShrink: 0 }} />
+                ) : (
+                  <div style={{ width: 280, height: 220, background: CATEGORY_COLORS[0], display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 80, flexShrink: 0 }}>📝</div>
+                )}
+                <div style={{ flex: '1 1 300px', padding: '28px 32px' }}>
                   <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
                     <span style={{ fontSize: 11, fontWeight: 700, color: '#E8622A', background: '#FEF0EB', padding: '3px 10px', borderRadius: 99 }}>⭐ ÖNE ÇIKAN</span>
-                    {(yazilar[0].tags ?? []).slice(0, 1).map((t: string) => (
+                    {(Array.isArray(yazilar[0].tags) ? yazilar[0].tags : [yazilar[0].tags]).filter(Boolean).slice(0, 1).map((t: string) => (
                       <span key={t} style={{ fontSize: 11, fontWeight: 700, color: '#8A7B6B', background: '#F5EDD8', padding: '3px 10px', borderRadius: 99 }}>{t}</span>
                     ))}
                   </div>
@@ -68,15 +71,20 @@ export default async function BlogPage() {
               </div>
             </Link>
 
+            {/* Yazı grid */}
             {yazilar.length > 1 && (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 20 }}>
                 {yazilar.slice(1).map((post: any, i: number) => (
                   <Link key={post.id} href={`/blog/${post.slug}`} style={{ textDecoration: 'none' }}>
                     <div style={{ background: 'white', borderRadius: 16, overflow: 'hidden', boxShadow: '0 2px 12px rgba(74,44,14,0.07)', border: '1px solid rgba(232,224,212,0.4)', height: '100%', display: 'flex', flexDirection: 'column' }}>
-                      <div style={{ height: 120, background: CATEGORY_COLORS[i % CATEGORY_COLORS.length], display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 52 }}>📝</div>
+                      {post.cover_image ? (
+                        <img src={post.cover_image} alt={post.title} style={{ width: '100%', height: 160, objectFit: 'cover', display: 'block', flexShrink: 0 }} />
+                      ) : (
+                        <div style={{ height: 160, background: CATEGORY_COLORS[i % CATEGORY_COLORS.length], display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 52, flexShrink: 0 }}>📝</div>
+                      )}
                       <div style={{ padding: 16, flex: 1, display: 'flex', flexDirection: 'column' }}>
                         <div style={{ display: 'flex', gap: 6, marginBottom: 8, flexWrap: 'wrap' }}>
-                          {(post.tags ?? []).slice(0, 2).map((t: string) => (
+                          {(Array.isArray(post.tags) ? post.tags : [post.tags]).filter(Boolean).slice(0, 2).map((t: string) => (
                             <span key={t} style={{ fontSize: 10, fontWeight: 700, color: '#8A7B6B', background: '#F5EDD8', padding: '2px 8px', borderRadius: 99 }}>{t}</span>
                           ))}
                         </div>
