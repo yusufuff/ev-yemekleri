@@ -14,16 +14,14 @@ const NAV_LINKS = [
   ['Destek', '/admin/destek'],
   ['Blog', '/admin/blog'],
   ['Kampanya', '/admin/kampanya'],
+  ['Sözleşmeler', '/admin/sozlesmeler'],
 ]
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
-
   if (pathname === '/admin/giris') return <>{children}</>
-
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: '#FAF6EF', fontFamily: "'DM Sans', sans-serif" }}>
-      {/* Sidebar */}
       <div style={{ width: 220, background: '#4A2C0E', display: 'flex', flexDirection: 'column', flexShrink: 0, position: 'fixed', top: 0, left: 0, height: '100vh', zIndex: 100 }}>
         <div style={{ padding: '20px 16px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
           <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 16, fontWeight: 900, color: 'white' }}>ANNEELIM</div>
@@ -52,8 +50,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </button>
         </div>
       </div>
-
-      {/* İçerik - sidebar kadar margin */}
       <div style={{ marginLeft: 220, flex: 1, minWidth: 0 }}>
         {children}
       </div>
