@@ -107,8 +107,7 @@ export default function YemekFotolarPage() {
   // ── Kategori fonksiyonları ──
   const kategorileriYukle = async () => {
     setKatLoading(true)
-    const { data, error } = await supabase.from('menu_categories').select('*').order('sira')
-    console.log('kategoriler:', data, error)
+    const { data } = await (supabase as any).from('menu_categories').select('*').order('sira')
     setKategoriler(data ?? [])
     setKatLoading(false)
   }
@@ -116,10 +115,10 @@ export default function YemekFotolarPage() {
   const katEkle = async () => {
     if (!yeniKat.id.trim() || !yeniKat.ad.trim()) return
     setKatSaving(true)
-    await supabase.from('menu_categories').insert({
+    await (supabase as any).from('menu_categories').insert({
       id: yeniKat.id.trim().toLowerCase().replace(/\s+/g, '_'),
       ad: yeniKat.ad.trim(),
-      emoji: yeniKat.emoji.trim(),
+      emoji: yeniKat.emoji.trim() || '',
       sira: kategoriler.length + 1,
     })
     setYeniKat({ id: '', ad: '', emoji: '' })
@@ -130,7 +129,7 @@ export default function YemekFotolarPage() {
   const katSil = async (id: string) => {
     if (!confirm(`"${id}" kategorisini silmek istediğinize emin misiniz?`)) return
     setKatSilYukleniyor(id)
-    await supabase.from('menu_categories').delete().eq('id', id)
+    await (supabase as any).from('menu_categories').delete().eq('id', id)
     setKatSilYukleniyor(null)
     kategorileriYukle()
   }
