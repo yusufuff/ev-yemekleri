@@ -107,7 +107,8 @@ export default function YemekFotolarPage() {
   // ── Kategori fonksiyonları ──
   const kategorileriYukle = async () => {
     setKatLoading(true)
-    const { data } = await supabase.from('menu_categories').select('*').order('sira')
+    const { data, error } = await supabase.from('menu_categories').select('*').order('sira')
+    console.log('kategoriler:', data, error)
     setKategoriler(data ?? [])
     setKatLoading(false)
   }
