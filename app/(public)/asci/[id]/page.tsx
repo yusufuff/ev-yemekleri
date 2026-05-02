@@ -500,7 +500,7 @@ const [shareModalAcik, setShareModalAcik] = useState(false)
                   Tümü
                 </button>
                 {cats.map(key => {
-                  const meta = CATEGORY_META[key]
+                  const meta = CATEGORY_META[key] ?? { emoji: '🍽️', label: key }
                   return (
                     <button
                       key={key}
