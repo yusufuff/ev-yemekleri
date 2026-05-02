@@ -15,6 +15,7 @@ const NAV_LINKS = [
   ['Blog', '/admin/blog'],
   ['Kampanya', '/admin/kampanya'],
   ['Sözleşmeler', '/admin/sozlesmeler'],
+  ['Kategoriler', '/admin/kategoriler'],
 ]
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
