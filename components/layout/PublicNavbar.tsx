@@ -125,12 +125,13 @@ export function PublicNavbar() {
           background: duyuru.renk, color: 'white', textAlign: 'center',
           padding: '8px 16px', fontSize: 13, fontWeight: 700,
           animation: 'pulse 2s infinite',
+          position: 'sticky', top: 0, zIndex: 51,
         }}>
           📢 {duyuru.mesaj}
         </div>
       )}
 
-      <nav style={{ background:'white', borderBottom:'1px solid #E8E0D4', position:'sticky', top: duyuru?.aktif && duyuru.mesaj ? 37 : 0, zIndex:50 }}>
+      <nav style={{ background:'white', borderBottom:'1px solid #E8E0D4', position:'sticky', top:0, zIndex:50 }}>
         <div style={{ maxWidth:1152, margin:'0 auto', padding:'0 24px', height:56, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
           <Link href="/" style={{ fontFamily:"'Playfair Display',serif", fontWeight:900, fontSize:20, color:'#4A2C0E', textDecoration:'none' }}>
             EV YEMEKLERİ
