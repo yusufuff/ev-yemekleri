@@ -153,15 +153,16 @@ export default function YemekFotolarPage() {
             <span style={{ color: katMesaj.tip === 'basari' ? '#15803d' : '#dc2626', fontWeight: 600, fontSize: 14 }}>{katMesaj.metin}</span>
           </div>
         )}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 80px', gap: 12, marginBottom: 12 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 120px', gap: 12, marginBottom: 12 }}>
           
           <div>
             <label style={{ fontSize: 12, fontWeight: 700, color: '#8A7B6B', display: 'block', marginBottom: 4 }}>Görünen Ad</label>
             <input value={yeniKat.ad} onChange={e => setYeniKat(p => ({ ...p, ad: e.target.value }))} placeholder="Kahvaltı" style={inp} />
           </div>
-          <div>
+          <div style={{ minWidth: 120 }}>
             <label style={{ fontSize: 12, fontWeight: 700, color: '#8A7B6B', display: 'block', marginBottom: 4 }}>Emoji</label>
-            <input value={yeniKat.emoji} onChange={e => setYeniKat(p => ({ ...p, emoji: e.target.value }))} placeholder="🥚" style={inp} />
+            <input value={yeniKat.emoji} onChange={e => setYeniKat(p => ({ ...p, emoji: e.target.value }))} placeholder="🥚"
+              style={{ ...inp, fontSize: 22, textAlign: 'center' }} />
           </div>
         </div>
         <button onClick={katEkle} disabled={katSaving}
