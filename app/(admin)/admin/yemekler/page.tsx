@@ -8,16 +8,7 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 )
 
-const FOTO_KATEGORILER = [
-  { id: 'main',      label: 'Ana Yemek' },
-  { id: 'soup',      label: 'Çorba' },
-  { id: 'breakfast', label: 'Kahvaltı' },
-  { id: 'dessert',   label: 'Tatlı' },
-  { id: 'pastry',    label: 'Börek' },
-  { id: 'cake',      label: 'Pasta' },
-  { id: 'drink',     label: 'İçecek' },
-  { id: 'salad',     label: 'Salata' },
-]
+
 
 export default function YemekFotolarPage() {
   const [aramaMetni, setAramaMetni] = useState('')
@@ -233,7 +224,7 @@ export default function YemekFotolarPage() {
             <label style={{ fontSize: 12, fontWeight: 600, color: '#555', display: 'block', marginBottom: 6 }}>Kategori</label>
             <select value={kategori} onChange={e => setKategori(e.target.value)}
               style={{ width: '100%', border: '1px solid #e0e0e0', borderRadius: 10, padding: '10px 14px', fontSize: 14, background: 'white' }}>
-              {FOTO_KATEGORILER.map(k => <option key={k.id} value={k.id}>{k.label}</option>)}
+              {kategoriler.map(k => <option key={k.id} value={k.id}>{k.emoji} {k.ad}</option>)}
             </select>
           </div>
           <div style={{ display: 'flex', alignItems: 'flex-end' }}>
@@ -271,7 +262,7 @@ export default function YemekFotolarPage() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
             <div>
               <h3 style={{ fontSize: 16, fontWeight: 700, color: '#4A2C0E', margin: 0 }}>{yemekAdi}</h3>
-              <span style={{ fontSize: 12, color: '#888' }}>{fotograflar.length} fotoğraf · {FOTO_KATEGORILER.find(k => k.id === fotograflar[0]?.category)?.label}</span>
+              <span style={{ fontSize: 12, color: '#888' }}>{fotograflar.length} fotoğraf · {kategoriler.find(k => k.id === fotograflar[0]?.category)?.ad}</span>
             </div>
             <span style={{ fontSize: 13, fontWeight: 600, color: fotograflar.length >= 5 ? '#15803d' : '#E8622A' }}>
               {fotograflar.length >= 5 ? '✅ Yeterli' : `⚠️ ${fotograflar.length}/5`}
