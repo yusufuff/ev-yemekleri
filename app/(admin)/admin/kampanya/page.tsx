@@ -11,7 +11,7 @@ const supabase = createClient(
 const BALON_EMOJILER = ['📢', '🉐', '✨', '🍽️', '🛵', '💬']
 
 export default function AdminKampanya() {
-  const [kampanya, setKampanya] = useState({ aktif: false, bitis: '', sart: '', gun: '7', link: 'https://www.anneelim.com' })
+  const [kampanya, setKampanya] = useState({ aktif: false, bitis: '', sart: '', gun: '7', link: 'https://www.anneelim.com', hiz: '12' })
   const [duyuru, setDuyuru]     = useState({ aktif: false, mesaj: '', renk: '#E8622A' })
   const [balonlar, setBalonlar] = useState(['', '', '', '', '', ''])
   const [loading, setLoading]   = useState(true)
@@ -30,6 +30,8 @@ export default function AdminKampanya() {
         sart:  m.kampanya_sart ?? '',
         gun:   m.kampanya_gun ?? '7',
         link:  m.kampanya_link ?? 'https://www.anneelim.com',
+        
+        hiz:   m.kampanya_hiz ?? '12',
       })
       setDuyuru({ aktif: m.duyuru_aktif === 'true', mesaj: m.duyuru_mesaj ?? '', renk: m.duyuru_renk ?? '#E8622A' })
       setBalonlar([m.duyuru_1 ?? '', m.duyuru_2 ?? '', m.duyuru_3 ?? '', m.duyuru_4 ?? '', m.duyuru_5 ?? '', m.duyuru_6 ?? ''])
@@ -48,6 +50,7 @@ export default function AdminKampanya() {
         supabase.from('app_settings').upsert({ key: 'kampanya_sart',  value: kampanya.sart }),
         supabase.from('app_settings').upsert({ key: 'kampanya_gun',   value: kampanya.gun }),
         supabase.from('app_settings').upsert({ key: 'kampanya_link',  value: kampanya.link }),
+        supabase.from('app_settings').upsert({ key: 'kampanya_hiz',   value: kampanya.hiz }),
       ])
     } else if (tip === 'duyuru') {
       await Promise.all([
@@ -98,6 +101,10 @@ export default function AdminKampanya() {
         <div style={{ marginBottom: 16 }}>
           <label style={{ fontSize: 12, fontWeight: 700, color: '#8A7B6B', display: 'block', marginBottom: 4 }}>Kampanya Şartı (Mobilde gösterilir)</label>
           <input value={kampanya.sart} onChange={e => setKampanya(p => ({ ...p, sart: e.target.value }))} placeholder="Uygulamayı paylaş, ücretsiz üyelik kazan!" style={inp} />
+        </div>
+        <div style={{ marginBottom: 16 }}>
+          <label style={{ fontSize: 12, fontWeight: 700, color: '#8A7B6B', display: 'block', marginBottom: 4 }}>Kayan Yazı Hızı (saniye) — düşük = hızlı</label>
+          <input type="number" min="5" max="60" value={kampanya.hiz} onChange={e => setKampanya(p => ({ ...p, hiz: e.target.value }))} placeholder="12" style={inp} />
         </div>
 
         {/* Önizleme */}
