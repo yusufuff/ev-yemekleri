@@ -33,8 +33,8 @@ export default function AdminOdemeler() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ payout_id: id, action }),
     })
-    const text = await res.text()
-    const d = text ? JSON.parse(text) : {}
+    let d = {}
+    try { const text = await res.text(); d = text ? JSON.parse(text) : {} } catch (_) {}
     if (res.ok) { setPayouts(prev => prev.filter(p => p.id !== id)); showToast(d.message ?? 'İşlem tamamlandı') }
     else showToast('Hata: ' + (d.error ?? 'Bilinmeyen'))
     setBusy(null)
