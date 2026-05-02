@@ -20,7 +20,6 @@ const FOTO_KATEGORILER = [
 ]
 
 export default function YemekFotolarPage() {
-  // ── Fotoğraf state ──
   const [aramaMetni, setAramaMetni] = useState('')
   const [yemekAdı, setYemekAdı]     = useState('')
   const [kategori, setKategori]     = useState('main')
@@ -33,12 +32,12 @@ export default function YemekFotolarPage() {
   const [silYukleniyor, setSilYukleniyor] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
-  // ── Kategori state ──
-  const [kategoriler, setKategoriler]   = useState<any[]>([])
-  const [katLoading, setKatLoading]     = useState(true)
-  const [katSaving, setKatSaving]       = useState(false)
-  const [yeniKat, setYeniKat]           = useState({ id: '', ad: '', emoji: '' })
+  const [kategoriler, setKategoriler]         = useState<any[]>([])
+  const [katLoading, setKatLoading]           = useState(true)
+  const [katSaving, setKatSaving]             = useState(false)
+  const [yeniKat, setYeniKat]                 = useState({ id: '', ad: '', emoji: '' })
   const [katSilYukleniyor, setKatSilYukleniyor] = useState<string | null>(null)
+  const [katMesaj, setKatMesaj]               = useState<{tip: string, metin: string} | null>(null)
 
   useEffect(() => { kayitlariYukle(); kategorileriYukle() }, [])
 
@@ -47,7 +46,6 @@ export default function YemekFotolarPage() {
     else setFiltreli(kayitlar.filter(k => k.food_name.toLowerCase().includes(aramaMetni.toLowerCase())))
   }, [aramaMetni, kayitlar])
 
-  // ── Fotoğraf fonksiyonları ──
   const kayitlariYukle = async () => {
     const { data } = await supabase.from('standard_food_photos').select('*').order('food_name')
     setKayitlar(data ?? []); setFiltreli(data ?? [])
@@ -55,7 +53,7 @@ export default function YemekFotolarPage() {
 
   const dosyaSec = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? [])
-    if (files.length + fotolar.length > 20) { setMesaj({ tip: 'hata', metin: 'En fazla 20 fotoğraf ekleyebilirsiniz.' }); return }
+    if (files.length + fotolar.length > 20) { setMesaj({ tip: 'hata', metin: 'En fazla 20 fotoğraf.' }); return }
     setFotolar(prev => [...prev, ...files])
     setOnizleme(prev => [...prev, ...files.map(f => URL.createObjectURL(f))])
   }
@@ -84,17 +82,17 @@ export default function YemekFotolarPage() {
       }
       const { error } = await supabase.from('standard_food_photos').insert(insertler)
       if (error) throw error
-      setMesaj({ tip: 'basari', metin: `${insertler.length} fotoğraf başarıyla yüklendi!` })
+      setMesaj({ tip: 'basari', metin: `${insertler.length} fotoğraf yüklendi!` })
       setYemekAdı(''); setFotolar([]); setOnizleme([])
       if (fileRef.current) fileRef.current.value = ''
       await kayitlariYukle()
     } catch (e: any) {
-      setMesaj({ tip: 'hata', metin: 'Hata: ' + (e?.message ?? 'Bilinmeyen hata') })
+      setMesaj({ tip: 'hata', metin: 'Hata: ' + (e?.message ?? 'Bilinmeyen') })
     } finally { setYukleniyor(false) }
   }
 
   const sil = async (id: string, photoUrl: string) => {
-    if (!confirm('Bu fotoğrafı silmek istediğinizden emin misiniz?')) return
+    if (!confirm('Silmek istediğinize emin misiniz?')) return
     setSilYukleniyor(id)
     try {
       const dosyaAdi = photoUrl.split('/food-photos/')[1]
@@ -104,34 +102,41 @@ export default function YemekFotolarPage() {
     } catch (e: any) { alert('Silme hatası: ' + e?.message) } finally { setSilYukleniyor(null) }
   }
 
-  // ── Kategori fonksiyonları ──
   const kategorileriYukle = async () => {
     setKatLoading(true)
-    const { data } = await (supabase as any).from('menu_categories').select('*').order('sira')
+    const { data, error } = await supabase.from('menu_categories').select('*').order('sira')
+    if (error) console.error('menu_categories hata:', error)
     setKategoriler(data ?? [])
     setKatLoading(false)
   }
 
   const katEkle = async () => {
-    if (!yeniKat.id.trim() || !yeniKat.ad.trim()) return
-    setKatSaving(true)
-    await (supabase as any).from('menu_categories').insert({
+    if (!yeniKat.id.trim() || !yeniKat.ad.trim()) {
+      setKatMesaj({ tip: 'hata', metin: 'ID ve Ad zorunludur.' }); return
+    }
+    setKatSaving(true); setKatMesaj(null)
+    const { error } = await supabase.from('menu_categories').insert({
       id: yeniKat.id.trim().toLowerCase().replace(/\s+/g, '_'),
       ad: yeniKat.ad.trim(),
       emoji: yeniKat.emoji.trim() || '',
       sira: kategoriler.length + 1,
     })
-    setYeniKat({ id: '', ad: '', emoji: '' })
+    if (error) {
+      setKatMesaj({ tip: 'hata', metin: error.message })
+    } else {
+      setKatMesaj({ tip: 'basari', metin: 'Kategori eklendi!' })
+      setYeniKat({ id: '', ad: '', emoji: '' })
+      await kategorileriYukle()
+    }
     setKatSaving(false)
-    kategorileriYukle()
   }
 
   const katSil = async (id: string) => {
     if (!confirm(`"${id}" kategorisini silmek istediğinize emin misiniz?`)) return
     setKatSilYukleniyor(id)
-    await (supabase as any).from('menu_categories').delete().eq('id', id)
+    await supabase.from('menu_categories').delete().eq('id', id)
     setKatSilYukleniyor(null)
-    kategorileriYukle()
+    await kategorileriYukle()
   }
 
   const gruplar: Record<string, any[]> = {}
@@ -142,18 +147,21 @@ export default function YemekFotolarPage() {
   return (
     <div style={{ padding: '28px 24px', fontFamily: "'DM Sans', sans-serif" }}>
 
-      {/* ══════════════════════════════════
-          KATEGORİLER
-      ══════════════════════════════════ */}
+      {/* ── KATEGORİLER ── */}
       <h1 style={{ fontFamily: "'Playfair Display',serif", fontSize: 24, fontWeight: 900, color: '#4A2C0E', marginBottom: 8 }}>Kategoriler</h1>
       <p style={{ fontSize: 13, color: '#8A7B6B', marginBottom: 24 }}>Buradan eklediğiniz kategoriler mobil uygulamada aşçıların yemek eklerken göreceği kategoriler olacaktır.</p>
 
-      <div style={{ background: 'white', borderRadius: 16, padding: 24, boxShadow: '0 2px 12px rgba(74,44,14,0.08)', marginBottom: 24 }}>
-        <h3 style={{ fontFamily: "'Playfair Display',serif", fontSize: 18, fontWeight: 700, color: '#4A2C0E', marginBottom: 16 }}>Yeni Kategori Ekle</h3>
+      <div style={{ background: 'white', borderRadius: 16, padding: 24, boxShadow: '0 2px 12px rgba(74,44,14,0.08)', marginBottom: 16 }}>
+        <h3 style={{ fontFamily: "'Playfair Display',serif", fontSize: 16, fontWeight: 700, color: '#4A2C0E', marginBottom: 16 }}>Yeni Kategori Ekle</h3>
+        {katMesaj && (
+          <div style={{ background: katMesaj.tip === 'basari' ? '#f0fdf4' : '#fef2f2', border: `1px solid ${katMesaj.tip === 'basari' ? '#86efac' : '#fecaca'}`, borderRadius: 10, padding: 12, marginBottom: 16 }}>
+            <span style={{ color: katMesaj.tip === 'basari' ? '#15803d' : '#dc2626', fontWeight: 600, fontSize: 14 }}>{katMesaj.metin}</span>
+          </div>
+        )}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 80px', gap: 12, marginBottom: 12 }}>
           <div>
-            <label style={{ fontSize: 12, fontWeight: 700, color: '#8A7B6B', display: 'block', marginBottom: 4 }}>Kategori ID (İngilizce)</label>
-            <input value={yeniKat.id} onChange={e => setYeniKat(p => ({ ...p, id: e.target.value }))} placeholder="ornek: breakfast" style={inp} />
+            <label style={{ fontSize: 12, fontWeight: 700, color: '#8A7B6B', display: 'block', marginBottom: 4 }}>Kod (İngilizce)</label>
+            <input value={yeniKat.id} onChange={e => setYeniKat(p => ({ ...p, id: e.target.value }))} placeholder="breakfast" style={inp} />
           </div>
           <div>
             <label style={{ fontSize: 12, fontWeight: 700, color: '#8A7B6B', display: 'block', marginBottom: 4 }}>Görünen Ad</label>
@@ -165,18 +173,20 @@ export default function YemekFotolarPage() {
           </div>
         </div>
         <button onClick={katEkle} disabled={katSaving}
-          style={{ padding: '10px 24px', borderRadius: 10, background: '#E8622A', color: 'white', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14, fontFamily: 'inherit' }}>
+          style={{ padding: '10px 24px', borderRadius: 10, background: '#E8622A', color: 'white', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14, fontFamily: 'inherit', opacity: katSaving ? 0.7 : 1 }}>
           {katSaving ? 'Ekleniyor...' : '+ Ekle'}
         </button>
       </div>
 
-      <div style={{ background: 'white', borderRadius: 16, boxShadow: '0 2px 12px rgba(74,44,14,0.08)', overflow: 'hidden', marginBottom: 32 }}>
+      <div style={{ background: 'white', borderRadius: 16, boxShadow: '0 2px 12px rgba(74,44,14,0.08)', overflow: 'hidden', marginBottom: 40 }}>
         {katLoading ? (
           <div style={{ padding: 40, textAlign: 'center', color: '#8A7B6B' }}>Yükleniyor...</div>
+        ) : kategoriler.length === 0 ? (
+          <div style={{ padding: 40, textAlign: 'center', color: '#8A7B6B' }}>Henüz kategori yok</div>
         ) : (
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
-              <tr style={{ borderBottom: '1px solid #FAF6EF' }}>
+              <tr style={{ borderBottom: '1px solid #FAF6EF', background: '#FAF6EF' }}>
                 {['Emoji', 'ID', 'Ad', 'İşlem'].map(h => (
                   <th key={h} style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', color: '#8A7B6B', padding: '12px 16px', textAlign: 'left' }}>{h}</th>
                 ))}
@@ -201,10 +211,10 @@ export default function YemekFotolarPage() {
         )}
       </div>
 
-      <div style={{ borderTop: '2px solid #F0E8DC', marginBottom: 24 }} />
+      {/* ── YEMEK FOTOĞRAF KÜTÜPHANESİ ── */}
+      <div style={{ borderTop: '2px solid #F0E8DC', marginBottom: 32 }} />
       <h1 style={{ fontFamily: "'Playfair Display',serif", fontSize: 24, fontWeight: 900, color: '#4A2C0E', marginBottom: 24 }}>🍽️ Yemek Fotoğraf Kütüphanesi</h1>
 
-      {/* ── Fotoğraf Ekleme Formu ── */}
       <div style={{ background: 'white', borderRadius: 16, padding: 24, marginBottom: 24, boxShadow: '0 2px 12px rgba(74,44,14,0.08)' }}>
         <h2 style={{ fontSize: 16, fontWeight: 700, color: '#4A2C0E', marginBottom: 16 }}>Yeni Fotoğraf Ekle</h2>
         {mesaj && (
@@ -249,14 +259,12 @@ export default function YemekFotolarPage() {
         </button>
       </div>
 
-      {/* ── Arama ── */}
       <div style={{ background: 'white', borderRadius: 16, padding: 20, marginBottom: 24, boxShadow: '0 2px 12px rgba(74,44,14,0.08)' }}>
         <input value={aramaMetni} onChange={e => setAramaMetni(e.target.value)} placeholder="🔍 Yemek adı ara..."
           style={{ width: '100%', border: '1px solid #e0e0e0', borderRadius: 10, padding: '10px 14px', fontSize: 14, boxSizing: 'border-box' }} />
         <div style={{ marginTop: 8, fontSize: 12, color: '#888' }}>{Object.keys(gruplar).length} yemek, {filtreli.length} fotoğraf</div>
       </div>
 
-      {/* ── Fotoğraf Galerisi ── */}
       {Object.entries(gruplar).map(([yemekAdi, fotograflar]) => (
         <div key={yemekAdi} style={{ background: 'white', borderRadius: 16, padding: 20, marginBottom: 16, boxShadow: '0 2px 12px rgba(74,44,14,0.08)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
@@ -288,66 +296,6 @@ export default function YemekFotolarPage() {
           <div>Henüz fotoğraf yok</div>
         </div>
       )}
-
-      {/* ══════════════════════════════════
-          KATEGORİLER
-      ══════════════════════════════════ */}
-      <div style={{ borderTop: '2px solid #F0E8DC', margin: '32px 0 24px' }} />
-      <h2 style={{ fontFamily: "'Playfair Display',serif", fontSize: 20, fontWeight: 900, color: '#4A2C0E', marginBottom: 8 }}>Kategoriler</h2>
-      <p style={{ fontSize: 13, color: '#8A7B6B', marginBottom: 24 }}>Buradan eklediğiniz kategoriler mobil uygulamada aşçıların yemek eklerken göreceği kategoriler olacaktır.</p>
-
-      <div style={{ background: 'white', borderRadius: 16, padding: 24, boxShadow: '0 2px 12px rgba(74,44,14,0.08)', marginBottom: 24 }}>
-        <h3 style={{ fontFamily: "'Playfair Display',serif", fontSize: 18, fontWeight: 700, color: '#4A2C0E', marginBottom: 16 }}>Yeni Kategori Ekle</h3>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 80px', gap: 12, marginBottom: 12 }}>
-          <div>
-            <label style={{ fontSize: 12, fontWeight: 700, color: '#8A7B6B', display: 'block', marginBottom: 4 }}>Kategori ID (İngilizce)</label>
-            <input value={yeniKat.id} onChange={e => setYeniKat(p => ({ ...p, id: e.target.value }))} placeholder="ornek: breakfast" style={inp} />
-          </div>
-          <div>
-            <label style={{ fontSize: 12, fontWeight: 700, color: '#8A7B6B', display: 'block', marginBottom: 4 }}>Görünen Ad</label>
-            <input value={yeniKat.ad} onChange={e => setYeniKat(p => ({ ...p, ad: e.target.value }))} placeholder="Kahvaltı" style={inp} />
-          </div>
-          <div>
-            <label style={{ fontSize: 12, fontWeight: 700, color: '#8A7B6B', display: 'block', marginBottom: 4 }}>Emoji</label>
-            <input value={yeniKat.emoji} onChange={e => setYeniKat(p => ({ ...p, emoji: e.target.value }))} placeholder="🥚" style={inp} />
-          </div>
-        </div>
-        <button onClick={katEkle} disabled={katSaving}
-          style={{ padding: '10px 24px', borderRadius: 10, background: '#E8622A', color: 'white', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14, fontFamily: 'inherit' }}>
-          {katSaving ? 'Ekleniyor...' : '+ Ekle'}
-        </button>
-      </div>
-
-      <div style={{ background: 'white', borderRadius: 16, boxShadow: '0 2px 12px rgba(74,44,14,0.08)', overflow: 'hidden' }}>
-        {katLoading ? (
-          <div style={{ padding: 40, textAlign: 'center', color: '#8A7B6B' }}>Yükleniyor...</div>
-        ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid #FAF6EF' }}>
-                {['Emoji', 'ID', 'Ad', 'İşlem'].map(h => (
-                  <th key={h} style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', color: '#8A7B6B', padding: '12px 16px', textAlign: 'left' }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {kategoriler.map(k => (
-                <tr key={k.id} style={{ borderBottom: '1px solid #FAF6EF' }}>
-                  <td style={{ padding: '12px 16px', fontSize: 24 }}>{k.emoji}</td>
-                  <td style={{ padding: '12px 16px', fontSize: 13, color: '#8A7B6B', fontFamily: 'monospace' }}>{k.id}</td>
-                  <td style={{ padding: '12px 16px', fontSize: 14, fontWeight: 600, color: '#4A2C0E' }}>{k.ad}</td>
-                  <td style={{ padding: '12px 16px' }}>
-                    <button onClick={() => katSil(k.id)} disabled={katSilYukleniyor === k.id}
-                      style={{ fontSize: 12, fontWeight: 700, padding: '5px 12px', borderRadius: 8, background: '#FEE2E2', color: '#DC2626', border: 'none', cursor: 'pointer', opacity: katSilYukleniyor === k.id ? 0.6 : 1 }}>
-                      {katSilYukleniyor === k.id ? '...' : 'Sil'}
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
     </div>
   )
 }
