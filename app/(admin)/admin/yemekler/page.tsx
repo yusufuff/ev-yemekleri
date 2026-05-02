@@ -111,12 +111,16 @@ export default function YemekFotolarPage() {
   }
 
   const katEkle = async () => {
-    if (!yeniKat.id.trim() || !yeniKat.ad.trim()) {
-      setKatMesaj({ tip: 'hata', metin: 'ID ve Ad zorunludur.' }); return
+    if (!yeniKat.ad.trim()) {
+      setKatMesaj({ tip: 'hata', metin: 'Ad zorunludur.' }); return
     }
+    const otomatikId = yeniKat.ad.trim().toLowerCase()
+      .replace(/ğ/g,'g').replace(/ü/g,'u').replace(/ş/g,'s')
+      .replace(/ı/g,'i').replace(/ö/g,'o').replace(/ç/g,'c')
+      .replace(/\s+/g,'_').replace(/[^a-z0-9_]/g,'')
     setKatSaving(true); setKatMesaj(null)
     const { error } = await supabase.from('menu_categories').insert({
-      id: yeniKat.id.trim().toLowerCase().replace(/\s+/g, '_'),
+      id: otomatikId,
       ad: yeniKat.ad.trim(),
       emoji: yeniKat.emoji.trim() || '',
       sira: kategoriler.length + 1,
@@ -158,11 +162,8 @@ export default function YemekFotolarPage() {
             <span style={{ color: katMesaj.tip === 'basari' ? '#15803d' : '#dc2626', fontWeight: 600, fontSize: 14 }}>{katMesaj.metin}</span>
           </div>
         )}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 80px', gap: 12, marginBottom: 12 }}>
-          <div>
-            <label style={{ fontSize: 12, fontWeight: 700, color: '#8A7B6B', display: 'block', marginBottom: 4 }}>Kod (İngilizce)</label>
-            <input value={yeniKat.id} onChange={e => setYeniKat(p => ({ ...p, id: e.target.value }))} placeholder="breakfast" style={inp} />
-          </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 80px', gap: 12, marginBottom: 12 }}>
+          
           <div>
             <label style={{ fontSize: 12, fontWeight: 700, color: '#8A7B6B', display: 'block', marginBottom: 4 }}>Görünen Ad</label>
             <input value={yeniKat.ad} onChange={e => setYeniKat(p => ({ ...p, ad: e.target.value }))} placeholder="Kahvaltı" style={inp} />
