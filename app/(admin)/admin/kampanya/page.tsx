@@ -52,6 +52,26 @@ export default function AdminKampanya() {
         supabase.from('app_settings').upsert({ key: 'kampanya_link',  value: kampanya.link }),
         supabase.from('app_settings').upsert({ key: 'kampanya_hiz',   value: kampanya.hiz }),
       ])
+
+      // Kampanya aktifse tüm aşçılara bildirim gönder
+      if (kampanya.aktif) {
+        const { data: chefler } = await supabase
+          .from('chef_profiles')
+          .select('user_id')
+          .eq('verification_status', 'approved')
+
+        if (chefler && chefler.length > 0) {
+          const bildirimler = chefler.map(c => ({
+            user_id: c.user_id,
+            title: '🎉 Yeni Kampanya Başladı!',
+            message: kampanya.sart || ('Uygulamayı paylaş, ' + kampanya.gun + ' gün ücretsiz üyelik kazan!'),
+            type: 'promo',
+            is_read: false,
+            created_at: new Date().toISOString(),
+          }))
+          await supabase.from('notifications').insert(bildirimler)
+        }
+      }
     } else if (tip === 'duyuru') {
       await Promise.all([
         supabase.from('app_settings').upsert({ key: 'duyuru_aktif', value: String(duyuru.aktif) }),
