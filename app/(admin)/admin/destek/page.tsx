@@ -60,6 +60,7 @@ export default function AdminDestek() {
           title: '✅ Destek Talebiniz Cevaplandı',
           body: 'Talep #' + secili.ticket_no + ' için yanıtımız hazır.',
           type: 'system',
+          data: { ticket_no: secili.ticket_no, action: 'destek' },
           is_read: false,
           created_at: new Date().toISOString(),
         })
