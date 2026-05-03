@@ -35,7 +35,7 @@ export default function AdminDestek() {
     setLoading(true)
     const { data } = await supabase
       .from('support_tickets')
-      .select('*, users(full_name, email)')
+      .select('*')
       .order('created_at', { ascending: false })
     setTalepler(data ?? [])
     setLoading(false)
