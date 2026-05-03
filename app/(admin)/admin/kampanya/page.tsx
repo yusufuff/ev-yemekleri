@@ -64,7 +64,7 @@ export default function AdminKampanya() {
           const bildirimler = chefler.map(c => ({
             user_id: c.user_id,
             title: '🎉 Yeni Kampanya Başladı!',
-            message: kampanya.sart || ('Uygulamayı paylaş, ' + kampanya.gun + ' gün ücretsiz üyelik kazan!'),
+            body: kampanya.sart || ('Uygulamayı paylaş, ' + kampanya.gun + ' gün ücretsiz üyelik kazan!'),
             type: 'promo',
             is_read: false,
             created_at: new Date().toISOString(),
