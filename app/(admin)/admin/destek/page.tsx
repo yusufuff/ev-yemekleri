@@ -8,136 +8,198 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 )
 
-const DURUM_META: Record<string, { label: string; color: string; bg: string }> = {
-  open:        { label: 'Açık',      color: '#E8622A', bg: '#FEF3EC' },
-  in_progress: { label: 'İşlemde',   color: '#3B82F6', bg: '#EFF6FF' },
-  resolved:    { label: 'Çözüldü',   color: '#3D6B47', bg: '#ECFDF5' },
-  closed:      { label: 'Kapatıldı', color: '#8A7B6B', bg: '#F5F5F5' },
+const DURUM_RENK = {
+  acik:       { bg: '#FEF3C7', text: '#92400E', label: '⏳ Açık' },
+  cevaplandi: { bg: '#D1FAE5', text: '#065F46', label: '✅ Cevaplandı' },
+  kapali:     { bg: '#F3F4F6', text: '#6B7280', label: '🔒 Kapalı' },
 }
 
-const ONCELIK_META: Record<string, { label: string; color: string }> = {
-  low:      { label: 'Düşük',  color: '#8A7B6B' },
-  medium:   { label: 'Orta',   color: '#F59E0B' },
-  high:     { label: 'Yüksek', color: '#E8622A' },
-  critical: { label: 'Kritik', color: '#DC2626' },
+const ONCELIK_RENK = {
+  düşük:  { bg: '#D1FAE5', text: '#065F46' },
+  normal:  { bg: '#FEF3C7', text: '#92400E' },
+  yüksek: { bg: '#FEE2E2', text: '#991B1B' },
 }
 
 export default function AdminDestek() {
-  const [talepler, setTalepler] = useState<any[]>([])
-  const [loading, setLoading]   = useState(true)
-  const [filter, setFilter]     = useState('open')
-  const [secili, setSecili]     = useState<any>(null)
-  const [yanit, setYanit]       = useState('')
-  const [saving, setSaving]     = useState(false)
+  const [talepler, setTalepler]     = useState([])
+  const [loading, setLoading]       = useState(true)
+  const [secili, setSecili]         = useState(null)
+  const [yanit, setYanit]           = useState('')
+  const [saving, setSaving]         = useState(false)
+  const [toast, setToast]           = useState('')
+  const [filtre, setFiltre]         = useState('hepsi')
 
-  useEffect(() => {
-    yukle()
-    const kanal = supabase.channel('admin-destek')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'support_tickets' }, () => yukle())
-      .subscribe()
-    return () => { supabase.removeChannel(kanal) }
-  }, [filter])
+  useEffect(() => { yukle() }, [])
 
   const yukle = async () => {
     setLoading(true)
-    const q = supabase.from('support_tickets').select('*, users(full_name, email)').order('created_at', { ascending: false })
-    if (filter !== 'hepsi') q.eq('durum', filter)
-    const { data } = await q
+    const { data } = await supabase
+      .from('support_tickets')
+      .select('*, users(full_name, email)')
+      .order('created_at', { ascending: false })
     setTalepler(data ?? [])
     setLoading(false)
   }
 
-  const durumGuncelle = async (id: string, durum: string) => {
-    await supabase.from('support_tickets').update({ durum, updated_at: new Date().toISOString() }).eq('id', id)
-    yukle()
-    if (secili?.id === id) setSecili((prev: any) => ({ ...prev, durum }))
-  }
+  const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(''), 3000) }
 
   const yanitGonder = async () => {
-    if (!yanit.trim() || !secili) return
+    if (!secili || !yanit.trim()) return
     setSaving(true)
-    await supabase.from('support_tickets').update({ yanit, durum: 'resolved', updated_at: new Date().toISOString() }).eq('id', secili.id)
-    setSaving(false); setYanit('')
-    setSecili((prev: any) => ({ ...prev, yanit, durum: 'resolved' }))
-    yukle()
+    try {
+      await supabase.from('support_tickets').update({
+        yanit: yanit.trim(),
+        durum: 'cevaplandi',
+        updated_at: new Date().toISOString(),
+      }).eq('id', secili.id)
+
+      // Kullanıcıya bildirim gönder
+      if (secili.user_id) {
+        await supabase.from('notifications').insert({
+          user_id: secili.user_id,
+          title: '✅ Destek Talebiniz Cevaplandı',
+          body: 'Talep #' + secili.ticket_no + ' için yanıtımız hazır.',
+          type: 'system',
+          is_read: false,
+          created_at: new Date().toISOString(),
+        })
+      }
+
+      setTalepler(prev => prev.map(t => t.id === secili.id ? { ...t, yanit: yanit.trim(), durum: 'cevaplandi' } : t))
+      setSecili(prev => ({ ...prev, yanit: yanit.trim(), durum: 'cevaplandi' }))
+      setYanit('')
+      showToast('Yanıt gönderildi!')
+    } catch { showToast('Hata oluştu.') }
+    finally { setSaving(false) }
   }
+
+  const durumDegistir = async (id: string, durum: string) => {
+    await supabase.from('support_tickets').update({ durum, updated_at: new Date().toISOString() }).eq('id', id)
+    setTalepler(prev => prev.map(t => t.id === id ? { ...t, durum } : t))
+    if (secili?.id === id) setSecili(prev => ({ ...prev, durum }))
+    showToast('Durum güncellendi!')
+  }
+
+  const filtreliTalepler = filtre === 'hepsi' ? talepler : talepler.filter(t => t.durum === filtre)
+
+  const formatTarih = (iso: string) => new Date(iso).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+
+  if (loading) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>Yükleniyor...</div>
 
   return (
     <div style={{ padding: '28px 24px', fontFamily: "'DM Sans', sans-serif" }}>
-      <h1 style={{ fontFamily: "'Playfair Display',serif", fontSize: 24, fontWeight: 900, color: '#4A2C0E', marginBottom: 24 }}>Destek Talepleri</h1>
-
-      <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
-        {[['open','Açık'],['in_progress','İşlemde'],['resolved','Çözüldü'],['closed','Kapatıldı'],['hepsi','Hepsi']].map(([k, l]) => (
-          <button key={k} onClick={() => setFilter(k)} style={{
-            padding: '8px 16px', borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: 'pointer', border: 'none', fontFamily: 'inherit',
-            background: filter === k ? '#4A2C0E' : 'white', color: filter === k ? 'white' : '#8A7B6B',
-            boxShadow: '0 1px 4px rgba(0,0,0,0.08)',
-          }}>{l}</button>
-        ))}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+        <h1 style={{ fontFamily: "'Playfair Display',serif", fontSize: 24, fontWeight: 900, color: '#4A2C0E', margin: 0 }}>🎧 Destek Talepleri</h1>
+        <div style={{ display: 'flex', gap: 8 }}>
+          {['hepsi', 'acik', 'cevaplandi', 'kapali'].map(f => (
+            <button key={f} onClick={() => setFiltre(f)}
+              style={{ padding: '6px 14px', borderRadius: 8, border: '1.5px solid', borderColor: filtre === f ? '#E8622A' : '#E8E0D4', background: filtre === f ? '#E8622A' : 'white', color: filtre === f ? 'white' : '#4A2C0E', fontWeight: 600, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>
+              {f === 'hepsi' ? 'Hepsi (' + talepler.length + ')' : f === 'acik' ? '⏳ Açık' : f === 'cevaplandi' ? '✅ Cevaplı' : '🔒 Kapalı'}
+            </button>
+          ))}
+        </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: secili ? '1fr 1fr' : '1fr', gap: 20 }}>
-        <div style={{ background: 'white', borderRadius: 16, boxShadow: '0 2px 12px rgba(74,44,14,0.08)', overflow: 'hidden' }}>
-          {loading ? (
-            <div style={{ padding: 40, textAlign: 'center', color: '#8A7B6B' }}>Yükleniyor...</div>
-          ) : talepler.length === 0 ? (
-            <div style={{ padding: 40, textAlign: 'center', color: '#8A7B6B' }}>Talep bulunamadı</div>
-          ) : talepler.map(t => {
-            const dm = DURUM_META[t.durum] ?? DURUM_META.open
-            const om = ONCELIK_META[t.oncelik] ?? ONCELIK_META.medium
+      <div style={{ display: 'grid', gridTemplateColumns: secili ? '1fr 1.4fr' : '1fr', gap: 20 }}>
+        {/* Liste */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {filtreliTalepler.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: 40, color: '#8A7B6B' }}>Talep bulunamadı</div>
+          ) : filtreliTalepler.map(t => {
+            const durum = DURUM_RENK[t.durum] ?? DURUM_RENK.acik
+            const onc = ONCELIK_RENK[t.oncelik] ?? ONCELIK_RENK.normal
             return (
               <div key={t.id} onClick={() => { setSecili(t); setYanit(t.yanit ?? '') }}
-                style={{ padding: '14px 18px', borderBottom: '1px solid #FAF6EF', cursor: 'pointer', background: secili?.id === t.id ? '#FEF3EC' : 'white' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: '#4A2C0E' }}>{t.konu}</span>
-                  <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 20, background: dm.bg, color: dm.color, fontWeight: 700 }}>{dm.label}</span>
+                style={{ background: 'white', borderRadius: 14, padding: 16, boxShadow: '0 2px 8px rgba(74,44,14,0.06)', cursor: 'pointer', border: secili?.id === t.id ? '2px solid #E8622A' : '2px solid transparent', transition: 'border 0.15s' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: '#E8622A' }}>{t.ticket_no}</span>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, background: onc.bg, color: onc.text, borderRadius: 6, padding: '2px 8px' }}>{t.oncelik}</span>
+                    <span style={{ fontSize: 11, fontWeight: 700, background: durum.bg, color: durum.text, borderRadius: 6, padding: '2px 8px' }}>{durum.label}</span>
+                  </div>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: 12, color: '#8A7B6B' }}>{t.users?.full_name ?? '-'} · #{t.ticket_no}</span>
-                  <span style={{ fontSize: 11, color: om.color, fontWeight: 600 }}>{om.label}</span>
+                <div style={{ fontSize: 14, fontWeight: 700, color: '#1a1a1a', marginBottom: 4 }}>{t.konu}</div>
+                <div style={{ fontSize: 13, color: '#555', marginBottom: 8, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.mesaj}</div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#aaa' }}>
+                  <span>{t.users?.full_name ?? t.users?.email ?? 'Anonim'}</span>
+                  <span>{formatTarih(t.created_at)}</span>
                 </div>
-                <div style={{ fontSize: 11, color: '#aaa', marginTop: 2 }}>{new Date(t.created_at).toLocaleDateString('tr-TR')}</div>
               </div>
             )
           })}
         </div>
 
+        {/* Detay */}
         {secili && (
-          <div style={{ background: 'white', borderRadius: 16, boxShadow: '0 2px 12px rgba(74,44,14,0.08)', padding: 24 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
-              <h2 style={{ fontFamily: "'Playfair Display',serif", fontSize: 18, fontWeight: 700, color: '#4A2C0E', margin: 0 }}>{secili.konu}</h2>
-              <button onClick={() => setSecili(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: '#8A7B6B' }}>✕</button>
+          <div style={{ background: 'white', borderRadius: 16, padding: 24, boxShadow: '0 2px 12px rgba(74,44,14,0.08)', height: 'fit-content' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <h2 style={{ fontFamily: "'Playfair Display',serif", fontSize: 18, fontWeight: 700, color: '#4A2C0E', margin: 0 }}>{secili.ticket_no}</h2>
+              <button onClick={() => setSecili(null)} style={{ background: 'none', border: 'none', fontSize: 18, cursor: 'pointer', color: '#888' }}>✕</button>
             </div>
-            <div style={{ marginBottom: 12, padding: 14, background: '#FAF6EF', borderRadius: 10 }}>
-              <div style={{ fontSize: 12, color: '#8A7B6B', marginBottom: 4 }}>Kullanıcı: {secili.users?.full_name} · {secili.users?.email}</div>
-              <p style={{ margin: 0, fontSize: 14, color: '#4A2C0E', lineHeight: 1.6 }}>{secili.mesaj}</p>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 16 }}>
+              {[
+                { label: 'Kullanıcı', value: secili.users?.full_name ?? secili.users?.email ?? 'Anonim' },
+                { label: 'Konu', value: secili.konu },
+                { label: 'Öncelik', value: secili.oncelik },
+                { label: 'Tarih', value: formatTarih(secili.created_at) },
+              ].map(item => (
+                <div key={item.label} style={{ background: '#FAF6EF', borderRadius: 10, padding: 12 }}>
+                  <div style={{ fontSize: 11, color: '#8A7B6B', fontWeight: 700, marginBottom: 4 }}>{item.label}</div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: '#4A2C0E' }}>{item.value}</div>
+                </div>
+              ))}
             </div>
-            {secili.yanit && (
-              <div style={{ marginBottom: 12, padding: 14, background: '#ECFDF5', borderRadius: 10, borderLeft: '3px solid #3D6B47' }}>
-                <div style={{ fontSize: 12, color: '#3D6B47', fontWeight: 700, marginBottom: 4 }}>Yanıtınız:</div>
-                <p style={{ margin: 0, fontSize: 14, color: '#4A2C0E' }}>{secili.yanit}</p>
+
+            <div style={{ background: '#FAF6EF', borderRadius: 12, padding: 14, marginBottom: 16 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: '#8A7B6B', marginBottom: 8 }}>Mesaj</div>
+              <div style={{ fontSize: 14, color: '#1a1a1a', lineHeight: 1.6 }}>{secili.mesaj}</div>
+            </div>
+
+            {secili.foto_urls && secili.foto_urls.length > 0 && (
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#8A7B6B', marginBottom: 8 }}>Ekli Fotoğraflar</div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  {secili.foto_urls.map((url: string, i: number) => (
+                    <a key={i} href={url} target="_blank" rel="noreferrer">
+                      <img src={url} alt="" style={{ width: 80, height: 80, borderRadius: 8, objectFit: 'cover' }} />
+                    </a>
+                  ))}
+                </div>
               </div>
             )}
+
+            {secili.yanit && (
+              <div style={{ background: '#D1FAE5', borderRadius: 12, padding: 14, marginBottom: 16, borderLeft: '3px solid #22c55e' }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#065F46', marginBottom: 6 }}>Gönderilen Yanıt</div>
+                <div style={{ fontSize: 13, color: '#065F46', lineHeight: 1.6 }}>{secili.yanit}</div>
+              </div>
+            )}
+
             <div style={{ marginBottom: 12 }}>
               <label style={{ fontSize: 12, fontWeight: 700, color: '#8A7B6B', display: 'block', marginBottom: 6 }}>Yanıt Yaz</label>
-              <textarea value={yanit} onChange={e => setYanit(e.target.value)} rows={4} placeholder="Kullanıcıya yanıt yaz..."
-                style={{ width: '100%', padding: 12, borderRadius: 10, border: '1.5px solid #E8E0D4', fontSize: 14, fontFamily: 'inherit', resize: 'vertical', boxSizing: 'border-box' }} />
+              <textarea value={yanit} onChange={e => setYanit(e.target.value)}
+                placeholder="Kullanıcıya yanıt yazın..." rows={4}
+                style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #E8E0D4', fontSize: 14, fontFamily: 'inherit', resize: 'vertical', boxSizing: 'border-box' }} />
             </div>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+
+            <div style={{ display: 'flex', gap: 8 }}>
               <button onClick={yanitGonder} disabled={saving || !yanit.trim()}
-                style={{ padding: '10px 20px', borderRadius: 10, background: '#3D6B47', color: 'white', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13, fontFamily: 'inherit', opacity: saving ? 0.6 : 1 }}>
-                {saving ? 'Gönderiliyor...' : '✓ Yanıt Gönder'}
+                style={{ flex: 1, padding: '10px 16px', borderRadius: 10, background: '#E8622A', color: 'white', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14, fontFamily: 'inherit', opacity: !yanit.trim() ? 0.6 : 1 }}>
+                {saving ? 'Gönderiliyor...' : '📨 Yanıt Gönder'}
               </button>
-              {Object.entries(DURUM_META).map(([k, v]) => (
-                <button key={k} onClick={() => durumGuncelle(secili.id, k)}
-                  style={{ padding: '10px 14px', borderRadius: 10, background: v.bg, color: v.color, border: `1px solid ${v.color}30`, cursor: 'pointer', fontWeight: 700, fontSize: 12, fontFamily: 'inherit' }}>
-                  {v.label}
-                </button>
-              ))}
+              <button onClick={() => durumDegistir(secili.id, 'kapali')}
+                style={{ padding: '10px 16px', borderRadius: 10, background: '#f5f5f5', color: '#555', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14, fontFamily: 'inherit' }}>
+                🔒 Kapat
+              </button>
             </div>
           </div>
         )}
       </div>
+
+      {toast && (
+        <div style={{ position: 'fixed', bottom: 24, right: 24, background: '#4A2C0E', color: 'white', borderRadius: 12, padding: '12px 20px', fontSize: 13, fontWeight: 600, zIndex: 100 }}>✅ {toast}</div>
+      )}
     </div>
   )
 }
