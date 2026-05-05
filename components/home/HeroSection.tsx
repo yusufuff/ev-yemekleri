@@ -14,12 +14,12 @@ const DISTANCES = [1, 5, 8, 10]
 const BALON_EMOJILER = ['📢', '🎉', '⭐', '🍽️', '🛵', '💬']
 
 const BALON_POZISYONLAR = [
-  { top: '8%',  left: '2%',  animDur: '4s',   animDelay: '0s',   size: 88,  bg: 'rgba(232,98,42,0.92)',   color: 'white' },
-  { top: '5%',  left: '18%', animDur: '5s',   animDelay: '0.5s', size: 100, bg: 'rgba(255,255,255,0.88)', color: '#4A2C0E' },
-  { top: '10%', left: '12%', animDur: '4.5s', animDelay: '1s',   size: 82,  bg: 'rgba(61,107,71,0.9)',    color: 'white' },
-  { top: '58%', left: '2%',  animDur: '5.5s', animDelay: '0.3s', size: 92,  bg: 'rgba(255,255,255,0.12)', color: 'white', border: '1.5px solid rgba(255,255,255,0.4)' },
-  { top: '60%', left: '18%', animDur: '6s',   animDelay: '0.8s', size: 96,  bg: 'rgba(232,98,42,0.92)',   color: 'white' },
-  { top: '55%', left: '8%',  animDur: '4.2s', animDelay: '0.2s', size: 80,  bg: 'rgba(255,255,255,0.88)', color: '#4A2C0E' },
+  { top: '8%',  right: '2%',  animDur: '4s',   animDelay: '0s',   size: 88,  bg: 'rgba(232,98,42,0.92)',   color: 'white' },
+  { top: '5%',  right: '18%', animDur: '5s',   animDelay: '0.5s', size: 100, bg: 'rgba(255,255,255,0.88)', color: '#4A2C0E' },
+  { top: '10%', right: '12%', animDur: '4.5s', animDelay: '1s',   size: 82,  bg: 'rgba(61,107,71,0.9)',    color: 'white' },
+  { top: '58%', right: '2%',  animDur: '5.5s', animDelay: '0.3s', size: 92,  bg: 'rgba(255,255,255,0.12)', color: 'white', border: '1.5px solid rgba(255,255,255,0.4)' },
+  { top: '60%', right: '18%', animDur: '6s',   animDelay: '0.8s', size: 96,  bg: 'rgba(232,98,42,0.92)',   color: 'white' },
+  { top: '55%', right: '8%',  animDur: '4.2s', animDelay: '0.2s', size: 80,  bg: 'rgba(255,255,255,0.88)', color: '#4A2C0E' },
 ]
 function StoriesPanel() {
   const [stories, setStories] = React.useState<any[]>([])
@@ -119,7 +119,7 @@ export function HeroSection() {
               style={{
                 position: 'absolute',
                 top: pos.top,
-                left: pos.left,
+                right: pos.right,
                
                 width: pos.size,
                 height: pos.size,
