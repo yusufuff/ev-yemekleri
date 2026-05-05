@@ -119,7 +119,62 @@ function YemekKart({ yemek }: { yemek: any }) {
     </div>
   )
 }
+function AnaSayfaTalepler() {
+  const [talepler, setTalepler] = useState<any[]>([])
+  const [yukleniyor, setYukleniyor] = useState(true)
 
+  useEffect(() => { yukle() }, [])
+
+  const yukle = async () => {
+    try {
+      const supabase = getSupabaseBrowserClient()
+      const { data } = await supabase.from('food_requests')
+        .select('*, food_request_offers(count)')
+        .eq('durum', 'aktif')
+        .order('created_at', { ascending: false })
+        .limit(3)
+      if (!data || data.length === 0) { setTalepler([]); return }
+      const userIds = [...new Set(data.map((t: any) => t.user_id).filter(Boolean))]
+      const { data: usersData } = await supabase.from('users').select('id, full_name').in('id', userIds)
+      const userMap: any = {}
+      ;(usersData ?? []).forEach((u: any) => { userMap[u.id] = u.full_name })
+      setTalepler(data.map((t: any) => ({ ...t, user_full_name: userMap[t.user_id] ?? null })))
+    } catch {}
+    finally { setYukleniyor(false) }
+  }
+
+  if (yukleniyor) return <div style={{ textAlign: 'center', padding: 20 }}>Yükleniyor...</div>
+  if (talepler.length === 0) return (
+    <Link href="/yemek-talepleri" style={{ display: 'block', background: '#FFF5EC', borderRadius: 14, padding: 16, border: '1.5px solid #E8622A', textAlign: 'center', textDecoration: 'none' }}>
+      <p style={{ color: '#4A2C0E', fontWeight: 700, margin: 0 }}>+ İlk talebi oluştur</p>
+      <p style={{ color: '#8A7B6B', fontSize: 12, margin: '4px 0 0' }}>Toplu sipariş, bayram, misafir için</p>
+    </Link>
+  )
+
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
+      {talepler.map((t: any) => (
+        <Link key={t.id} href="/yemek-talepleri" style={{ textDecoration: 'none' }}>
+          <div style={{ background: '#fff', borderRadius: 16, padding: 16, border: '1.5px solid #e0e0e0', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', cursor: 'pointer' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+              <p style={{ fontWeight: 700, color: '#1a1a1a', margin: 0, fontSize: 15 }}>{t.baslik}</p>
+              {t.butce && <span style={{ color: '#E8622A', fontWeight: 700 }}>₺{t.butce.toLocaleString()}</span>}
+            </div>
+            {t.user_full_name && <p style={{ fontSize: 12, color: '#888', margin: '0 0 6px' }}>👤 {t.user_full_name}</p>}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 10 }}>
+              {t.kisi_sayisi && <span style={{ fontSize: 12, color: '#888' }}>👥 {t.kisi_sayisi} kişilik</span>}
+              {t.konum && <span style={{ fontSize: 12, color: '#888' }}>📍 {t.konum}</span>}
+            </div>
+            <div style={{ borderTop: '1px solid #f0f0f0', paddingTop: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: 12, color: '#888' }}>{t.food_request_offers?.[0]?.count > 0 ? t.food_request_offers[0].count + ' teklif var!' : 'Henüz teklif yok'}</span>
+              <span style={{ background: '#E8622A', color: '#fff', borderRadius: 8, padding: '4px 12px', fontSize: 12, fontWeight: 700 }}>Teklif Ver</span>
+            </div>
+          </div>
+        </Link>
+      ))}
+    </div>
+  )
+}
 export default function HomePage() {
   const [yemekler, setYemekler] = useState<any[]>([])
   const [chefs, setChefs] = useState<any[]>([])
@@ -277,7 +332,14 @@ export default function HomePage() {
           </>
         )}
       </section>
-
+{/* Yemek Talepleri */}
+<section style={{ maxWidth: 1152, margin: '0 auto', padding: '0 24px 48px' }}>
+  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+    <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 24, fontWeight: 700, color: '#4A2C0E', margin: 0 }}>📋 Açık Yemek Talepleri</h2>
+    <Link href="/yemek-talepleri" style={{ color: '#E8622A', fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>Tümünü Gör →</Link>
+  </div>
+  <AnaSayfaTalepler />
+</section>
       {/* Yakınındaki Aşçılar */}
       <section style={{ maxWidth: 1152, margin: '0 auto', padding: '0 24px 64px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
@@ -370,7 +432,7 @@ export default function HomePage() {
             <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11, marginTop: 4 }}>🚶 Yürüme Mesafesinde Ev Yemeği</div>
           </div>
           <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
-            {[['Keşfet', '/kesif'], ['Blog', '/blog'], ['Aşçı Ol', '/asci-ol'], ['Hakkımızda', '/hakkimizda'], ['SSS', '/sss'], ['KVKK', '/kvkk'], ['Kullanım Koşulları', '/kullanim-kosullari']].map(([label, href]) => (
+            {[['Yemek Talepleri', '/yemek-talepleri'], ['Keşfet', '/kesif'], ['Blog', '/blog'], ['Aşçı Ol', '/asci-ol'], ['Hakkımızda', '/hakkimizda'], ['SSS', '/sss'], ['KVKK', '/kvkk'], ['Kullanım Koşulları', '/kullanim-kosullari']].map(([label, href]) => (
               <Link key={href} href={href} style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12, textDecoration: 'none' }}>{label}</Link>
             ))}
           </div>
