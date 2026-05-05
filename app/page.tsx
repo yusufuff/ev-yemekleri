@@ -293,7 +293,8 @@ const [talepPins, setTalepPins] = useState<any[]>([])
               />
               {aramaMetni && <button onClick={() => setAramaMetni('')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, color: '#8A7B6B' }}>✕</button>}
             </div>
-
+ {/* Sol Harita - Aşçılar */}
+<div style={{ marginTop: 32 }}>
             {/* Kategoriler */}
             <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4, marginBottom: 16 }}>
               {KATEGORILER.map(k => (
@@ -364,8 +365,7 @@ const [talepPins, setTalepPins] = useState<any[]>([])
                   )}
                 </>
               )}
-              {/* Sol Harita - Aşçılar */}
-<div style={{ marginTop: 32 }}>
+             
   <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 700, color: '#4A2C0E', marginBottom: 12 }}>🗺️ Aşçı Konumları</h3>
   <LeafletMap
     chefs={chefs.filter(c => c.lat && c.lng).map(c => ({

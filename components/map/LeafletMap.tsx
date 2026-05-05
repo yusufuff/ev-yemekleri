@@ -90,8 +90,8 @@ export default function LeafletMap({ chefs, userCoords, radius, onRadius, select
       // Kullanıcı marker
       const userIcon = L.divIcon({
         html: `<div style="background:#E8622A;width:20px;height:20px;border-radius:50%;border:3px solid white;box-shadow:0 2px 8px rgba(232,98,42,0.5)"></div>`,
-        iconSize: [20, 20],
-        iconAnchor: [10, 10],
+        iconSize: [20, 40],
+        iconAnchor: [14, 40],
         className: '',
       })
       userMarkerRef.current = L.marker([lat, lng], { icon: userIcon })
