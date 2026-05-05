@@ -257,10 +257,10 @@ export default function HomePage() {
       <HeroSection />
 
       {/* ANA İKİ KOLON - normal sayfa scroll */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', alignItems: 'start' }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start' }}>
 
         {/* SOL KOLON */}
-        <div style={{ borderRight: '1px solid #E8E0D4' }}>
+        <div style={{ borderRight: '1px solid #E8E0D4', flex: 1 }}>
 
           {/* SOL STICKY ÜSTTE - Başlık + Arama + Harita */}
           <div style={{ position: 'sticky', top: 0, zIndex: 10, background: '#FAF6EF', padding: '16px 20px 12px', borderBottom: '1px solid #f0f0f0' }}>
@@ -334,7 +334,7 @@ export default function HomePage() {
         </div>
 
         {/* SAĞ KOLON */}
-        <div>
+        <div style={{ flex: 1 }}>
 
           {/* SAĞ STICKY ÜSTTE - Başlık + Buton + Harita */}
           <div style={{ position: 'sticky', top: 0, zIndex: 10, background: '#FAF6EF', padding: '16px 20px 12px', borderBottom: '1px solid #f0f0f0' }}>
