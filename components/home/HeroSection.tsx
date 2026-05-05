@@ -90,9 +90,9 @@ function StoriesPanel() {
           </div>
         ))}
       </div>
-      {aktif && (
+      {aktif ? (
   <StoryOverlay story={aktif} onClose={() => setAktif(null)} />
-)}
+) : null}
         <div onClick={() => setAktif(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div onClick={e => e.stopPropagation()} style={{ width: 380, maxWidth: '95vw', borderRadius: 20, overflow: 'hidden', position: 'relative' }}>
             <img src={aktif.image_url} style={{ width: '100%', maxHeight: '70vh', objectFit: 'cover', display: 'block' }} />
