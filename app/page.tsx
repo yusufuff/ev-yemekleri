@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { HeroSection } from '@/components/home/HeroSection'
 import { createClient } from '@supabase/supabase-js'
+import { getSupabaseBrowserClient } from '@/lib/supabase/client'
 import { useCart } from '@/hooks/useCart'
 
 const supabase = createClient(
