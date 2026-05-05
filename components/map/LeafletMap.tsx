@@ -202,7 +202,10 @@ export default function LeafletMap({ chefs, userCoords, radius, onRadius, select
       </div>
 
       {/* Harita */}
-      <div ref={mapRef} style={{ height: '320px', borderRadius: '16px', overflow: 'hidden', border: '1px solid #E8E0D4', zIndex: 1 }} />
+      <div style={{ position: 'relative' }}>
+  <button onClick={() => { if (!navigator.geolocation) return; navigator.geolocation.getCurrentPosition(pos => { if (mapInstanceRef.current) mapInstanceRef.current.setView([pos.coords.latitude, pos.coords.longitude], 14) }) }} style={{ position: 'absolute', top: 8, right: 8, zIndex: 999, width: 40, height: 40, borderRadius: '50%', background: 'white', border: '2px solid #ef4444', cursor: 'pointer', fontSize: 18, boxShadow: '0 2px 8px rgba(0,0,0,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>📍</button>
+  <div ref={mapRef} style={{ height: '320px', borderRadius: '16px', overflow: 'hidden', border: '1px solid #E8E0D4', zIndex: 1 }} />
+</div>
 
       {/* Açıklama */}
       <div style={{ display: 'flex', gap: 12, marginTop: 8, fontSize: 11, color: '#8A7B6B' }}>
