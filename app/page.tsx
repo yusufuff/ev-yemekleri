@@ -241,7 +241,32 @@ export default function HomePage() {
   return (
     <div style={{ minHeight: '100vh', background: '#FAF6EF', fontFamily: "'DM Sans', sans-serif" }}>
       <HeroSection />
+{/* İki Kolon - Aşçı Yemekleri ve Yemek Talepleri */}
+<div style={{ maxWidth: 1152, margin: '0 auto', padding: '32px 24px 0', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+  {/* Sol - Aşçı Yemekleri */}
+  <div style={{ background: '#fff', borderRadius: 20, padding: 24, boxShadow: '0 2px 12px rgba(74,44,14,0.06)' }}>
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+      <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 20, fontWeight: 700, color: '#4A2C0E', margin: 0 }}>🍲 Aşçı Yemekleri</h2>
+      <Link href="/kesif" style={{ color: '#E8622A', fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>Tümünü Gör →</Link>
+    </div>
+    <p style={{ fontSize: 13, color: '#8A7B6B', marginBottom: 16 }}>Yakınındaki ev aşçılarından taze yemekler sipariş et.</p>
+    <Link href="/kesif" style={{ display: 'block', background: '#E8622A', color: '#fff', textAlign: 'center', padding: '12px', borderRadius: 12, fontWeight: 700, fontSize: 14, textDecoration: 'none' }}>
+      Yemekleri Keşfet →
+    </Link>
+  </div>
 
+  {/* Sağ - Yemek Talepleri */}
+  <div style={{ background: '#fff', borderRadius: 20, padding: 24, boxShadow: '0 2px 12px rgba(74,44,14,0.06)' }}>
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+      <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 20, fontWeight: 700, color: '#4A2C0E', margin: 0 }}>📋 Yemek Talepleri</h2>
+      <Link href="/yemek-talepleri" style={{ color: '#E8622A', fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>Tümünü Gör →</Link>
+    </div>
+    <p style={{ fontSize: 13, color: '#8A7B6B', marginBottom: 16 }}>İstediğin yemeği talep et, aşçılar sana teklif versin.</p>
+    <Link href="/yemek-talepleri" style={{ display: 'block', background: '#3D6B47', color: '#fff', textAlign: 'center', padding: '12px', borderRadius: 12, fontWeight: 700, fontSize: 14, textDecoration: 'none' }}>
+      Talep Oluştur →
+    </Link>
+  </div>
+</div>
       {/* Arama */}
       <div style={{ maxWidth: 1152, margin: '0 auto', padding: '24px 24px 0' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'white', borderRadius: 14, padding: '12px 16px', boxShadow: '0 2px 12px rgba(74,44,14,0.08)', border: '1px solid #E8E0D4' }}>
