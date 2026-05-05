@@ -120,6 +120,7 @@ function YemekKart({ yemek }: { yemek: any }) {
     </div>
   )
 }
+
 function AnaSayfaTalepler() {
   const [talepler, setTalepler] = useState<any[]>([])
   const [yukleniyor, setYukleniyor] = useState(true)
@@ -133,7 +134,7 @@ function AnaSayfaTalepler() {
         .select('*, food_request_offers(count)')
         .eq('durum', 'aktif')
         .order('created_at', { ascending: false })
-        .limit(3)
+        .limit(5)
       if (!data || data.length === 0) { setTalepler([]); return }
       const userIds = [...new Set(data.map((t: any) => t.user_id).filter(Boolean))]
       const { data: usersData } = await supabase.from('users').select('id, full_name').in('id', userIds)
@@ -144,7 +145,7 @@ function AnaSayfaTalepler() {
     finally { setYukleniyor(false) }
   }
 
-  if (yukleniyor) return <div style={{ textAlign: 'center', padding: 20 }}>Yükleniyor...</div>
+  if (yukleniyor) return <div style={{ textAlign: 'center', padding: 20, color: '#8A7B6B' }}>Yükleniyor...</div>
   if (talepler.length === 0) return (
     <Link href="/yemek-talepleri" style={{ display: 'block', background: '#FFF5EC', borderRadius: 14, padding: 16, border: '1.5px solid #E8622A', textAlign: 'center', textDecoration: 'none' }}>
       <p style={{ color: '#4A2C0E', fontWeight: 700, margin: 0 }}>+ İlk talebi oluştur</p>
@@ -153,21 +154,23 @@ function AnaSayfaTalepler() {
   )
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       {talepler.map((t: any) => (
         <Link key={t.id} href="/yemek-talepleri" style={{ textDecoration: 'none' }}>
-          <div style={{ background: '#fff', borderRadius: 16, padding: 16, border: '1.5px solid #e0e0e0', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', cursor: 'pointer' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-              <p style={{ fontWeight: 700, color: '#1a1a1a', margin: 0, fontSize: 15 }}>{t.baslik}</p>
-              {t.butce && <span style={{ color: '#E8622A', fontWeight: 700 }}>₺{t.butce.toLocaleString()}</span>}
+          <div style={{ background: '#fff', borderRadius: 16, padding: 14, border: '1.5px solid #e0e0e0', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', cursor: 'pointer' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+              <p style={{ fontWeight: 700, color: '#1a1a1a', margin: 0, fontSize: 14 }}>{t.baslik}</p>
+              {t.butce && <span style={{ color: '#E8622A', fontWeight: 700, fontSize: 13 }}>₺{t.butce.toLocaleString()}</span>}
             </div>
             {t.user_full_name && <p style={{ fontSize: 12, color: '#888', margin: '0 0 6px' }}>👤 {t.user_full_name}</p>}
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 10 }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 8 }}>
               {t.kisi_sayisi && <span style={{ fontSize: 12, color: '#888' }}>👥 {t.kisi_sayisi} kişilik</span>}
               {t.konum && <span style={{ fontSize: 12, color: '#888' }}>📍 {t.konum}</span>}
             </div>
-            <div style={{ borderTop: '1px solid #f0f0f0', paddingTop: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: 12, color: '#888' }}>{t.food_request_offers?.[0]?.count > 0 ? t.food_request_offers[0].count + ' teklif var!' : 'Henüz teklif yok'}</span>
+            <div style={{ borderTop: '1px solid #f0f0f0', paddingTop: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: 12, color: t.food_request_offers?.[0]?.count > 0 ? '#E8622A' : '#888', fontWeight: t.food_request_offers?.[0]?.count > 0 ? 700 : 400 }}>
+                {t.food_request_offers?.[0]?.count > 0 ? t.food_request_offers[0].count + ' teklif var!' : 'Henüz teklif yok'}
+              </span>
               <span style={{ background: '#E8622A', color: '#fff', borderRadius: 8, padding: '4px 12px', fontSize: 12, fontWeight: 700 }}>Teklif Ver</span>
             </div>
           </div>
@@ -176,6 +179,7 @@ function AnaSayfaTalepler() {
     </div>
   )
 }
+
 export default function HomePage() {
   const [yemekler, setYemekler] = useState<any[]>([])
   const [chefs, setChefs] = useState<any[]>([])
@@ -241,133 +245,132 @@ export default function HomePage() {
   return (
     <div style={{ minHeight: '100vh', background: '#FAF6EF', fontFamily: "'DM Sans', sans-serif" }}>
       <HeroSection />
-{/* İki Kolon - Aşçı Yemekleri ve Yemek Talepleri */}
-<div style={{ maxWidth: 1152, margin: '0 auto', padding: '32px 24px 0', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
-  {/* Sol - Aşçı Yemekleri */}
-  <div style={{ background: '#fff', borderRadius: 20, padding: 24, boxShadow: '0 2px 12px rgba(74,44,14,0.06)' }}>
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-      <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 20, fontWeight: 700, color: '#4A2C0E', margin: 0 }}>🍲 Aşçı Yemekleri</h2>
-      <Link href="/kesif" style={{ color: '#E8622A', fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>Tümünü Gör →</Link>
-    </div>
-    <p style={{ fontSize: 13, color: '#8A7B6B', marginBottom: 16 }}>Yakınındaki ev aşçılarından taze yemekler sipariş et.</p>
-    <Link href="/kesif" style={{ display: 'block', background: '#E8622A', color: '#fff', textAlign: 'center', padding: '12px', borderRadius: 12, fontWeight: 700, fontSize: 14, textDecoration: 'none' }}>
-      Yemekleri Keşfet →
-    </Link>
-  </div>
 
-  {/* Sağ - Yemek Talepleri */}
-  <div style={{ background: '#fff', borderRadius: 20, padding: 24, boxShadow: '0 2px 12px rgba(74,44,14,0.06)' }}>
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-      <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 20, fontWeight: 700, color: '#4A2C0E', margin: 0 }}>📋 Yemek Talepleri</h2>
-      <Link href="/yemek-talepleri" style={{ color: '#E8622A', fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>Tümünü Gör →</Link>
-    </div>
-    <p style={{ fontSize: 13, color: '#8A7B6B', marginBottom: 16 }}>İstediğin yemeği talep et, aşçılar sana teklif versin.</p>
-    <Link href="/yemek-talepleri" style={{ display: 'block', background: '#3D6B47', color: '#fff', textAlign: 'center', padding: '12px', borderRadius: 12, fontWeight: 700, fontSize: 14, textDecoration: 'none' }}>
-      Talep Oluştur →
-    </Link>
-  </div>
-</div>
-      {/* Arama */}
-      <div style={{ maxWidth: 1152, margin: '0 auto', padding: '24px 24px 0' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'white', borderRadius: 14, padding: '12px 16px', boxShadow: '0 2px 12px rgba(74,44,14,0.08)', border: '1px solid #E8E0D4' }}>
-          <span style={{ fontSize: 18 }}>🔍</span>
-          <input
-            value={aramaMetni}
-            onChange={e => setAramaMetni(e.target.value)}
-            placeholder="Yemek veya aşçı ara..."
-            style={{ flex: 1, border: 'none', outline: 'none', fontSize: 14, fontFamily: 'inherit', background: 'transparent', color: '#4A2C0E' }}
-          />
-          {aramaMetni && <button onClick={() => setAramaMetni('')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: '#8A7B6B' }}>✕</button>}
-        </div>
-      </div>
+      {/* ANA İKİ KOLON LAYOUT */}
+      <div style={{ maxWidth: 1400, margin: '0 auto', padding: '0 16px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0, minHeight: 'calc(100vh - 80px)' }}>
 
-      {/* Kategoriler */}
-      <div style={{ maxWidth: 1152, margin: '0 auto', padding: '16px 24px 0' }}>
-        <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
-          {KATEGORILER.map(k => (
-            <button key={k.id} onClick={() => setAktifKategori(k.id)}
-              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 20, border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600, fontSize: 13, whiteSpace: 'nowrap', transition: 'all 0.15s',
-                background: aktifKategori === k.id ? '#E8622A' : 'white',
-                color: aktifKategori === k.id ? 'white' : '#8A7B6B',
-                boxShadow: '0 1px 4px rgba(0,0,0,0.08)',
-              }}>
-              <span>{k.emoji}</span>{k.ad}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Yemekler */}
-      <section style={{ maxWidth: 1152, margin: '0 auto', padding: '24px 24px' }}>
-        {yukleniyor ? (
-          <div style={{ textAlign: 'center', padding: 60, color: '#8A7B6B' }}>Yemekler yükleniyor...</div>
-        ) : aramaMetni ? (
-          <>
-            <div style={{ fontSize: 13, color: '#8A7B6B', marginBottom: 16 }}>{aramaFiltreli.length} sonuç</div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 16 }}>
-              {aramaFiltreli.map(y => <YemekKart key={y.id} yemek={y} />)}
+          {/* SOL KOLON - AŞÇI YEMEKLERİ */}
+          <div style={{ borderRight: '1px solid #E8E0D4', padding: '24px 24px 24px 0' }}>
+            {/* Sol Başlık */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, paddingBottom: 16, borderBottom: '2px solid #E8622A' }}>
+              <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 22, fontWeight: 700, color: '#4A2C0E', margin: 0 }}>🍲 Aşçı Yemekleri</h2>
+              <Link href="/kesif" style={{ color: '#E8622A', fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>Tümünü Gör →</Link>
             </div>
-          </>
-        ) : aktifKategori !== 'hepsi' ? (
-          <>
-            {filtreliYemekler.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: 60, color: '#8A7B6B' }}>Bu kategoride yemek yok</div>
-            ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 16 }}>
-                {filtreliYemekler.map(y => <YemekKart key={y.id} yemek={y} />)}
-              </div>
-            )}
-          </>
-        ) : (
-          <>
-            {indirimliYemekler.length > 0 && (
-              <div onClick={() => setAktifKategori('indirimli')}
-                style={{ background: 'linear-gradient(135deg, #E8622A, #C44E1A)', borderRadius: 14, padding: '14px 20px', marginBottom: 24, display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', color: 'white' }}>
-                <span style={{ fontSize: 24 }}>🏷️</span>
-                <div>
-                  <div style={{ fontWeight: 700, fontSize: 15 }}>İndirimli Yemekler</div>
-                  <div style={{ fontSize: 12, opacity: 0.8 }}>{indirimliYemekler.length} yemekte fırsatlar var!</div>
-                </div>
-                <span style={{ marginLeft: 'auto', fontSize: 18 }}>→</span>
-              </div>
-            )}
 
-            {KATEGORI_SIRASI.map(kat => {
-              const items = kategoriBazli[kat]
-              if (!items || items.length === 0) return null
-              const meta = KATEGORI_META[kat]
-              return (
-                <div key={kat} style={{ marginBottom: 36 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                    <h2 style={{ fontFamily: "'Playfair Display',serif", fontSize: 18, fontWeight: 700, color: '#4A2C0E', margin: 0 }}>{meta.emoji} {meta.ad}</h2>
-                    <button onClick={() => setAktifKategori(kat)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#E8622A', fontWeight: 600, fontSize: 13, fontFamily: 'inherit' }}>Tümünü Gör →</button>
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 16 }}>
-                    {items.slice(0, 4).map(y => <YemekKart key={y.id} yemek={y} />)}
-                  </div>
-                </div>
-              )
-            })}
+            {/* Arama */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'white', borderRadius: 14, padding: '10px 14px', boxShadow: '0 2px 8px rgba(74,44,14,0.06)', border: '1px solid #E8E0D4', marginBottom: 14 }}>
+              <span style={{ fontSize: 16 }}>🔍</span>
+              <input
+                value={aramaMetni}
+                onChange={e => setAramaMetni(e.target.value)}
+                placeholder="Yemek veya aşçı ara..."
+                style={{ flex: 1, border: 'none', outline: 'none', fontSize: 13, fontFamily: 'inherit', background: 'transparent', color: '#4A2C0E' }}
+              />
+              {aramaMetni && <button onClick={() => setAramaMetni('')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, color: '#8A7B6B' }}>✕</button>}
+            </div>
 
-            {Object.keys(kategoriBazli).length === 0 && (
-              <div style={{ textAlign: 'center', padding: 60, color: '#8A7B6B' }}>
-                <div style={{ fontSize: 48, marginBottom: 12 }}>🍽️</div>
-                <div style={{ fontWeight: 700, color: '#4A2C0E', marginBottom: 6 }}>Şu an aktif yemek yok</div>
+            {/* Kategoriler */}
+            <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4, marginBottom: 16 }}>
+              {KATEGORILER.map(k => (
+                <button key={k.id} onClick={() => setAktifKategori(k.id)}
+                  style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '6px 12px', borderRadius: 20, border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600, fontSize: 12, whiteSpace: 'nowrap', transition: 'all 0.15s',
+                    background: aktifKategori === k.id ? '#E8622A' : 'white',
+                    color: aktifKategori === k.id ? 'white' : '#8A7B6B',
+                    boxShadow: '0 1px 4px rgba(0,0,0,0.08)',
+                  }}>
+                  <span>{k.emoji}</span>{k.ad}
+                </button>
+              ))}
+            </div>
+
+            {/* Yemekler */}
+            <div>
+              {yukleniyor ? (
+                <div style={{ textAlign: 'center', padding: 40, color: '#8A7B6B' }}>Yemekler yükleniyor...</div>
+              ) : aramaMetni ? (
+                <>
+                  <div style={{ fontSize: 12, color: '#8A7B6B', marginBottom: 12 }}>{aramaFiltreli.length} sonuç</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 12 }}>
+                    {aramaFiltreli.map(y => <YemekKart key={y.id} yemek={y} />)}
+                  </div>
+                </>
+              ) : aktifKategori !== 'hepsi' ? (
+                filtreliYemekler.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: 40, color: '#8A7B6B' }}>Bu kategoride yemek yok</div>
+                ) : (
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 12 }}>
+                    {filtreliYemekler.map(y => <YemekKart key={y.id} yemek={y} />)}
+                  </div>
+                )
+              ) : (
+                <>
+                  {indirimliYemekler.length > 0 && (
+                    <div onClick={() => setAktifKategori('indirimli')}
+                      style={{ background: 'linear-gradient(135deg, #E8622A, #C44E1A)', borderRadius: 14, padding: '12px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', color: 'white' }}>
+                      <span style={{ fontSize: 20 }}>🏷️</span>
+                      <div>
+                        <div style={{ fontWeight: 700, fontSize: 13 }}>İndirimli Yemekler</div>
+                        <div style={{ fontSize: 11, opacity: 0.8 }}>{indirimliYemekler.length} yemekte fırsatlar var!</div>
+                      </div>
+                      <span style={{ marginLeft: 'auto', fontSize: 16 }}>→</span>
+                    </div>
+                  )}
+                  {KATEGORI_SIRASI.map(kat => {
+                    const items = kategoriBazli[kat]
+                    if (!items || items.length === 0) return null
+                    const meta = KATEGORI_META[kat]
+                    return (
+                      <div key={kat} style={{ marginBottom: 28 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                          <h2 style={{ fontFamily: "'Playfair Display',serif", fontSize: 16, fontWeight: 700, color: '#4A2C0E', margin: 0 }}>{meta.emoji} {meta.ad}</h2>
+                          <button onClick={() => setAktifKategori(kat)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#E8622A', fontWeight: 600, fontSize: 12, fontFamily: 'inherit' }}>Tümünü Gör →</button>
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 12 }}>
+                          {items.slice(0, 4).map(y => <YemekKart key={y.id} yemek={y} />)}
+                        </div>
+                      </div>
+                    )
+                  })}
+                  {Object.keys(kategoriBazli).length === 0 && (
+                    <div style={{ textAlign: 'center', padding: 40, color: '#8A7B6B' }}>
+                      <div style={{ fontSize: 40, marginBottom: 10 }}>🍽️</div>
+                      <div style={{ fontWeight: 700, color: '#4A2C0E' }}>Şu an aktif yemek yok</div>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* SAĞ KOLON - YEMEK TALEPLERİ */}
+          <div style={{ padding: '24px 0 24px 24px' }}>
+            {/* Sağ Başlık */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, paddingBottom: 16, borderBottom: '2px solid #3D6B47' }}>
+              <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 22, fontWeight: 700, color: '#4A2C0E', margin: 0 }}>📋 Yemek Talepleri</h2>
+              <Link href="/yemek-talepleri" style={{ color: '#3D6B47', fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>Tümünü Gör →</Link>
+            </div>
+
+            {/* Açıklama + Buton */}
+            <div style={{ background: 'linear-gradient(135deg, #3D6B47, #2e5236)', borderRadius: 14, padding: '14px 18px', marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+              <div>
+                <p style={{ color: 'white', fontWeight: 700, fontSize: 13, margin: '0 0 4px' }}>İstediğin yemeği talep et</p>
+                <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 11, margin: 0 }}>Aşçılar sana teklif versin</p>
               </div>
-            )}
-          </>
-        )}
-      </section>
-{/* Yemek Talepleri */}
-<section style={{ maxWidth: 1152, margin: '0 auto', padding: '0 24px 48px' }}>
-  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-    <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 24, fontWeight: 700, color: '#4A2C0E', margin: 0 }}>📋 Açık Yemek Talepleri</h2>
-    <Link href="/yemek-talepleri" style={{ color: '#E8622A', fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>Tümünü Gör →</Link>
-  </div>
-  <AnaSayfaTalepler />
-</section>
+              <Link href="/yemek-talepleri" style={{ background: 'white', color: '#3D6B47', borderRadius: 10, padding: '8px 16px', fontWeight: 700, fontSize: 12, textDecoration: 'none', whiteSpace: 'nowrap' }}>
+                + Talep Oluştur
+              </Link>
+            </div>
+
+            {/* Talep Listesi */}
+            <AnaSayfaTalepler />
+          </div>
+
+        </div>
+      </div>
+
       {/* Yakınındaki Aşçılar */}
-      <section style={{ maxWidth: 1152, margin: '0 auto', padding: '0 24px 64px' }}>
+      <section style={{ maxWidth: 1400, margin: '0 auto', padding: '0 16px 64px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
           <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 24, fontWeight: 700, color: '#4A2C0E', margin: 0 }}>Yakınındaki Aşçılar</h2>
           <Link href="/kesif" style={{ color: '#E8622A', fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>Tümünü Gör →</Link>
@@ -403,7 +406,7 @@ export default function HomePage() {
       </section>
 
       {/* Nasıl Çalışır */}
-      <section style={{ maxWidth: 1152, margin: '0 auto', padding: '0 24px 64px' }}>
+      <section style={{ maxWidth: 1400, margin: '0 auto', padding: '0 16px 64px' }}>
         <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 24, fontWeight: 700, color: '#4A2C0E', textAlign: 'center', marginBottom: 40 }}>Nasıl Çalışır?</h2>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 24 }}>
           {HOW_STEPS.map((step, i) => (
@@ -417,7 +420,7 @@ export default function HomePage() {
       </section>
 
       {/* Aşçı Ol CTA */}
-      <section style={{ maxWidth: 1152, margin: '0 auto', padding: '0 24px 64px' }}>
+      <section style={{ maxWidth: 1400, margin: '0 auto', padding: '0 16px 64px' }}>
         <div style={{ background: 'linear-gradient(135deg, #3D6B47, #2e5236)', borderRadius: 20, padding: 48, display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 32, position: 'relative', overflow: 'hidden' }}>
           <span style={{ position: 'absolute', right: 32, top: '50%', transform: 'translateY(-50%)', fontSize: 120, opacity: 0.08, userSelect: 'none', pointerEvents: 'none' }}>👩‍🍳</span>
           <div style={{ position: 'relative', zIndex: 1 }}>
@@ -437,7 +440,7 @@ export default function HomePage() {
       </section>
 
       {/* Yorumlar */}
-      <section style={{ maxWidth: 1152, margin: '0 auto', padding: '0 24px 80px' }}>
+      <section style={{ maxWidth: 1400, margin: '0 auto', padding: '0 16px 80px' }}>
         <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 24, fontWeight: 700, color: '#4A2C0E', marginBottom: 24 }}>Kullanıcı Yorumları</h2>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 20 }}>
           {TESTIMONIALS.map((t, i) => (
@@ -452,7 +455,7 @@ export default function HomePage() {
 
       {/* Footer */}
       <footer style={{ background: '#4A2C0E', padding: '40px 24px' }}>
-        <div style={{ maxWidth: 1152, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
+        <div style={{ maxWidth: 1400, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
           <div>
             <div style={{ fontFamily: "'Playfair Display', serif", fontWeight: 900, fontSize: 18, color: 'white' }}>Anneelim</div>
             <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11, marginTop: 4 }}>🚶 Yürüme Mesafesinde Ev Yemeği</div>
