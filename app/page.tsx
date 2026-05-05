@@ -189,9 +189,9 @@ export default function HomePage() {
   const [aramaMetni, setAramaMetni] = useState('')
   const [yukleniyor, setYukleniyor] = useState(true)
   const [selectedPin, setSelectedPin] = useState<string | null>(null)
-const [userCoords, setUserCoords] = useState<{lat: number, lng: number} | null>(null)
-const [radius, setRadius] = useState(5)
-const [talepPins, setTalepPins] = useState<any[]>([])
+  const [userCoords, setUserCoords] = useState<{lat: number, lng: number} | null>(null)
+  const [radius, setRadius] = useState(5)
+  const [talepPins, setTalepPins] = useState<any[]>([])
 
   const yemekleriYukle = useCallback(async () => {
     try {
@@ -223,7 +223,7 @@ const [talepPins, setTalepPins] = useState<any[]>([])
     try {
       const res = await fetch('/api/discover?sort=rating')
       const data = await res.json()
-      setChefs(data.chefs?.slice(0, 3) ?? [])
+      setChefs(data.chefs?.slice(0, 10) ?? [])
     } catch {}
   }, [])
 
@@ -231,15 +231,14 @@ const [talepPins, setTalepPins] = useState<any[]>([])
     yemekleriYukle()
     chefleriYukle()
   }, [yemekleriYukle, chefleriYukle])
+
   useEffect(() => {
-    // Kullanıcı konumu al
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         pos => setUserCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
         () => {}
       )
     }
-    // Talep koordinatlarını yükle
     const talepYukle = async () => {
       const { data } = await supabase.from('food_requests')
         .select('id, baslik, lat, lng, konum, user_id')
@@ -266,40 +265,58 @@ const [talepPins, setTalepPins] = useState<any[]>([])
     return acc
   }, {} as Record<string, any[]>)
 
+  const chefPins = chefs.filter(c => c.lat && c.lng).map(c => ({
+    chef_id: c.chef_id,
+    full_name: c.full_name,
+    avg_rating: c.avg_rating,
+    distance_km: c.distance_km ?? 0,
+    is_open: c.is_open,
+    lat: c.lat,
+    lng: c.lng,
+    location_approx: c.location_approx,
+  }))
+
+  const talepHaritaPins = talepPins.map(t => ({
+    chef_id: t.id,
+    full_name: t.baslik,
+    avg_rating: null,
+    distance_km: 0,
+    is_open: true,
+    lat: t.lat,
+    lng: t.lng,
+    location_approx: t.konum,
+  }))
+
   return (
     <div style={{ minHeight: '100vh', background: '#FAF6EF', fontFamily: "'DM Sans', sans-serif" }}>
       <HeroSection />
 
       {/* ANA İKİ KOLON LAYOUT */}
-      <div style={{ maxWidth: 1400, margin: '0 auto', padding: '0 16px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0, minHeight: 'calc(100vh - 80px)' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', height: 'calc(100vh - 80px)', overflow: 'hidden' }}>
 
-          {/* SOL KOLON - AŞÇI YEMEKLERİ */}
-          <div style={{ borderRight: '1px solid #E8E0D4', padding: '24px 24px 24px 0' }}>
-            {/* Sol Başlık */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, paddingBottom: 16, borderBottom: '2px solid #E8622A' }}>
-              <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 22, fontWeight: 700, color: '#4A2C0E', margin: 0 }}>🍲 Aşçı Yemekleri</h2>
-              <Link href="/kesif" style={{ color: '#E8622A', fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>Tümünü Gör →</Link>
+        {/* SOL KOLON */}
+        <div style={{ borderRight: '1px solid #E8E0D4', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          
+          {/* SABİT ÜSTTE */}
+          <div style={{ padding: '16px 20px 12px', background: '#FAF6EF', flexShrink: 0, borderBottom: '1px solid #f0f0f0' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, paddingBottom: 12, borderBottom: '2px solid #E8622A' }}>
+              <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 20, fontWeight: 700, color: '#4A2C0E', margin: 0 }}>🍲 Aşçı Yemekleri</h2>
+              <Link href="/kesif" style={{ color: '#E8622A', fontSize: 12, fontWeight: 600, textDecoration: 'none' }}>Tümünü Gör →</Link>
             </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'white', borderRadius: 12, padding: '8px 12px', border: '1px solid #E8E0D4', marginBottom: 12 }}>
+              <span>🔍</span>
+              <input value={aramaMetni} onChange={e => setAramaMetni(e.target.value)} placeholder="Yemek veya aşçı ara..." style={{ flex: 1, border: 'none', outline: 'none', fontSize: 13, fontFamily: 'inherit', background: 'transparent', color: '#4A2C0E' }} />
+              {aramaMetni && <button onClick={() => setAramaMetni('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#8A7B6B' }}>✕</button>}
+            </div>
+            <LeafletMap chefs={chefPins} userCoords={userCoords} radius={radius} onRadius={setRadius} selectedPin={selectedPin} onPinClick={setSelectedPin} />
+          </div>
 
-            {/* Arama */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'white', borderRadius: 14, padding: '10px 14px', boxShadow: '0 2px 8px rgba(74,44,14,0.06)', border: '1px solid #E8E0D4', marginBottom: 14 }}>
-              <span style={{ fontSize: 16 }}>🔍</span>
-              <input
-                value={aramaMetni}
-                onChange={e => setAramaMetni(e.target.value)}
-                placeholder="Yemek veya aşçı ara..."
-                style={{ flex: 1, border: 'none', outline: 'none', fontSize: 13, fontFamily: 'inherit', background: 'transparent', color: '#4A2C0E' }}
-              />
-              {aramaMetni && <button onClick={() => setAramaMetni('')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, color: '#8A7B6B' }}>✕</button>}
-            </div>
- {/* Sol Harita - Aşçılar */}
-<div style={{ marginTop: 0, marginBottom: 24 }}>
-            {/* Kategoriler */}
-            <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4, marginBottom: 16 }}>
+          {/* SCROLL ALT */}
+          <div style={{ overflowY: 'auto', flex: 1, padding: '12px 20px 20px' }}>
+            <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4, marginBottom: 14 }}>
               {KATEGORILER.map(k => (
                 <button key={k.id} onClick={() => setAktifKategori(k.id)}
-                  style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '6px 12px', borderRadius: 20, border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600, fontSize: 12, whiteSpace: 'nowrap', transition: 'all 0.15s',
+                  style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '5px 10px', borderRadius: 20, border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600, fontSize: 11, whiteSpace: 'nowrap',
                     background: aktifKategori === k.id ? '#E8622A' : 'white',
                     color: aktifKategori === k.id ? 'white' : '#8A7B6B',
                     boxShadow: '0 1px 4px rgba(0,0,0,0.08)',
@@ -308,141 +325,84 @@ const [talepPins, setTalepPins] = useState<any[]>([])
                 </button>
               ))}
             </div>
-
-            {/* Yemekler */}
-            <div>
-              {yukleniyor ? (
-                <div style={{ textAlign: 'center', padding: 40, color: '#8A7B6B' }}>Yemekler yükleniyor...</div>
-              ) : aramaMetni ? (
-                <>
-                  <div style={{ fontSize: 12, color: '#8A7B6B', marginBottom: 12 }}>{aramaFiltreli.length} sonuç</div>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 12 }}>
-                    {aramaFiltreli.map(y => <YemekKart key={y.id} yemek={y} />)}
-                  </div>
-                </>
-              ) : aktifKategori !== 'hepsi' ? (
-                filtreliYemekler.length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: 40, color: '#8A7B6B' }}>Bu kategoride yemek yok</div>
-                ) : (
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 12 }}>
-                    {filtreliYemekler.map(y => <YemekKart key={y.id} yemek={y} />)}
-                  </div>
-                )
-              ) : (
-                <>
-                  {indirimliYemekler.length > 0 && (
-                    <div onClick={() => setAktifKategori('indirimli')}
-                      style={{ background: 'linear-gradient(135deg, #E8622A, #C44E1A)', borderRadius: 14, padding: '12px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', color: 'white' }}>
-                      <span style={{ fontSize: 20 }}>🏷️</span>
-                      <div>
-                        <div style={{ fontWeight: 700, fontSize: 13 }}>İndirimli Yemekler</div>
-                        <div style={{ fontSize: 11, opacity: 0.8 }}>{indirimliYemekler.length} yemekte fırsatlar var!</div>
-                      </div>
-                      <span style={{ marginLeft: 'auto', fontSize: 16 }}>→</span>
+            {yukleniyor ? (
+              <div style={{ textAlign: 'center', padding: 40, color: '#8A7B6B' }}>Yemekler yükleniyor...</div>
+            ) : aramaMetni ? (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 10 }}>
+                {aramaFiltreli.map(y => <YemekKart key={y.id} yemek={y} />)}
+              </div>
+            ) : aktifKategori !== 'hepsi' ? (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 10 }}>
+                {filtreliYemekler.map(y => <YemekKart key={y.id} yemek={y} />)}
+              </div>
+            ) : (
+              <>
+                {indirimliYemekler.length > 0 && (
+                  <div onClick={() => setAktifKategori('indirimli')} style={{ background: 'linear-gradient(135deg, #E8622A, #C44E1A)', borderRadius: 12, padding: '10px 14px', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', color: 'white' }}>
+                    <span>🏷️</span>
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: 12 }}>İndirimli Yemekler</div>
+                      <div style={{ fontSize: 11, opacity: 0.8 }}>{indirimliYemekler.length} yemekte fırsatlar var!</div>
                     </div>
-                  )}
-                  {KATEGORI_SIRASI.map(kat => {
-                    const items = kategoriBazli[kat]
-                    if (!items || items.length === 0) return null
-                    const meta = KATEGORI_META[kat]
-                    return (
-                      <div key={kat} style={{ marginBottom: 28 }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                          <h2 style={{ fontFamily: "'Playfair Display',serif", fontSize: 16, fontWeight: 700, color: '#4A2C0E', margin: 0 }}>{meta.emoji} {meta.ad}</h2>
-                          <button onClick={() => setAktifKategori(kat)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#E8622A', fontWeight: 600, fontSize: 12, fontFamily: 'inherit' }}>Tümünü Gör →</button>
-                        </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 12 }}>
-                          {items.slice(0, 4).map(y => <YemekKart key={y.id} yemek={y} />)}
-                        </div>
+                    <span style={{ marginLeft: 'auto' }}>→</span>
+                  </div>
+                )}
+                {KATEGORI_SIRASI.map(kat => {
+                  const items = kategoriBazli[kat]
+                  if (!items || items.length === 0) return null
+                  const meta = KATEGORI_META[kat]
+                  return (
+                    <div key={kat} style={{ marginBottom: 24 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                        <h2 style={{ fontFamily: "'Playfair Display',serif", fontSize: 15, fontWeight: 700, color: '#4A2C0E', margin: 0 }}>{meta.emoji} {meta.ad}</h2>
+                        <button onClick={() => setAktifKategori(kat)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#E8622A', fontWeight: 600, fontSize: 11, fontFamily: 'inherit' }}>Tümünü Gör →</button>
                       </div>
-                    )
-                  })}
-                  {Object.keys(kategoriBazli).length === 0 && (
-                    <div style={{ textAlign: 'center', padding: 40, color: '#8A7B6B' }}>
-                      <div style={{ fontSize: 40, marginBottom: 10 }}>🍽️</div>
-                      <div style={{ fontWeight: 700, color: '#4A2C0E' }}>Şu an aktif yemek yok</div>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 10 }}>
+                        {items.slice(0, 4).map(y => <YemekKart key={y.id} yemek={y} />)}
+                      </div>
                     </div>
-                  )}
-                </>
-              )}
-             
-  <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 700, color: '#4A2C0E', marginBottom: 12 }}>🗺️ Aşçı Konumları</h3>
-  <LeafletMap
-    chefs={chefs.filter(c => c.lat && c.lng).map(c => ({
-      chef_id: c.chef_id,
-      full_name: c.full_name,
-      avg_rating: c.avg_rating,
-      distance_km: c.distance_km ?? 0,
-      is_open: c.is_open,
-      lat: c.lat,
-      lng: c.lng,
-      location_approx: c.location_approx,
-    }))}
-    userCoords={userCoords}
-    radius={radius}
-    onRadius={setRadius}
-    selectedPin={selectedPin}
-    onPinClick={setSelectedPin}
-  />
-</div>
-            </div>
+                  )
+                })}
+              </>
+            )}
           </div>
+        </div>
 
-          {/* SAĞ KOLON - YEMEK TALEPLERİ */}
-          <div style={{ padding: '24px 0 24px 24px' }}>
-            {/* Sağ Başlık */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, paddingBottom: 16, borderBottom: '2px solid #3D6B47' }}>
-              <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 22, fontWeight: 700, color: '#4A2C0E', margin: 0 }}>📋 Yemek Talepleri</h2>
-              <Link href="/yemek-talepleri" style={{ color: '#3D6B47', fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>Tümünü Gör →</Link>
+        {/* SAĞ KOLON */}
+        <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+
+          {/* SABİT ÜSTTE */}
+          <div style={{ padding: '16px 20px 12px', background: '#FAF6EF', flexShrink: 0, borderBottom: '1px solid #f0f0f0' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, paddingBottom: 12, borderBottom: '2px solid #3D6B47' }}>
+              <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 20, fontWeight: 700, color: '#4A2C0E', margin: 0 }}>📋 Yemek Talepleri</h2>
+              <Link href="/yemek-talepleri" style={{ color: '#3D6B47', fontSize: 12, fontWeight: 600, textDecoration: 'none' }}>Tümünü Gör →</Link>
             </div>
-
-            {/* Açıklama + Buton */}
-            <div style={{ background: 'linear-gradient(135deg, #3D6B47, #2e5236)', borderRadius: 14, padding: '14px 18px', marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+            <div style={{ background: 'linear-gradient(135deg, #3D6B47, #2e5236)', borderRadius: 12, padding: '10px 16px', marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
               <div>
-                <p style={{ color: 'white', fontWeight: 700, fontSize: 13, margin: '0 0 4px' }}>İstediğin yemeği talep et</p>
+                <p style={{ color: 'white', fontWeight: 700, fontSize: 12, margin: '0 0 2px' }}>İstediğin yemeği talep et</p>
                 <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 11, margin: 0 }}>Aşçılar sana teklif versin</p>
               </div>
-              <Link href="/yemek-talepleri" style={{ background: 'white', color: '#3D6B47', borderRadius: 10, padding: '8px 16px', fontWeight: 700, fontSize: 12, textDecoration: 'none', whiteSpace: 'nowrap' }}>
-                + Talep Oluştur
-              </Link>
+              <Link href="/yemek-talepleri" style={{ background: 'white', color: '#3D6B47', borderRadius: 10, padding: '6px 14px', fontWeight: 700, fontSize: 12, textDecoration: 'none', whiteSpace: 'nowrap' }}>+ Talep Oluştur</Link>
             </div>
-
-            {/* Talep Listesi */}
-            <AnaSayfaTalepler />
-            {/* Sağ Harita - Talepler */}
-<div style={{ marginTop: 32 }}>
-  <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 700, color: '#4A2C0E', marginBottom: 12 }}>🗺️ Talep Konumları</h3>
-  <LeafletMap
-    chefs={talepPins.map(t => ({
-      chef_id: t.id,
-      full_name: t.baslik,
-      avg_rating: null,
-      distance_km: 0,
-      is_open: true,
-      lat: t.lat,
-      lng: t.lng,
-      location_approx: t.konum,
-    }))}
-    userCoords={userCoords}
-    radius={radius}
-    onRadius={setRadius}
-    selectedPin={selectedPin}
-    onPinClick={setSelectedPin}
-  />
-</div>
+            <LeafletMap chefs={talepHaritaPins} userCoords={userCoords} radius={radius} onRadius={setRadius} selectedPin={selectedPin} onPinClick={setSelectedPin} />
           </div>
 
+          {/* SCROLL ALT */}
+          <div style={{ overflowY: 'auto', flex: 1, padding: '12px 20px 20px' }}>
+            <AnaSayfaTalepler />
+          </div>
         </div>
+
       </div>
 
       {/* Yakınındaki Aşçılar */}
-      <section style={{ maxWidth: 1400, margin: '0 auto', padding: '0 16px 64px' }}>
+      <section style={{ maxWidth: 1400, margin: '0 auto', padding: '40px 16px 64px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
           <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 24, fontWeight: 700, color: '#4A2C0E', margin: 0 }}>Yakınındaki Aşçılar</h2>
           <Link href="/kesif" style={{ color: '#E8622A', fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>Tümünü Gör →</Link>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 20 }}>
-          {chefs.length > 0 ? chefs.map((chef, i) => {
+          {chefs.length > 0 ? chefs.slice(0,3).map((chef, i) => {
             const badge = BADGE_META[chef.badge ?? 'new']
             return (
               <Link key={chef.chef_id} href={`/asci/${chef.chef_id}`} style={{ textDecoration: 'none' }}>
