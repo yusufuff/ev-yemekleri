@@ -361,7 +361,7 @@ export default function HomePage() {
       </div>
 
       {/* Yakınındaki Aşçılar */}
-      <section style={{ maxWidth: 1400, margin: '0 auto', padding: '40px 16px 64px' }}>
+      <section style={{ padding: '40px 16px 64px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
           <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 24, fontWeight: 700, color: '#4A2C0E', margin: 0 }}>Yakınındaki Aşçılar</h2>
           <Link href="/kesif" style={{ color: '#E8622A', fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>Tümünü Gör →</Link>
