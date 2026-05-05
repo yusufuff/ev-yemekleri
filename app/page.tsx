@@ -263,7 +263,7 @@ export default function HomePage() {
         <div style={{ borderRight: '1px solid #E8E0D4', flex: 1 }}>
 
           {/* SOL STICKY ÜSTTE - Başlık + Arama + Harita */}
-          <div style={{ position: 'sticky', top: 0, zIndex: 10, background: '#FAF6EF', padding: '16px 20px 12px', borderBottom: '1px solid #f0f0f0' }}>
+          <div style={{ background: '#FAF6EF', padding: '16px 20px 12px', borderBottom: '1px solid #f0f0f0' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, paddingBottom: 12, borderBottom: '2px solid #E8622A' }}>
               <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 20, fontWeight: 700, color: '#4A2C0E', margin: 0 }}>🍲 Aşçı Yemekleri</h2>
               <Link href="/kesif" style={{ color: '#E8622A', fontSize: 12, fontWeight: 600, textDecoration: 'none' }}>Tümünü Gör →</Link>
@@ -337,7 +337,7 @@ export default function HomePage() {
         <div style={{ flex: 1 }}>
 
           {/* SAĞ STICKY ÜSTTE - Başlık + Buton + Harita */}
-          <div style={{ position: 'sticky', top: 0, zIndex: 10, background: '#FAF6EF', padding: '16px 20px 12px', borderBottom: '1px solid #f0f0f0' }}>
+          <div style={{ background: '#FAF6EF', padding: '16px 20px 12px', borderBottom: '1px solid #f0f0f0' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, paddingBottom: 12, borderBottom: '2px solid #3D6B47' }}>
               <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 20, fontWeight: 700, color: '#4A2C0E', margin: 0 }}>📋 Yemek Talepleri</h2>
               <Link href="/yemek-talepleri" style={{ color: '#3D6B47', fontSize: 12, fontWeight: 600, textDecoration: 'none' }}>Tümünü Gör →</Link>
