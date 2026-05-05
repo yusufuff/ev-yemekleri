@@ -173,7 +173,7 @@ export default function LeafletMap({ chefs, userCoords, radius, onRadius, select
   }, [chefs, selectedPin])
 
   return (
-   <div style={{ position: 'relative', top: '72px', margin: '0 48px' }}>
+   <div style={{ position: 'relative', top: 0, margin: 0 }}>
     <button
   onClick={async () => {
     if (!navigator.geolocation) return
