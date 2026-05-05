@@ -203,9 +203,7 @@ export default function LeafletMap({ chefs, userCoords, radius, onRadius, select
 
       {/* Harita */}
       <div style={{ position: 'relative' }}>
-  <div style={{ position: 'relative' }}>
-  <div ref={mapRef} style={{ height: '320px', borderRadius: '16px', overflow: 'hidden', border: '1px solid #E8E0D4', zIndex: 1 }} />
-</div>
+  
   <div ref={mapRef} style={{ height: '320px', borderRadius: '16px', overflow: 'hidden', border: '1px solid #E8E0D4', zIndex: 1 }} />
 </div>
 
