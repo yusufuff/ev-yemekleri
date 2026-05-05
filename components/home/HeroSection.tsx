@@ -21,7 +21,28 @@ const BALON_POZISYONLAR = [
   { top: '60%', left: '18%', animDur: '6s',   animDelay: '0.8s', size: 96,  bg: 'rgba(232,98,42,0.92)',   color: 'white' },
   { top: '55%', left: '8%',  animDur: '4.2s', animDelay: '0.2s', size: 80,  bg: 'rgba(255,255,255,0.88)', color: '#4A2C0E' },
 ]
-
+function StoriesPanel() {
+  const [stories, setStories] = React.useState<any[]>([])
+  React.useEffect(() => {
+    fetch('/api/stories').then(r => r.json()).then(d => setStories(d.stories ?? []))
+  }, [])
+  if (stories.length === 0) return <div style={{ color: 'rgba(255,255,255,0.3)', fontSize: 12 }}>Henüz hikaye yok</div>
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      {stories.map((s: any) => (
+        <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }} onClick={() => window.open(s.image_url, '_blank')}>
+          <div style={{ width: 52, height: 52, borderRadius: '50%', border: '2.5px solid #E8622A', overflow: 'hidden', flexShrink: 0 }}>
+            <img src={s.image_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          </div>
+          <div>
+            <div style={{ color: 'white', fontSize: 12, fontWeight: 700 }}>{s.chef_profiles?.users?.full_name ?? 'Aşçı'}</div>
+            <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: 11 }}>{s.caption}</div>
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
 export function HeroSection() {
   const [km, setKm] = useState(5)
   const [balonlar, setBalonlar] = useState<string[]>([])
@@ -82,7 +103,11 @@ export function HeroSection() {
           position: 'absolute', right: '5%', top: '50%', transform: 'translateY(-50%)',
           fontSize: '160px', opacity: 0.08, userSelect: 'none', pointerEvents: 'none',
         }}>👩‍🍳</div>
-
+{/* Sol: Hikayeler */}
+<div style={{ width: 260, flexShrink: 0, padding: '0 24px', position: 'relative', zIndex: 10 }}>
+  <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 12 }}>📸 Aşçı Hikayeleri</div>
+  <StoriesPanel />
+</div>
         {/* 6 Uçan Yuvarlak Balon */}
         {balonlar.map((metin, i) => {
           if (!metin) return null
