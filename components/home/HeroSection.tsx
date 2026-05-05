@@ -94,16 +94,7 @@ function StoriesPanel() {
       {aktif ? (
   <StoryOverlay story={aktif} onClose={() => setAktif(null)} />
 ) : null}
-        <div onClick={() => setAktif(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div onClick={e => e.stopPropagation()} style={{ width: 380, maxWidth: '95vw', borderRadius: 20, overflow: 'hidden', position: 'relative' }}>
-            <img src={aktif.image_url} style={{ width: '100%', maxHeight: '70vh', objectFit: 'cover', display: 'block' }} />
-            <div style={{ background: 'linear-gradient(transparent, rgba(0,0,0,0.8))', padding: '32px 20px 20px', position: 'absolute', bottom: 0, width: '100%', boxSizing: 'border-box' }}>
-              <div style={{ color: 'white', fontWeight: 700, fontSize: 14 }}>{aktif.chef_profiles?.users?.full_name ?? 'Aşçı'}</div>
-              {aktif.caption && <div style={{ color: 'rgba(255,255,255,0.8)', fontSize: 13, marginTop: 4 }}>{aktif.caption}</div>}
-            </div>
-            <button onClick={() => setAktif(null)} style={{ position: 'absolute', top: 12, right: 12, background: 'rgba(0,0,0,0.5)', border: 'none', color: 'white', width: 32, height: 32, borderRadius: '50%', cursor: 'pointer', fontSize: 16 }}>✕</button>
-          </div>
-        </div>
+        
       )
     </>
   )
