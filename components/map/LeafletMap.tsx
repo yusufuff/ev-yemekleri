@@ -173,7 +173,21 @@ export default function LeafletMap({ chefs, userCoords, radius, onRadius, select
   }, [chefs, selectedPin])
 
   return (
-   <div style={{ position: 'sticky', top: '72px', margin: '0 48px' }}>
+   <div style={{ position: 'relative', top: '72px', margin: '0 48px' }}>
+    <button
+  onClick={async () => {
+    if (!navigator.geolocation) return
+    navigator.geolocation.getCurrentPosition(pos => {
+      onRadius && onRadius(radius)
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.setView([pos.coords.latitude, pos.coords.longitude], 14)
+      }
+    })
+  }}
+  style={{ position: 'absolute', top: 12, right: 12, zIndex: 999, width: 44, height: 44, borderRadius: '50%', background: 'white', border: '2px solid #ef4444', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}
+>
+  📍
+</button>
       {/* Mesafe slider */}
       <div style={{ background: 'white', borderRadius: '12px', padding: '14px 16px', marginBottom: '12px', boxShadow: '0 2px 12px rgba(74,44,14,0.08)', border: '1px solid #E8E0D4' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
