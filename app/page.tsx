@@ -6,6 +6,8 @@ import { HeroSection } from '@/components/home/HeroSection'
 import { createClient } from '@supabase/supabase-js'
 import { getSupabaseBrowserClient } from '@/lib/supabase/client'
 import { useCart } from '@/hooks/useCart'
+import dynamic from 'next/dynamic'
+const LeafletMap = dynamic(() => import('@/components/map/LeafletMap'), { ssr: false })
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -186,6 +188,10 @@ export default function HomePage() {
   const [aktifKategori, setAktifKategori] = useState('hepsi')
   const [aramaMetni, setAramaMetni] = useState('')
   const [yukleniyor, setYukleniyor] = useState(true)
+  const [selectedPin, setSelectedPin] = useState<string | null>(null)
+const [userCoords, setUserCoords] = useState<{lat: number, lng: number} | null>(null)
+const [radius, setRadius] = useState(5)
+const [talepPins, setTalepPins] = useState<any[]>([])
 
   const yemekleriYukle = useCallback(async () => {
     try {
@@ -225,6 +231,24 @@ export default function HomePage() {
     yemekleriYukle()
     chefleriYukle()
   }, [yemekleriYukle, chefleriYukle])
+  useEffect(() => {
+    // Kullanıcı konumu al
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        pos => setUserCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+        () => {}
+      )
+    }
+    // Talep koordinatlarını yükle
+    const talepYukle = async () => {
+      const { data } = await supabase.from('food_requests')
+        .select('id, baslik, lat, lng, konum, user_id')
+        .eq('durum', 'aktif')
+        .not('lat', 'is', null)
+      setTalepPins(data ?? [])
+    }
+    talepYukle()
+  }, [])
 
   const indirimliYemekler = yemekler.filter(y => y.indirim > 0)
   const filtreliYemekler = aktifKategori === 'indirimli' ? indirimliYemekler
@@ -340,6 +364,27 @@ export default function HomePage() {
                   )}
                 </>
               )}
+              {/* Sol Harita - Aşçılar */}
+<div style={{ marginTop: 32 }}>
+  <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 700, color: '#4A2C0E', marginBottom: 12 }}>🗺️ Aşçı Konumları</h3>
+  <LeafletMap
+    chefs={chefs.filter(c => c.lat && c.lng).map(c => ({
+      chef_id: c.chef_id,
+      full_name: c.full_name,
+      avg_rating: c.avg_rating,
+      distance_km: c.distance_km ?? 0,
+      is_open: c.is_open,
+      lat: c.lat,
+      lng: c.lng,
+      location_approx: c.location_approx,
+    }))}
+    userCoords={userCoords}
+    radius={radius}
+    onRadius={setRadius}
+    selectedPin={selectedPin}
+    onPinClick={setSelectedPin}
+  />
+</div>
             </div>
           </div>
 
@@ -364,6 +409,27 @@ export default function HomePage() {
 
             {/* Talep Listesi */}
             <AnaSayfaTalepler />
+            {/* Sağ Harita - Talepler */}
+<div style={{ marginTop: 32 }}>
+  <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 700, color: '#4A2C0E', marginBottom: 12 }}>🗺️ Talep Konumları</h3>
+  <LeafletMap
+    chefs={talepPins.map(t => ({
+      chef_id: t.id,
+      full_name: t.baslik,
+      avg_rating: null,
+      distance_km: 0,
+      is_open: true,
+      lat: t.lat,
+      lng: t.lng,
+      location_approx: t.konum,
+    }))}
+    userCoords={userCoords}
+    radius={radius}
+    onRadius={setRadius}
+    selectedPin={selectedPin}
+    onPinClick={setSelectedPin}
+  />
+</div>
           </div>
 
         </div>
