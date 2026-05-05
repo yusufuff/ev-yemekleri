@@ -173,7 +173,7 @@ export default function LeafletMap({ chefs, userCoords, radius, onRadius, select
   }, [chefs, selectedPin])
 
   return (
-    <div style={{ position: 'sticky', top: '72px', margin: '0 8px' }}>
+   <div style={{ position: 'sticky', top: '72px', margin: '0 20px' }}>
       {/* Mesafe slider */}
       <div style={{ background: 'white', borderRadius: '12px', padding: '14px 16px', marginBottom: '12px', boxShadow: '0 2px 12px rgba(74,44,14,0.08)', border: '1px solid #E8E0D4' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
