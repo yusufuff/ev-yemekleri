@@ -79,7 +79,7 @@ function StoriesPanel() {
   return (
     <>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {stories.map((s: any) => (
+        {stories.filter((s: any) => s?.image_url).map((s: any) => (
           <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }} onClick={() => setAktif(s)}>
             <div style={{ width: 52, height: 52, borderRadius: '50%', border: '2.5px solid #E8622A', overflow: 'hidden', flexShrink: 0 }}>
               <img src={s.image_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
