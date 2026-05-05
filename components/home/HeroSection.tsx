@@ -23,24 +23,39 @@ const BALON_POZISYONLAR = [
 ]
 function StoriesPanel() {
   const [stories, setStories] = React.useState<any[]>([])
+  const [aktif, setAktif] = React.useState<any>(null)
   React.useEffect(() => {
     fetch('/api/stories').then(r => r.json()).then(d => setStories(d.stories ?? []))
   }, [])
   if (stories.length === 0) return <div style={{ color: 'rgba(255,255,255,0.3)', fontSize: 12 }}>Henüz hikaye yok</div>
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-      {stories.map((s: any) => (
-        <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }} onClick={() => window.open(s.image_url, '_blank')}>
-          <div style={{ width: 52, height: 52, borderRadius: '50%', border: '2.5px solid #E8622A', overflow: 'hidden', flexShrink: 0 }}>
-            <img src={s.image_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+    <>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {stories.map((s: any) => (
+          <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }} onClick={() => setAktif(s)}>
+            <div style={{ width: 52, height: 52, borderRadius: '50%', border: '2.5px solid #E8622A', overflow: 'hidden', flexShrink: 0 }}>
+              <img src={s.image_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            </div>
+            <div>
+              <div style={{ color: 'white', fontSize: 12, fontWeight: 700 }}>{s.chef_profiles?.users?.full_name ?? 'Aşçı'}</div>
+              <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: 11 }}>{s.caption}</div>
+            </div>
           </div>
-          <div>
-            <div style={{ color: 'white', fontSize: 12, fontWeight: 700 }}>{s.chef_profiles?.users?.full_name ?? 'Aşçı'}</div>
-            <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: 11 }}>{s.caption}</div>
+        ))}
+      </div>
+      {aktif && (
+        <div onClick={() => setAktif(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div onClick={e => e.stopPropagation()} style={{ width: 380, maxWidth: '95vw', borderRadius: 20, overflow: 'hidden', position: 'relative' }}>
+            <img src={aktif.image_url} style={{ width: '100%', maxHeight: '70vh', objectFit: 'cover', display: 'block' }} />
+            <div style={{ background: 'linear-gradient(transparent, rgba(0,0,0,0.8))', padding: '32px 20px 20px', position: 'absolute', bottom: 0, width: '100%', boxSizing: 'border-box' }}>
+              <div style={{ color: 'white', fontWeight: 700, fontSize: 14 }}>{aktif.chef_profiles?.users?.full_name ?? 'Aşçı'}</div>
+              {aktif.caption && <div style={{ color: 'rgba(255,255,255,0.8)', fontSize: 13, marginTop: 4 }}>{aktif.caption}</div>}
+            </div>
+            <button onClick={() => setAktif(null)} style={{ position: 'absolute', top: 12, right: 12, background: 'rgba(0,0,0,0.5)', border: 'none', color: 'white', width: 32, height: 32, borderRadius: '50%', cursor: 'pointer', fontSize: 16 }}>✕</button>
           </div>
         </div>
-      ))}
-    </div>
+      )}
+    </>
   )
 }
 export function HeroSection() {
