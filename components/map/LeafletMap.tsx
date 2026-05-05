@@ -186,10 +186,10 @@ export default function LeafletMap({ chefs, userCoords, radius, onRadius, select
   }}
   style={{ position: 'absolute', top: 12, right: 12, zIndex: 999, width: 44, height: 44, borderRadius: '50%', background: 'white', border: '2px solid #ef4444', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}
 >
-  
+  📍
 </button>
       {/* Mesafe slider */}
-      <div style={{ background: 'white', borderRadius: '12px', padding: '14px 16px', marginBottom: '12px',  boxShadow: '0 2px 12px rgba(74,44,14,0.08)', border: '1px solid #E8E0D4' }}>
+      <div style={{ background: 'white', borderRadius: '12px', padding: '14px 16px', marginBottom: '12px', zIndex: 2, position: 'relative', boxShadow: '0 2px 12px rgba(74,44,14,0.08)', border: '1px solid #E8E0D4' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
           <span style={{ fontSize: '12px', color: '#8A7B6B', fontWeight: 600 }}> Mesafe:</span>
           <span style={{ fontSize: '13px', fontWeight: 700, color: '#E8622A' }}>{radius} km</span>
@@ -203,7 +203,7 @@ export default function LeafletMap({ chefs, userCoords, radius, onRadius, select
 
       {/* Harita */}
       <div style={{ position: 'relative' }}>
-  
+  <button onClick={() => { if (!navigator.geolocation) return; navigator.geolocation.getCurrentPosition(pos => { if (mapInstanceRef.current) mapInstanceRef.current.setView([pos.coords.latitude, pos.coords.longitude], 14) }) }} style={{ position: 'absolute', top: 8, right: 8, zIndex: 999, width: 40, height: 40, borderRadius: '50%', background: 'white', border: '2px solid #ef4444', cursor: 'pointer', fontSize: 18, boxShadow: '0 2px 8px rgba(0,0,0,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>📍</button>
   <div ref={mapRef} style={{ height: '320px', borderRadius: '16px', overflow: 'hidden', border: '1px solid #E8E0D4', zIndex: 1 }} />
 </div>
 
