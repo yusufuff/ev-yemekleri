@@ -294,7 +294,7 @@ const [talepPins, setTalepPins] = useState<any[]>([])
               {aramaMetni && <button onClick={() => setAramaMetni('')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, color: '#8A7B6B' }}>✕</button>}
             </div>
  {/* Sol Harita - Aşçılar */}
-<div style={{ marginTop: 32 }}>
+<div style={{ marginTop: 0, marginBottom: 24 }}>
             {/* Kategoriler */}
             <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4, marginBottom: 16 }}>
               {KATEGORILER.map(k => (
