@@ -24,6 +24,7 @@ const BALON_POZISYONLAR = [
 function StoryOverlay({ story, onClose }: { story: any, onClose: () => void }) {
   const [progress, setProgress] = React.useState(0)
   const router = useRouter()
+  if (!story) return null
 
   React.useEffect(() => {
     const start = Date.now()
