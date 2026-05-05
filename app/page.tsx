@@ -195,24 +195,13 @@ export default function HomePage() {
 
   const yemekleriYukle = useCallback(async () => {
     try {
-      const { data } = await supabase
-        .from('menu_items_with_chef')
-        .select('*')
-        .eq('is_active', true)
-        .gt('remaining_stock', 0)
-        .order('chef_rating', { ascending: false })
-        .limit(100)
+      const { data } = await supabase.from('menu_items_with_chef').select('*').eq('is_active', true).gt('remaining_stock', 0).order('chef_rating', { ascending: false }).limit(100)
       if (data) {
         setYemekler(data.map(item => ({
-          id:       item.id,
-          isim:     item.name,
-          fiyat:    parseFloat(item.price),
-          asci_ad:  item.chef_name ?? 'Aşçı',
-          asci_id:  item.chef_id,
-          kategori: item.category ?? 'main',
-          stok:     item.remaining_stock ?? 0,
-          foto:     item.standard_photo ?? item.photos?.[0] ?? null,
-          indirim:  item.discount_percent ?? 0,
+          id: item.id, isim: item.name, fiyat: parseFloat(item.price),
+          asci_ad: item.chef_name ?? 'Aşçı', asci_id: item.chef_id,
+          kategori: item.category ?? 'main', stok: item.remaining_stock ?? 0,
+          foto: item.standard_photo ?? item.photos?.[0] ?? null, indirim: item.discount_percent ?? 0,
         })))
       }
     } catch {}
@@ -227,10 +216,7 @@ export default function HomePage() {
     } catch {}
   }, [])
 
-  useEffect(() => {
-    yemekleriYukle()
-    chefleriYukle()
-  }, [yemekleriYukle, chefleriYukle])
+  useEffect(() => { yemekleriYukle(); chefleriYukle() }, [yemekleriYukle, chefleriYukle])
 
   useEffect(() => {
     if (navigator.geolocation) {
@@ -240,25 +226,15 @@ export default function HomePage() {
       )
     }
     const talepYukle = async () => {
-      const { data } = await supabase.from('food_requests')
-        .select('id, baslik, lat, lng, konum, user_id')
-        .eq('durum', 'aktif')
-        .not('lat', 'is', null)
+      const { data } = await supabase.from('food_requests').select('id, baslik, lat, lng, konum, user_id').eq('durum', 'aktif').not('lat', 'is', null)
       setTalepPins(data ?? [])
     }
     talepYukle()
   }, [])
 
   const indirimliYemekler = yemekler.filter(y => y.indirim > 0)
-  const filtreliYemekler = aktifKategori === 'indirimli' ? indirimliYemekler
-    : aktifKategori === 'hepsi' ? yemekler
-    : yemekler.filter(y => y.kategori === aktifKategori)
-
-  const aramaFiltreli = yemekler.filter(y =>
-    y.isim.toLowerCase().includes(aramaMetni.toLowerCase()) ||
-    y.asci_ad.toLowerCase().includes(aramaMetni.toLowerCase())
-  )
-
+  const filtreliYemekler = aktifKategori === 'indirimli' ? indirimliYemekler : aktifKategori === 'hepsi' ? yemekler : yemekler.filter(y => y.kategori === aktifKategori)
+  const aramaFiltreli = yemekler.filter(y => y.isim.toLowerCase().includes(aramaMetni.toLowerCase()) || y.asci_ad.toLowerCase().includes(aramaMetni.toLowerCase()))
   const kategoriBazli = KATEGORI_SIRASI.reduce((acc, kat) => {
     const items = yemekler.filter(y => y.kategori === kat)
     if (items.length > 0) acc[kat] = items
@@ -266,39 +242,28 @@ export default function HomePage() {
   }, {} as Record<string, any[]>)
 
   const chefPins = chefs.filter(c => c.lat && c.lng).map(c => ({
-    chef_id: c.chef_id,
-    full_name: c.full_name,
-    avg_rating: c.avg_rating,
-    distance_km: c.distance_km ?? 0,
-    is_open: c.is_open,
-    lat: c.lat,
-    lng: c.lng,
-    location_approx: c.location_approx,
+    chef_id: c.chef_id, full_name: c.full_name, avg_rating: c.avg_rating,
+    distance_km: c.distance_km ?? 0, is_open: c.is_open,
+    lat: c.lat, lng: c.lng, location_approx: c.location_approx,
   }))
 
   const talepHaritaPins = talepPins.map(t => ({
-    chef_id: t.id,
-    full_name: t.baslik,
-    avg_rating: null,
-    distance_km: 0,
-    is_open: true,
-    lat: t.lat,
-    lng: t.lng,
-    location_approx: t.konum,
+    chef_id: t.id, full_name: t.baslik, avg_rating: null,
+    distance_km: 0, is_open: true, lat: t.lat, lng: t.lng, location_approx: t.konum,
   }))
 
   return (
     <div style={{ minHeight: '100vh', background: '#FAF6EF', fontFamily: "'DM Sans', sans-serif" }}>
       <HeroSection />
 
-      {/* ANA İKİ KOLON LAYOUT */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', height: 'calc(100vh - 80px)', overflow: 'hidden' }}>
+      {/* ANA İKİ KOLON - normal sayfa scroll */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
 
         {/* SOL KOLON */}
-        <div style={{ borderRight: '1px solid #E8E0D4', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-          
-          {/* SABİT ÜSTTE */}
-          <div style={{ padding: '16px 20px 12px', background: '#FAF6EF', flexShrink: 0, borderBottom: '1px solid #f0f0f0' }}>
+        <div style={{ borderRight: '1px solid #E8E0D4' }}>
+
+          {/* SOL STICKY ÜSTTE - Başlık + Arama + Harita */}
+          <div style={{ position: 'sticky', top: 0, zIndex: 10, background: '#FAF6EF', padding: '16px 20px 12px', borderBottom: '1px solid #f0f0f0' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, paddingBottom: 12, borderBottom: '2px solid #E8622A' }}>
               <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 20, fontWeight: 700, color: '#4A2C0E', margin: 0 }}>🍲 Aşçı Yemekleri</h2>
               <Link href="/kesif" style={{ color: '#E8622A', fontSize: 12, fontWeight: 600, textDecoration: 'none' }}>Tümünü Gör →</Link>
@@ -311,8 +276,8 @@ export default function HomePage() {
             <LeafletMap chefs={chefPins} userCoords={userCoords} radius={radius} onRadius={setRadius} selectedPin={selectedPin} onPinClick={setSelectedPin} />
           </div>
 
-          {/* SCROLL ALT */}
-          <div style={{ overflowY: 'auto', flex: 1, padding: '12px 20px 20px' }}>
+          {/* SOL SCROLL - Kategoriler + Yemekler */}
+          <div style={{ padding: '16px 20px 40px' }}>
             <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4, marginBottom: 14 }}>
               {KATEGORILER.map(k => (
                 <button key={k.id} onClick={() => setAktifKategori(k.id)}
@@ -369,10 +334,10 @@ export default function HomePage() {
         </div>
 
         {/* SAĞ KOLON */}
-        <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        <div>
 
-          {/* SABİT ÜSTTE */}
-          <div style={{ padding: '16px 20px 12px', background: '#FAF6EF', flexShrink: 0, borderBottom: '1px solid #f0f0f0' }}>
+          {/* SAĞ STICKY ÜSTTE - Başlık + Buton + Harita */}
+          <div style={{ position: 'sticky', top: 0, zIndex: 10, background: '#FAF6EF', padding: '16px 20px 12px', borderBottom: '1px solid #f0f0f0' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, paddingBottom: 12, borderBottom: '2px solid #3D6B47' }}>
               <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 20, fontWeight: 700, color: '#4A2C0E', margin: 0 }}>📋 Yemek Talepleri</h2>
               <Link href="/yemek-talepleri" style={{ color: '#3D6B47', fontSize: 12, fontWeight: 600, textDecoration: 'none' }}>Tümünü Gör →</Link>
@@ -387,8 +352,8 @@ export default function HomePage() {
             <LeafletMap chefs={talepHaritaPins} userCoords={userCoords} radius={radius} onRadius={setRadius} selectedPin={selectedPin} onPinClick={setSelectedPin} />
           </div>
 
-          {/* SCROLL ALT */}
-          <div style={{ overflowY: 'auto', flex: 1, padding: '12px 20px 20px' }}>
+          {/* SAĞ SCROLL - Talep Listesi */}
+          <div style={{ padding: '16px 20px 40px' }}>
             <AnaSayfaTalepler />
           </div>
         </div>
@@ -402,7 +367,7 @@ export default function HomePage() {
           <Link href="/kesif" style={{ color: '#E8622A', fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>Tümünü Gör →</Link>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 20 }}>
-          {chefs.length > 0 ? chefs.slice(0,3).map((chef, i) => {
+          {chefs.length > 0 ? chefs.slice(0, 3).map((chef, i) => {
             const badge = BADGE_META[chef.badge ?? 'new']
             return (
               <Link key={chef.chef_id} href={`/asci/${chef.chef_id}`} style={{ textDecoration: 'none' }}>

@@ -188,7 +188,7 @@ export default function LeafletMap({ chefs, userCoords, radius, onRadius, select
       </div>
 
       {/* Harita */}
-      <div ref={mapRef} style={{ height: '420px', borderRadius: '16px', overflow: 'hidden', border: '1px solid #E8E0D4', zIndex: 1 }} />
+      <div ref={mapRef} style={{ height: '300px', borderRadius: '16px', overflow: 'hidden', border: '1px solid #E8E0D4', zIndex: 1 }} />
 
       {/* Açıklama */}
       <div style={{ display: 'flex', gap: 12, marginTop: 8, fontSize: 11, color: '#8A7B6B' }}>
