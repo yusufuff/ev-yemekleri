@@ -257,7 +257,7 @@ export default function HomePage() {
       <HeroSection />
 
       {/* ANA İKİ KOLON - normal sayfa scroll */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', alignItems: 'start' }}>
 
         {/* SOL KOLON */}
         <div style={{ borderRight: '1px solid #E8E0D4' }}>
