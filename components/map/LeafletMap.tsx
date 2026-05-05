@@ -189,7 +189,7 @@ export default function LeafletMap({ chefs, userCoords, radius, onRadius, select
   
 </button>
       {/* Mesafe slider */}
-      <div style={{ background: 'white', borderRadius: '12px', padding: '14px 16px', marginBottom: '12px', zIndex: 2, position: 'relative', boxShadow: '0 2px 12px rgba(74,44,14,0.08)', border: '1px solid #E8E0D4' }}>
+      <div style={{ background: 'white', borderRadius: '12px', padding: '14px 16px', marginBottom: '12px',  boxShadow: '0 2px 12px rgba(74,44,14,0.08)', border: '1px solid #E8E0D4' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
           <span style={{ fontSize: '12px', color: '#8A7B6B', fontWeight: 600 }}> Mesafe:</span>
           <span style={{ fontSize: '13px', fontWeight: 700, color: '#E8622A' }}>{radius} km</span>
