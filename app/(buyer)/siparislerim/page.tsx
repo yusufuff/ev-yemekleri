@@ -92,7 +92,9 @@ export default function SiparislerimPage() {
   const [tab, setTab] = useState('active')
   const [reviewOrder, setReviewOrder] = useState(null)
   const [onaylaniyor, setOnaylaniyor] = useState(null)
-
+const [isChef, setIsChef] = useState(false)
+const [isOpen, setIsOpen] = useState(false)
+const [toggleSaving, setToggleSaving] = useState(false)
   const loadOrders = async () => {
     try {
       const supabase = getSupabaseBrowserClient()
@@ -196,7 +198,29 @@ export default function SiparislerimPage() {
     })
     router.push('/odeme')
   }
+useEffect(() => {
+  const supabase = getSupabaseBrowserClient()
+  supabase.auth.getUser().then(({ data }) => {
+    if (!data?.user) return
+    supabase.from('users').select('role').eq('id', data.user.id).single().then(({ data: profile }) => {
+      if (profile?.role === 'chef') {
+        setIsChef(true)
+        supabase.from('chef_profiles').select('is_open').eq('user_id', data.user.id).single().then(({ data: cp }) => {
+          setIsOpen(cp?.is_open ?? false)
+        })
+      }
+    })
+  })
+}, [])
 
+const toggleOpen = async () => {
+  setToggleSaving(true)
+  const supabase = getSupabaseBrowserClient()
+  const { data: { user: authUser } } = await supabase.auth.getUser()
+  await supabase.from('chef_profiles').update({ is_open: !isOpen }).eq('user_id', authUser.id)
+  setIsOpen(v => !v)
+  setToggleSaving(false)
+}
   useEffect(() => {
     loadOrders()
     const interval = setInterval(loadOrders, 30000)
@@ -215,7 +239,17 @@ export default function SiparislerimPage() {
     <>
       <div style={{ minHeight:'100vh', background:'#FAF6EF', fontFamily:"'DM Sans', sans-serif" }}>
         <div style={{ maxWidth:680, margin:'0 auto', padding:'24px 16px' }}>
-          <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:26, fontWeight:900, color:'#4A2C0E', marginBottom:20 }}>Siparislerim</h1>
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20 }}>
+  <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:26, fontWeight:900, color:'#4A2C0E', margin:0 }}>Siparişlerim</h1>
+  {isChef && (
+    <button onClick={toggleOpen} disabled={toggleSaving} style={{ display:'flex', alignItems:'center', gap:8, padding:'8px 16px', borderRadius:20, border:'none', cursor:'pointer', fontFamily:'inherit', fontWeight:700, fontSize:13, background: isOpen ? '#ECFDF5' : '#FEE2E2', color: isOpen ? '#3D6B47' : '#DC2626' }}>
+      <div style={{ width:36, height:20, borderRadius:10, background: isOpen ? '#3D6B47' : '#E8E0D4', position:'relative', transition:'background 0.2s' }}>
+        <div style={{ width:16, height:16, borderRadius:'50%', background:'white', position:'absolute', top:2, left: isOpen ? 18 : 2, transition:'left 0.2s' }} />
+      </div>
+      {toggleSaving ? '...' : isOpen ? '● Açık' : '○ Kapalı'}
+    </button>
+  )}
+</div>
 
           <div style={{ display:'flex', borderBottom:'2px solid #E8E0D4', marginBottom:20 }}>
             {[['active', 'Aktif (' + active.length + ')'], ['past', 'Gecmis (' + past.length + ')']].map(([key, label]) => (
