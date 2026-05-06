@@ -95,6 +95,9 @@ export default function SiparislerimPage() {
 const [isChef, setIsChef] = useState(false)
 const [isOpen, setIsOpen] = useState(false)
 const [toggleSaving, setToggleSaving] = useState(false)
+const [abonelik, setAbonelik] = useState(null)
+const [kampanya, setKampanya] = useState(null)
+const [stats, setStats] = useState({ pending: 0, today_earnings: 0, today_orders: 0, avg_rating: '—', profile_views: 0 })
   const loadOrders = async () => {
     try {
       const supabase = getSupabaseBrowserClient()
@@ -205,6 +208,7 @@ useEffect(() => {
     supabase.from('users').select('role').eq('id', data.user.id).single().then(({ data: profile }) => {
       if (profile?.role === 'chef') {
         setIsChef(true)
+        loadChefStats()
         supabase.from('chef_profiles').select('is_open').eq('user_id', data.user.id).single().then(({ data: cp }) => {
           setIsOpen(cp?.is_open ?? false)
         })
@@ -220,6 +224,25 @@ const toggleOpen = async () => {
   await supabase.from('chef_profiles').update({ is_open: !isOpen }).eq('user_id', authUser.id)
   setIsOpen(v => !v)
   setToggleSaving(false)
+}
+const loadChefStats = async () => {
+  const supabase = getSupabaseBrowserClient()
+  const { data: authData } = await supabase.auth.getUser()
+  if (!authData?.user) return
+  const { data: cp } = await supabase.from('chef_profiles').select('id, avg_rating').eq('user_id', authData.user.id).single()
+  if (!cp) return
+  const { data: abone } = await supabase.from('chef_subscriptions').select('status, expires_at, amount_paid').eq('chef_id', cp.id).single()
+  setAbonelik(abone ?? null)
+  const { data: ayarlar } = await supabase.from('app_settings').select('key, value').in('key', ['kampanya_aktif', 'kampanya_bitis', 'kampanya_sart'])
+  if (ayarlar) {
+    const m = Object.fromEntries(ayarlar.map((d) => [d.key, d.value]))
+    setKampanya({ aktif: m.kampanya_aktif === 'true', bitis: m.kampanya_bitis ?? '', sart: m.kampanya_sart ?? '' })
+  }
+  const today = new Date().toISOString().split('T')[0]
+  const { data: todayOrders } = await supabase.from('orders').select('total_amount, status').eq('chef_id', cp.id).gte('created_at', today)
+  const todayEarnings = (todayOrders ?? []).filter(o => o.status === 'delivered').reduce((sum, o) => sum + parseFloat(o.total_amount ?? 0), 0)
+  const { count: pendingCount } = await supabase.from('orders').select('id', { count: 'exact' }).eq('chef_id', cp.id).eq('status', 'pending')
+  setStats({ pending: pendingCount ?? 0, today_earnings: todayEarnings, today_orders: (todayOrders ?? []).filter(o => o.status === 'delivered').length, avg_rating: cp.avg_rating?.toFixed(1) ?? '—', profile_views: 0 })
 }
   useEffect(() => {
     loadOrders()
@@ -250,6 +273,44 @@ const toggleOpen = async () => {
     </button>
   )}
 </div>
+{isChef && (
+  <>
+    {abonelik === null ? (
+      <div style={{ background:'#FEF3EC', border:'1px solid #F28B5E', borderRadius:12, padding:'12px 20px', marginBottom:16, display:'flex', alignItems:'center', justifyContent:'space-between', gap:12 }}>
+        <div><span style={{ fontWeight:700, color:'#E8622A', fontSize:14 }}>⚠️ Aktif üyeliğiniz yok</span><span style={{ fontSize:13, color:'#8A7B6B', marginLeft:8 }}>Platformda görünmek için üyelik başlatın.</span></div>
+        <Link href="/uyelik" style={{ padding:'8px 18px', background:'#E8622A', color:'white', borderRadius:8, fontSize:13, fontWeight:700, textDecoration:'none', whiteSpace:'nowrap' }}>Üyelik Al →</Link>
+      </div>
+    ) : abonelik?.status === 'active' ? (
+      <div style={{ background:'#F0FDF4', border:'1px solid #86EFAC', borderRadius:12, padding:'12px 20px', marginBottom:16, display:'flex', alignItems:'center', justifyContent:'space-between', gap:12 }}>
+        <span style={{ fontSize:13, color:'#4A2C0E' }}>✅ <strong>Üyelik Aktif</strong><span style={{ color:'#8A7B6B', marginLeft:8 }}>· {Math.ceil((new Date(abonelik.expires_at).getTime() - Date.now()) / 86400000)} gün kaldı · ₺{abonelik.amount_paid}/ay</span></span>
+        <Link href="/uyelik" style={{ fontSize:12, color:'#059669', textDecoration:'none', fontWeight:600 }}>Detay →</Link>
+      </div>
+    ) : null}
+    {kampanya?.aktif && (
+      <div style={{ background:'linear-gradient(135deg, #3D6B47, #2D5438)', borderRadius:12, padding:'14px 20px', marginBottom:16, display:'flex', alignItems:'center', justifyContent:'space-between', gap:12 }}>
+        <div>
+          <div style={{ fontWeight:700, color:'white', fontSize:14 }}>🎉 Ücretsiz Üyelik Kampanyası!</div>
+          <div style={{ fontSize:12, color:'rgba(255,255,255,0.8)', marginTop:2 }}>{kampanya.sart}{kampanya.bitis && ` · ${new Date(kampanya.bitis).toLocaleDateString('tr-TR')} tarihine kadar`}</div>
+        </div>
+        <Link href="/paylasim" style={{ padding:'8px 16px', background:'white', color:'#3D6B47', borderRadius:8, fontSize:12, fontWeight:700, textDecoration:'none', whiteSpace:'nowrap' }}>Hemen Paylaş →</Link>
+      </div>
+    )}
+    <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(140px, 1fr))', gap:12, marginBottom:20 }}>
+      {[
+        { label:'Bekleyen Sipariş', value: String(stats.pending), icon:'🛒', color:'#E8622A' },
+        { label:'Bugünkü Kazanç', value: `₺${stats.today_earnings}`, icon:'💰', color:'#3D6B47' },
+        { label:'Tamamlanan', value: String(stats.today_orders), icon:'🍳', color:'#4A2C0E' },
+        { label:'Puan Ortalaması', value: String(stats.avg_rating), icon:'⭐', color:'#3B82F6' },
+      ].map(({ label, value, icon, color }) => (
+        <div key={label} style={{ background:'white', borderRadius:12, padding:16, boxShadow:'0 2px 8px rgba(74,44,14,0.08)', borderTop:`3px solid ${color}`, position:'relative' }}>
+          <div style={{ position:'absolute', right:12, top:12, fontSize:20, opacity:0.15 }}>{icon}</div>
+          <div style={{ fontSize:10, color:'#8A7B6B', fontWeight:600, textTransform:'uppercase', letterSpacing:0.5, marginBottom:4 }}>{label}</div>
+          <div style={{ fontFamily:"'Playfair Display',serif", fontSize:22, fontWeight:700, color:'#4A2C0E' }}>{value}</div>
+        </div>
+      ))}
+    </div>
+  </>
+)}
 
           <div style={{ display:'flex', borderBottom:'2px solid #E8E0D4', marginBottom:20 }}>
             {[['active', 'Aktif (' + active.length + ')'], ['past', 'Gecmis (' + past.length + ')']].map(([key, label]) => (
