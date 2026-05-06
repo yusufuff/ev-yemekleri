@@ -21,29 +21,41 @@ const BALON_POZISYONLAR = [
   { top: '60%', right: '18%', animDur: '6s',   animDelay: '0.8s', size: 96,  bg: 'rgba(232,98,42,0.92)',   color: 'white' },
   { top: '55%', right: '8%',  animDur: '4.2s', animDelay: '0.2s', size: 80,  bg: 'rgba(255,255,255,0.88)', color: '#4A2C0E' },
 ]
-function StoryOverlay({ story, onClose }: { story: any, onClose: () => void }) {
+function StoryOverlay({ stories, startIndex, onClose }: { stories: any[], startIndex: number, onClose: () => void }) {
+  const [index, setIndex] = React.useState(startIndex)
   const [progress, setProgress] = React.useState(0)
   const router = useRouter()
-  if (!story) return null
+  const story = stories[index]
 
   React.useEffect(() => {
+    setProgress(0)
     const start = Date.now()
     const duration = 7000
     const timer = setInterval(() => {
       const elapsed = Date.now() - start
       const pct = Math.min((elapsed / duration) * 100, 100)
       setProgress(pct)
-      if (pct >= 100) { clearInterval(timer); onClose() }
+      if (pct >= 100) {
+        clearInterval(timer)
+        if (index < stories.length - 1) setIndex(i => i + 1)
+        else onClose()
+      }
     }, 50)
     return () => clearInterval(timer)
-  }, [story])
+  }, [index])
+
+  if (!story) return null
 
   return (
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.95)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div onClick={e => e.stopPropagation()} style={{ width: 390, maxWidth: '95vw', borderRadius: 20, overflow: 'hidden', position: 'relative', background: 'black' }}>
-        {/* Progress bar */}
-        <div style={{ position: 'absolute', top: 12, left: 12, right: 12, height: 3, background: 'rgba(255,255,255,0.3)', borderRadius: 2, zIndex: 10 }}>
-          <div style={{ height: '100%', width: `${progress}%`, background: 'white', borderRadius: 2, transition: 'width 0.05s linear' }} />
+        {/* Progress barlar */}
+        <div style={{ position: 'absolute', top: 12, left: 12, right: 12, display: 'flex', gap: 4, zIndex: 10 }}>
+          {stories.map((_, i) => (
+            <div key={i} style={{ flex: 1, height: 3, background: 'rgba(255,255,255,0.3)', borderRadius: 2 }}>
+              <div style={{ height: '100%', borderRadius: 2, background: 'white', width: i < index ? '100%' : i === index ? `${progress}%` : '0%', transition: i === index ? 'width 0.05s linear' : 'none' }} />
+            </div>
+          ))}
         </div>
         {/* Üst bilgi */}
         <div style={{ position: 'absolute', top: 24, left: 12, right: 48, display: 'flex', alignItems: 'center', gap: 8, zIndex: 10 }}>
@@ -55,10 +67,13 @@ function StoryOverlay({ story, onClose }: { story: any, onClose: () => void }) {
         </div>
         {/* Kapat */}
         <button onClick={onClose} style={{ position: 'absolute', top: 24, right: 12, background: 'none', border: 'none', color: 'white', fontSize: 22, cursor: 'pointer', zIndex: 10 }}>✕</button>
+        {/* Sol/Sağ tıklama */}
+        <div onClick={() => index > 0 && setIndex(i => i - 1)} style={{ position: 'absolute', left: 0, top: 0, width: '40%', height: '100%', zIndex: 5 }} />
+        <div onClick={() => index < stories.length - 1 ? setIndex(i => i + 1) : onClose()} style={{ position: 'absolute', right: 0, top: 0, width: '60%', height: '100%', zIndex: 5 }} />
         {/* Fotoğraf */}
         <img src={story.image_url} style={{ width: '100%', height: '70vh', objectFit: 'cover', display: 'block' }} />
-        {/* Alt: caption + buton */}
-        <div style={{ background: 'linear-gradient(transparent, rgba(0,0,0,0.85))', padding: '40px 16px 16px', position: 'absolute', bottom: 0, width: '100%', boxSizing: 'border-box' }}>
+        {/* Alt */}
+        <div style={{ background: 'linear-gradient(transparent, rgba(0,0,0,0.85))', padding: '40px 16px 16px', position: 'absolute', bottom: 0, width: '100%', boxSizing: 'border-box', zIndex: 6 }}>
           {story.caption && <div style={{ color: 'white', fontSize: 14, fontWeight: 600, marginBottom: 12 }}>{story.caption}</div>}
           <button onClick={() => { onClose(); router.push(`/asci/${story.chef_id}`) }}
             style={{ width: '100%', padding: '14px', borderRadius: 14, background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.3)', color: 'white', fontWeight: 700, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}>
@@ -69,6 +84,7 @@ function StoryOverlay({ story, onClose }: { story: any, onClose: () => void }) {
     </div>
   )
 }
+  
 function StoriesPanel() {
   const [stories, setStories] = React.useState<any[]>([])
   const [aktif, setAktif] = React.useState<any>(null)
@@ -92,7 +108,7 @@ function StoriesPanel() {
         ))}
       </div>
       {aktif ? (
-  <StoryOverlay story={aktif} onClose={() => setAktif(null)} />
+  <StoryOverlay stories={stories} startIndex={stories.indexOf(aktif)} onClose={() => setAktif(null)} />
 ) : null}
         
       )
