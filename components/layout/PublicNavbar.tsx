@@ -35,6 +35,7 @@ export function PublicNavbar() {
   const [unreadMessages, setUnreadMessages] = useState(0)
   const [duyuru, setDuyuru] = useState<{aktif: boolean; mesaj: string; renk: string} | null>(null)
   const channelRef = useRef(null)
+  const [dropdownAcik, setDropdownAcik] = useState(false)
 
   useEffect(() => {
     // Duyuru baloncuğunu çek
@@ -175,8 +176,8 @@ export function PublicNavbar() {
             <CartButton />
 
             {loaded && (user ? (
-              <div style={{ position:'relative' }} className="hidden-mobile group">
-  <div style={{ display:'flex', alignItems:'center', gap:8, cursor:'pointer' }}>
+              <div style={{ position:'relative' }} className="hidden-mobile">
+  <div style={{ display:'flex', alignItems:'center', gap:8, cursor:'pointer' }} onClick={() => setDropdownAcik(v => !v)}>
     <div style={{ width:34, height:34, borderRadius:'50%', background:'#E8622A', display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontSize:14, fontWeight:700 }}>
       {user.full_name?.charAt(0).toUpperCase() ?? '?'}
     </div>
@@ -184,7 +185,7 @@ export function PublicNavbar() {
       {user.full_name}
     </span>
   </div>
-  <div style={{ position:'absolute', right:0, top:'100%', marginTop:8, width:200, background:'white', borderRadius:12, border:'1px solid #E8E0D4', boxShadow:'0 4px 20px rgba(0,0,0,0.1)', zIndex:100, overflow:'hidden' }} className="dropdown-menu">
+  <div style={{ position:'absolute', right:0, top:'100%', marginTop:8, width:200, background:'white', borderRadius:12, border:'1px solid #E8E0D4', boxShadow:'0 4px 20px rgba(0,0,0,0.1)', zIndex:100, overflow:'hidden' }} style={{ display: dropdownAcik ? 'block' : 'none' }}>
     <Link href="/profil" style={{ display:'flex', alignItems:'center', gap:8, padding:'10px 16px', fontSize:13, color:'#4A2C0E', textDecoration:'none', fontWeight:600, borderBottom:'1px solid #F0EBE0' }}>👤 Profil & Ayarlar</Link>
     {user.role === 'chef' && <>
       <Link href="/dashboard" style={{ display:'flex', alignItems:'center', gap:8, padding:'10px 16px', fontSize:13, color:'#4A2C0E', textDecoration:'none', fontWeight:600 }}>🍲 Panelim</Link>
@@ -231,7 +232,6 @@ export function PublicNavbar() {
 
       <style>{`
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.85} }
-  
   .dropdown-menu { display: none; }
   .group:hover .dropdown-menu { display: block !important; }
         @media (max-width: 767px) {
