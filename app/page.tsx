@@ -268,12 +268,12 @@ export default function HomePage() {
               <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 20, fontWeight: 700, color: '#4A2C0E', margin: 0 }}>🍲 Aşçı Yemekleri</h2>
               <Link href="/kesif" style={{ color: '#E8622A', fontSize: 12, fontWeight: 600, textDecoration: 'none' }}>Tümünü Gör →</Link>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'white', borderRadius: 12, padding: '8px 12px', border: '1px solid #E8E0D4', marginBottom: 12 }}>
-              <span>🔍</span>
-              <input value={aramaMetni} onChange={e => setAramaMetni(e.target.value)} placeholder="Yemek veya aşçı ara..." style={{ flex: 1, border: 'none', outline: 'none', fontSize: 13, fontFamily: 'inherit', background: 'transparent', color: '#4A2C0E' }} />
-              {aramaMetni && <button onClick={() => setAramaMetni('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#8A7B6B' }}>✕</button>}
-            </div>
             <LeafletMap chefs={chefPins} userCoords={userCoords} radius={radius} onRadius={setRadius} selectedPin={selectedPin} onPinClick={setSelectedPin} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'white', borderRadius: 12, padding: '8px 12px', border: '1px solid #E8E0D4', marginTop: 12 }}>
+  <span>🔍</span>
+  <input value={aramaMetni} onChange={e => setAramaMetni(e.target.value)} placeholder="Yemek veya aşçı ara..." style={{ flex: 1, border: 'none', outline: 'none', fontSize: 13, fontFamily: 'inherit', background: 'transparent', color: '#4A2C0E' }} />
+  {aramaMetni && <button onClick={() => setAramaMetni('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#8A7B6B' }}>✕</button>}
+</div>
           </div>
 
           {/* SOL SCROLL - Kategoriler + Yemekler */}
@@ -342,14 +342,15 @@ export default function HomePage() {
               <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 20, fontWeight: 700, color: '#4A2C0E', margin: 0 }}>📋 Yemek Talepleri</h2>
               <Link href="/yemek-talepleri" style={{ color: '#3D6B47', fontSize: 12, fontWeight: 600, textDecoration: 'none' }}>Tümünü Gör →</Link>
             </div>
-            <div style={{ background: 'linear-gradient(135deg, #3D6B47, #2e5236)', borderRadius: 12, padding: '10px 16px', marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-              <div>
-                <p style={{ color: 'white', fontWeight: 700, fontSize: 12, margin: '0 0 2px' }}>İstediğin yemeği talep et</p>
-                <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 11, margin: 0 }}>Aşçılar sana teklif versin</p>
-              </div>
-              <Link href="/yemek-talepleri" style={{ background: 'white', color: '#3D6B47', borderRadius: 10, padding: '6px 14px', fontWeight: 700, fontSize: 12, textDecoration: 'none', whiteSpace: 'nowrap' }}>+ Talep Oluştur</Link>
-            </div>
+            
             <LeafletMap chefs={talepHaritaPins} userCoords={userCoords} radius={radius} onRadius={setRadius} selectedPin={selectedPin} onPinClick={setSelectedPin} />
+            <div style={{ background: 'linear-gradient(135deg, #3D6B47, #2e5236)', borderRadius: 12, padding: '10px 16px', marginTop: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+  <div>
+    <p style={{ color: 'white', fontWeight: 700, fontSize: 12, margin: '0 0 2px' }}>İstediğin yemeği talep et</p>
+    <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 11, margin: 0 }}>Aşçılar sana teklif versin</p>
+  </div>
+  <Link href="/yemek-talepleri" style={{ background: 'white', color: '#3D6B47', borderRadius: 10, padding: '6px 14px', fontWeight: 700, fontSize: 12, textDecoration: 'none', whiteSpace: 'nowrap' }}>+ Talep Oluştur</Link>
+</div>
           </div>
 
           {/* SAĞ SCROLL - Talep Listesi */}
