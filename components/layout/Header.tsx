@@ -79,13 +79,20 @@ export default function Header({ title, subtitle, user, actions }: HeaderProps) 
                 >
                   👤 Profilim
                 </Link>
-                <Link
-                  href="/odeme-yontemleri"
-                  className="flex items-center gap-2 px-4 py-3 text-sm text-brown
-                             hover:bg-cream transition"
-                >
-                  💳 Ödeme Yöntemleri
-                </Link>
+                {user?.role === 'chef' && <>
+                  <Link href="/dashboard" className="flex items-center gap-2 px-4 py-3 text-sm text-brown hover:bg-cream transition">
+                    🍲 Panelim
+                  </Link>
+                  <Link href="/menu" className="flex items-center gap-2 px-4 py-3 text-sm text-brown hover:bg-cream transition">
+                    📋 Menüm
+                  </Link>
+                  <Link href="/kazanc" className="flex items-center gap-2 px-4 py-3 text-sm text-brown hover:bg-cream transition">
+                    💰 Kazancım
+                  </Link>
+                  <Link href="/asci-ayarlar" className="flex items-center gap-2 px-4 py-3 text-sm text-brown hover:bg-cream transition">
+                    ⚙️ Aşçı Ayarları
+                  </Link>
+                </>}
                 <button
                   onClick={handleLogout}
                   className="flex items-center gap-2 px-4 py-3 text-sm text-red-600
