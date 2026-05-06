@@ -177,6 +177,7 @@ export function PublicNavbar() {
   <div style={{ width:34, height:34, borderRadius:'50%', background:'#E8622A', display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontSize:14, fontWeight:700 }}>
     {user.full_name?.charAt(0).toUpperCase() ?? '?'}
   </div>
+  <span style={{ fontSize:13, fontWeight:600, color:'#4A2C0E' }}>{user.full_name}</span>
 </div>
             ) : (
               <>
