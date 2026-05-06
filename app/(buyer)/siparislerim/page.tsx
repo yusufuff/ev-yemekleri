@@ -260,8 +260,24 @@ const loadChefStats = async () => {
 
   return (
     <>
-      <div style={{ minHeight:'100vh', background:'#FAF6EF', fontFamily:"'DM Sans', sans-serif" }}>
-        <div style={{ maxWidth:680, margin:'0 auto', padding:'24px 16px' }}>
+      <div style={{ minHeight:'100vh', background:'#FAF6EF', fontFamily:"'DM Sans', sans-serif", display:'flex' }}>
+        {isChef && (
+          <div style={{ width:200, flexShrink:0, background:'white', borderRight:'1px solid #E8E0D4', padding:'24px 16px', display:'flex', flexDirection:'column', gap:8, position:'sticky', top:56, height:'calc(100vh - 56px)' }} className="hidden-mobile">
+            <div style={{ fontFamily:"'Playfair Display',serif", fontSize:14, fontWeight:700, color:'#4A2C0E', marginBottom:8, paddingBottom:8, borderBottom:'1px solid #F0EBE0' }}>Aşçı Menüsü</div>
+            {[
+              { href:'/menu',        icon:'📋', label:'Menüm'          },
+              { href:'/kazanc',      icon:'💰', label:'Kazancım'       },
+              { href:'/asci-ayarlar',icon:'⚙️', label:'Aşçı Ayarları' },
+              { href:'/paylasim',    icon:'📸', label:'Hikaye Paylaş'  },
+              { href:'/uyelik',      icon:'💳', label:'Üyeliğim'       },
+            ].map(item => (
+              <Link key={item.href} href={item.href} style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 12px', borderRadius:10, fontSize:13, fontWeight:600, color:'#4A2C0E', textDecoration:'none', background:'#FAF6EF', border:'1px solid #F0EBE0' }}>
+                {item.icon} {item.label}
+              </Link>
+            ))}
+          </div>
+        )}
+        <div style={{ flex:1, maxWidth:680, margin:'0 auto', padding:'24px 16px' }}>
           <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20 }}>
   <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:26, fontWeight:900, color:'#4A2C0E', margin:0 }}>Siparişlerim</h1>
   {isChef && (
