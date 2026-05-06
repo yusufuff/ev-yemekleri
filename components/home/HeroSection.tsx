@@ -190,7 +190,7 @@ export function HeroSection() {
           fontSize: '160px', opacity: 0.08, userSelect: 'none', pointerEvents: 'none',
         }}>👩‍🍳</div>
 {/* Sol: Hikayeler */}
-<div style={{ width: 260, flexShrink: 0, padding: '0 24px', position: 'relative', zIndex: 10 }}>
+<div style={{ width: 260, flexShrink: 0, padding: '0 24px', position: 'relative', zIndex: 10, maxHeight: 300, overflowY: 'auto' }}>
   <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 12 }}>📸 Aşçı Hikayeleri</div>
   <StoriesPanel />
 </div>
