@@ -87,31 +87,45 @@ function StoryOverlay({ stories, startIndex, onClose }: { stories: any[], startI
   
 function StoriesPanel() {
   const [stories, setStories] = React.useState<any[]>([])
-  const [aktif, setAktif] = React.useState<any>(null)
+  const [aktifChef, setAktifChef] = React.useState<any>(null)
+  const [aktifIndex, setAktifIndex] = React.useState(0)
+
   React.useEffect(() => {
     fetch('/api/stories').then(r => r.json()).then(d => setStories(d.stories ?? []))
   }, [])
-  if (stories.length === 0) return <div style={{ color: 'rgba(255,255,255,0.3)', fontSize: 12 }}>Henüz hikaye yok</div>
+
+  const chefMap: Record<string, any[]> = {}
+  stories.filter(s => s?.image_url).forEach(s => {
+    const id = s.chef_id
+    if (!chefMap[id]) chefMap[id] = []
+    chefMap[id].push(s)
+  })
+  const chefler = Object.values(chefMap)
+
+  if (chefler.length === 0) return <div style={{ color: 'rgba(255,255,255,0.3)', fontSize: 12 }}>Henüz hikaye yok</div>
+
   return (
     <>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {stories.filter((s: any) => s?.image_url).map((s: any) => (
-          <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }} onClick={() => setAktif(s)}>
-            <div style={{ width: 52, height: 52, borderRadius: '50%', border: '2.5px solid #E8622A', overflow: 'hidden', flexShrink: 0 }}>
-              <img src={s.image_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        {chefler.map((group: any[]) => {
+          const first = group[0]
+          return (
+            <div key={first.chef_id} style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}
+              onClick={() => { setAktifChef(group); setAktifIndex(0) }}>
+              <div style={{ width: 52, height: 52, borderRadius: '50%', border: '2.5px solid #E8622A', overflow: 'hidden', flexShrink: 0 }}>
+                <img src={first.image_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              </div>
+              <div>
+                <div style={{ color: 'white', fontSize: 12, fontWeight: 700 }}>{first.chef_profiles?.users?.full_name ?? 'Aşçı'}</div>
+                <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: 11 }}>{first.caption}</div>
+              </div>
             </div>
-            <div>
-              <div style={{ color: 'white', fontSize: 12, fontWeight: 700 }}>{s.chef_profiles?.users?.full_name ?? 'Aşçı'}</div>
-              <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: 11 }}>{s.caption}</div>
-            </div>
-          </div>
-        ))}
+          )
+        })}
       </div>
-      {aktif ? (
-  <StoryOverlay stories={stories} startIndex={stories.indexOf(aktif)} onClose={() => setAktif(null)} />
-) : null}
-        
-      )
+      {aktifChef ? (
+        <StoryOverlay stories={aktifChef} startIndex={aktifIndex} onClose={() => setAktifChef(null)} />
+      ) : null}
     </>
   )
 }
