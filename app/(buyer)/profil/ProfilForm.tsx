@@ -21,6 +21,10 @@ export default function ProfilForm({ user, chefData, isAdmin }) {
   const [sifreSaving, setSifreSaving] = useState(false)
   const [sifreSaved, setSifreSaved] = useState(false)
   const [sifreHata, setSifreHata] = useState('')
+  const [kisiselAcik, setKisiselAcik] = useState(true)
+  const [sifreAcik, setSifreAcik] = useState(false)
+  const [asciAcik, setAsciAcik] = useState(false)
+  const [bildirimAcik, setBildirimAcik] = useState(false)
   const [adreslerAcik, setAdreslerAcik] = useState(false)
   const [adresler, setAdresler] = useState([])
   const [adresYukleniyor, setAdresYukleniyor] = useState(false)
@@ -145,6 +149,13 @@ export default function ProfilForm({ user, chefData, isAdmin }) {
     router.push('/')
   }
 
+  const AccordionHeader = ({ title, acik, setAcik }) => (
+    <button onClick={() => setAcik(p => !p)} style={{ width: '100%', padding: '16px 24px', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontFamily: 'inherit' }}>
+      <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 17, fontWeight: 700, color: '#4A2C0E' }}>{title}</span>
+      <span style={{ fontSize: 20, color: '#8A7B6B' }}>{acik ? '▲' : '▼'}</span>
+    </button>
+  )
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <div style={{ display: 'flex', gap: 10 }}>
@@ -156,116 +167,138 @@ export default function ProfilForm({ user, chefData, isAdmin }) {
         </div>
       </div>
 
-      <div style={{ background: 'white', borderRadius: 16, padding: 24, boxShadow: '0 2px 12px rgba(74,44,14,0.08)' }}>
-        <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 17, fontWeight: 700, color: '#4A2C0E', marginBottom: 16 }}>Kisisel Bilgiler</div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20 }}>
-          <div style={{ width: 64, height: 64, borderRadius: '50%', background: '#E8622A', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 24, fontWeight: 700 }}>
-            {displayName.charAt(0).toUpperCase()}
-          </div>
-          <div>
-            <div style={{ fontWeight: 700, fontSize: 15, color: '#4A2C0E' }}>{displayName}</div>
-            <div style={{ fontSize: 12, color: '#8A7B6B', marginTop: 2 }}>{isChef ? 'Asci' : 'Alici'}</div>
-          </div>
-        </div>
-        <div style={{ marginBottom: 12 }}>
-          <label style={{ fontSize: 12, fontWeight: 600, color: '#7A4A20', display: 'block', marginBottom: 5 }}>Ad Soyad</label>
-          <input type="text" value={form.full_name} onChange={e => setForm(p => ({ ...p, full_name: e.target.value }))} style={inputStyle} />
-        </div>
-        <div style={{ marginBottom: 12 }}>
-          <label style={{ fontSize: 12, fontWeight: 600, color: '#7A4A20', display: 'block', marginBottom: 5 }}>Telefon</label>
-          <input type="tel" value={form.phone} onChange={e => { const val = e.target.value.replace(/[^0-9]/g, ''); if (val.length <= 11) setForm(p => ({ ...p, phone: val })) }} maxLength={11} placeholder="05XXXXXXXXX" style={inputStyle} />
-        </div>
-        <div style={{ marginBottom: 16 }}>
-          <label style={{ fontSize: 12, fontWeight: 600, color: '#7A4A20', display: 'block', marginBottom: 5 }}>E-posta</label>
-          <input type="email" value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))} style={inputStyle} />
-        </div>
-        <button onClick={save} disabled={saving} style={{ width: '100%', padding: '12px 0', background: saved ? '#3D6B47' : '#E8622A', color: 'white', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', opacity: saving ? 0.7 : 1, marginBottom: 20 }}>
-          {saving ? 'Kaydediliyor...' : saved ? 'Kaydedildi!' : 'Bilgileri Kaydet'}
-        </button>
-        <div style={{ borderTop: '1px solid #F5EDD8', paddingTop: 20 }}>
-          <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 15, fontWeight: 700, color: '#4A2C0E', marginBottom: 14 }}>Sifre Degistir</div>
-          <div style={{ marginBottom: 12 }}>
-            <label style={{ fontSize: 12, fontWeight: 600, color: '#7A4A20', display: 'block', marginBottom: 5 }}>Yeni Sifre</label>
-            <div style={{ position: 'relative' }}>
-              <input type={goster.yeni ? 'text' : 'password'} value={sifreForm.yeni} onChange={e => setSifreForm(p => ({ ...p, yeni: e.target.value }))} placeholder="En az 6 karakter" style={{ ...inputStyle, paddingRight: 44 }} />
-              <button onClick={() => setGoster(p => ({ ...p, yeni: !p.yeni }))} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: '#8A7B6B' }}>
-                {goster.yeni ? 'Gizle' : 'Goster'}
-              </button>
+      {/* Kişisel Bilgiler */}
+      <div style={{ background: 'white', borderRadius: 16, boxShadow: '0 2px 12px rgba(74,44,14,0.08)', overflow: 'hidden' }}>
+        <AccordionHeader title="Kişisel Bilgiler" acik={kisiselAcik} setAcik={setKisiselAcik} />
+        {kisiselAcik && (
+          <div style={{ padding: '0 24px 24px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20 }}>
+              <div style={{ width: 64, height: 64, borderRadius: '50%', background: '#E8622A', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 24, fontWeight: 700 }}>
+                {displayName.charAt(0).toUpperCase()}
+              </div>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: 15, color: '#4A2C0E' }}>{displayName}</div>
+                <div style={{ fontSize: 12, color: '#8A7B6B', marginTop: 2 }}>{isChef ? 'Asci' : 'Alici'}</div>
+              </div>
             </div>
-          </div>
-          <div style={{ marginBottom: 12 }}>
-            <label style={{ fontSize: 12, fontWeight: 600, color: '#7A4A20', display: 'block', marginBottom: 5 }}>Yeni Sifre (Tekrar)</label>
-            <div style={{ position: 'relative' }}>
-              <input type={goster.tekrar ? 'text' : 'password'} value={sifreForm.tekrar} onChange={e => setSifreForm(p => ({ ...p, tekrar: e.target.value }))} placeholder="Sifreyi tekrar girin" style={{ ...inputStyle, paddingRight: 44 }} />
-              <button onClick={() => setGoster(p => ({ ...p, tekrar: !p.tekrar }))} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: '#8A7B6B' }}>
-                {goster.tekrar ? 'Gizle' : 'Goster'}
-              </button>
+            <div style={{ marginBottom: 12 }}>
+              <label style={{ fontSize: 12, fontWeight: 600, color: '#7A4A20', display: 'block', marginBottom: 5 }}>Ad Soyad</label>
+              <input type="text" value={form.full_name} onChange={e => setForm(p => ({ ...p, full_name: e.target.value }))} style={inputStyle} />
             </div>
-          </div>
-          {sifreHata && <div style={{ background: '#FEE2E2', color: '#DC2626', borderRadius: 8, padding: '8px 12px', fontSize: 13, marginBottom: 12 }}>{sifreHata}</div>}
-          <button onClick={sifreDegistir} disabled={sifreSaving} style={{ width: '100%', padding: '12px 0', background: sifreSaved ? '#3D6B47' : '#4A2C0E', color: 'white', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', opacity: sifreSaving ? 0.7 : 1 }}>
-            {sifreSaving ? 'Degistiriliyor...' : sifreSaved ? 'Sifre Degistirildi!' : 'Sifreyi Degistir'}
-          </button>
-        </div>
-      </div>
-
-      {isChef && (
-        <div style={{ background: 'white', borderRadius: 16, padding: 24, boxShadow: '0 2px 12px rgba(74,44,14,0.08)' }}>
-          <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 17, fontWeight: 700, color: '#4A2C0E', marginBottom: 16 }}>Asci Ayarlari</div>
-          <div style={{ marginBottom: 16 }}>
-            <label style={{ fontSize: 12, fontWeight: 600, color: '#7A4A20', display: 'block', marginBottom: 5 }}>Konum</label>
-            <button onClick={konumuGuncelle} disabled={locating} style={{ width: '100%', padding: '10px 14px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: locating ? 'not-allowed' : 'pointer', fontFamily: 'inherit', background: locationSaved ? '#ECFDF5' : '#FEF3EC', border: `1.5px solid ${locationSaved ? '#3D6B47' : '#E8622A'}`, color: locationSaved ? '#3D6B47' : '#E8622A' }}>
-              {locating ? 'Konum aliniyor...' : locationSaved ? 'Konum Guncellendi!' : 'Konumumu Guncelle'}
+            <div style={{ marginBottom: 12 }}>
+              <label style={{ fontSize: 12, fontWeight: 600, color: '#7A4A20', display: 'block', marginBottom: 5 }}>Telefon</label>
+              <input type="tel" value={form.phone} onChange={e => { const val = e.target.value.replace(/[^0-9]/g, ''); if (val.length <= 11) setForm(p => ({ ...p, phone: val })) }} maxLength={11} placeholder="05XXXXXXXXX" style={inputStyle} />
+            </div>
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ fontSize: 12, fontWeight: 600, color: '#7A4A20', display: 'block', marginBottom: 5 }}>E-posta</label>
+              <input type="email" value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))} style={inputStyle} />
+            </div>
+            <button onClick={save} disabled={saving} style={{ width: '100%', padding: '12px 0', background: saved ? '#3D6B47' : '#E8622A', color: 'white', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', opacity: saving ? 0.7 : 1 }}>
+              {saving ? 'Kaydediliyor...' : saved ? 'Kaydedildi!' : 'Bilgileri Kaydet'}
             </button>
           </div>
-          <div style={{ marginBottom: 12 }}>
-            <label style={{ fontSize: 12, fontWeight: 600, color: '#7A4A20', display: 'block', marginBottom: 5 }}>Biyografi</label>
-            <textarea value={chefForm.bio} onChange={e => setChefForm(p => ({ ...p, bio: e.target.value }))} rows={3} style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #E8E0D4', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', resize: 'none', boxSizing: 'border-box' as const }} />
+        )}
+      </div>
+
+      {/* Şifre Değiştir */}
+      <div style={{ background: 'white', borderRadius: 16, boxShadow: '0 2px 12px rgba(74,44,14,0.08)', overflow: 'hidden' }}>
+        <AccordionHeader title="Şifre Değiştir" acik={sifreAcik} setAcik={setSifreAcik} />
+        {sifreAcik && (
+          <div style={{ padding: '0 24px 24px' }}>
+            <div style={{ marginBottom: 12 }}>
+              <label style={{ fontSize: 12, fontWeight: 600, color: '#7A4A20', display: 'block', marginBottom: 5 }}>Yeni Şifre</label>
+              <div style={{ position: 'relative' }}>
+                <input type={goster.yeni ? 'text' : 'password'} value={sifreForm.yeni} onChange={e => setSifreForm(p => ({ ...p, yeni: e.target.value }))} placeholder="En az 6 karakter" style={{ ...inputStyle, paddingRight: 44 }} />
+                <button onClick={() => setGoster(p => ({ ...p, yeni: !p.yeni }))} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: '#8A7B6B' }}>
+                  {goster.yeni ? 'Gizle' : 'Göster'}
+                </button>
+              </div>
+            </div>
+            <div style={{ marginBottom: 12 }}>
+              <label style={{ fontSize: 12, fontWeight: 600, color: '#7A4A20', display: 'block', marginBottom: 5 }}>Yeni Şifre (Tekrar)</label>
+              <div style={{ position: 'relative' }}>
+                <input type={goster.tekrar ? 'text' : 'password'} value={sifreForm.tekrar} onChange={e => setSifreForm(p => ({ ...p, tekrar: e.target.value }))} placeholder="Şifreyi tekrar girin" style={{ ...inputStyle, paddingRight: 44 }} />
+                <button onClick={() => setGoster(p => ({ ...p, tekrar: !p.tekrar }))} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: '#8A7B6B' }}>
+                  {goster.tekrar ? 'Gizle' : 'Göster'}
+                </button>
+              </div>
+            </div>
+            {sifreHata && <div style={{ background: '#FEE2E2', color: '#DC2626', borderRadius: 8, padding: '8px 12px', fontSize: 13, marginBottom: 12 }}>{sifreHata}</div>}
+            <button onClick={sifreDegistir} disabled={sifreSaving} style={{ width: '100%', padding: '12px 0', background: sifreSaved ? '#3D6B47' : '#4A2C0E', color: 'white', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', opacity: sifreSaving ? 0.7 : 1 }}>
+              {sifreSaving ? 'Değiştiriliyor...' : sifreSaved ? 'Şifre Değiştirildi!' : 'Şifreyi Değiştir'}
+            </button>
           </div>
-          <div style={{ marginBottom: 12 }}>
-            <label style={{ fontSize: 12, fontWeight: 600, color: '#7A4A20', display: 'block', marginBottom: 5 }}>IBAN</label>
-            <input value={chefForm.iban} onChange={e => setChefForm(p => ({ ...p, iban: e.target.value }))} style={inputStyle} />
-          </div>
-          <div style={{ marginBottom: 12 }}>
-            <label style={{ fontSize: 12, fontWeight: 600, color: '#7A4A20', display: 'block', marginBottom: 8 }}>Teslimat Yaricapi: <span style={{ color: '#E8622A' }}>{chefForm.radius} km</span></label>
-            <input type="range" min={1} max={10} value={chefForm.radius} onChange={e => setChefForm(p => ({ ...p, radius: Number(e.target.value) }))} style={{ width: '100%', accentColor: '#E8622A' }} />
-          </div>
-          <div>
-            <label style={{ fontSize: 12, fontWeight: 600, color: '#7A4A20', display: 'block', marginBottom: 5 }}>Min. Siparis Tutari</label>
-            <input type="number" value={chefForm.min_order} onChange={e => setChefForm(p => ({ ...p, min_order: Number(e.target.value) }))} style={inputStyle} />
-          </div>
+        )}
+      </div>
+
+      {/* Aşçı Ayarları */}
+      {isChef && (
+        <div style={{ background: 'white', borderRadius: 16, boxShadow: '0 2px 12px rgba(74,44,14,0.08)', overflow: 'hidden' }}>
+          <AccordionHeader title="Aşçı Ayarları" acik={asciAcik} setAcik={setAsciAcik} />
+          {asciAcik && (
+            <div style={{ padding: '0 24px 24px' }}>
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ fontSize: 12, fontWeight: 600, color: '#7A4A20', display: 'block', marginBottom: 5 }}>Konum</label>
+                <button onClick={konumuGuncelle} disabled={locating} style={{ width: '100%', padding: '10px 14px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: locating ? 'not-allowed' : 'pointer', fontFamily: 'inherit', background: locationSaved ? '#ECFDF5' : '#FEF3EC', border: `1.5px solid ${locationSaved ? '#3D6B47' : '#E8622A'}`, color: locationSaved ? '#3D6B47' : '#E8622A' }}>
+                  {locating ? 'Konum aliniyor...' : locationSaved ? 'Konum Guncellendi!' : 'Konumumu Guncelle'}
+                </button>
+              </div>
+              <div style={{ marginBottom: 12 }}>
+                <label style={{ fontSize: 12, fontWeight: 600, color: '#7A4A20', display: 'block', marginBottom: 5 }}>Biyografi</label>
+                <textarea value={chefForm.bio} onChange={e => setChefForm(p => ({ ...p, bio: e.target.value }))} rows={3} style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #E8E0D4', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', resize: 'none', boxSizing: 'border-box' as const }} />
+              </div>
+              <div style={{ marginBottom: 12 }}>
+                <label style={{ fontSize: 12, fontWeight: 600, color: '#7A4A20', display: 'block', marginBottom: 5 }}>IBAN</label>
+                <input value={chefForm.iban} onChange={e => setChefForm(p => ({ ...p, iban: e.target.value }))} style={inputStyle} />
+              </div>
+              <div style={{ marginBottom: 12 }}>
+                <label style={{ fontSize: 12, fontWeight: 600, color: '#7A4A20', display: 'block', marginBottom: 8 }}>Teslimat Yarıçapı: <span style={{ color: '#E8622A' }}>{chefForm.radius} km</span></label>
+                <input type="range" min={1} max={10} value={chefForm.radius} onChange={e => setChefForm(p => ({ ...p, radius: Number(e.target.value) }))} style={{ width: '100%', accentColor: '#E8622A' }} />
+              </div>
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ fontSize: 12, fontWeight: 600, color: '#7A4A20', display: 'block', marginBottom: 5 }}>Min. Sipariş Tutarı</label>
+                <input type="number" value={chefForm.min_order} onChange={e => setChefForm(p => ({ ...p, min_order: Number(e.target.value) }))} style={inputStyle} />
+              </div>
+              <button onClick={save} disabled={saving} style={{ width: '100%', padding: '12px 0', background: saved ? '#3D6B47' : '#E8622A', color: 'white', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', opacity: saving ? 0.7 : 1 }}>
+                {saving ? 'Kaydediliyor...' : saved ? 'Kaydedildi!' : 'Ayarları Kaydet'}
+              </button>
+            </div>
+          )}
         </div>
       )}
 
-      <div style={{ background: 'white', borderRadius: 16, padding: 24, boxShadow: '0 2px 12px rgba(74,44,14,0.08)' }}>
-        <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 17, fontWeight: 700, color: '#4A2C0E', marginBottom: 16 }}>Bildirim Tercihleri</div>
-        {[
-          ['orders', 'Siparis Guncellemeleri', 'Onay, hazirlik, teslimat'],
-          ['favorites', 'Favori Asci', 'Yeni menu paylasimlari'],
-          ['reviews', 'Degerlendirme', 'Teslimdan 30 dk sonra'],
-          ['campaigns', 'Kampanyalar', 'Promosyon bildirimleri'],
-          ['stock', 'Stok Uyarisi', 'Son porsiyon uyarisi'],
-        ].map(([key, title, desc]) => (
-          <div key={key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 12, marginBottom: 12, borderBottom: '1px solid #F5EDD8' }}>
-            <div>
-              <div style={{ fontWeight: 600, fontSize: 13, color: '#4A2C0E' }}>{title}</div>
-              <div style={{ fontSize: 11, color: '#8A7B6B' }}>{desc}</div>
-            </div>
-            <button onClick={() => setNotifs(p => ({ ...p, [key]: !p[key] }))} style={{ width: 44, height: 24, borderRadius: 12, border: 'none', cursor: 'pointer', flexShrink: 0, background: notifs[key] ? '#3D6B47' : '#E8E0D4', position: 'relative', transition: 'background 0.2s' }}>
-              <div style={{ width: 18, height: 18, borderRadius: '50%', background: 'white', position: 'absolute', top: 3, left: notifs[key] ? 23 : 3, transition: 'left 0.2s' }} />
+      {/* Bildirim Tercihleri */}
+      <div style={{ background: 'white', borderRadius: 16, boxShadow: '0 2px 12px rgba(74,44,14,0.08)', overflow: 'hidden' }}>
+        <AccordionHeader title="Bildirim Tercihleri" acik={bildirimAcik} setAcik={setBildirimAcik} />
+        {bildirimAcik && (
+          <div style={{ padding: '0 24px 24px' }}>
+            {[
+              ['orders', 'Sipariş Güncellemeleri', 'Onay, hazırlık, teslimat'],
+              ['favorites', 'Favori Aşçı', 'Yeni menü paylaşımları'],
+              ['reviews', 'Değerlendirme', 'Teslimdan 30 dk sonra'],
+              ['campaigns', 'Kampanyalar', 'Promosyon bildirimleri'],
+              ['stock', 'Stok Uyarısı', 'Son porsiyon uyarısı'],
+            ].map(([key, title, desc]) => (
+              <div key={key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 12, marginBottom: 12, borderBottom: '1px solid #F5EDD8' }}>
+                <div>
+                  <div style={{ fontWeight: 600, fontSize: 13, color: '#4A2C0E' }}>{title}</div>
+                  <div style={{ fontSize: 11, color: '#8A7B6B' }}>{desc}</div>
+                </div>
+                <button onClick={() => setNotifs(p => ({ ...p, [key]: !p[key] }))} style={{ width: 44, height: 24, borderRadius: 12, border: 'none', cursor: 'pointer', flexShrink: 0, background: notifs[key] ? '#3D6B47' : '#E8E0D4', position: 'relative', transition: 'background 0.2s' }}>
+                  <div style={{ width: 18, height: 18, borderRadius: '50%', background: 'white', position: 'absolute', top: 3, left: notifs[key] ? 23 : 3, transition: 'left 0.2s' }} />
+                </button>
+              </div>
+            ))}
+            <button onClick={saveNotifs} disabled={notifSaving} style={{ width: '100%', padding: '12px 0', background: notifSaved ? '#3D6B47' : '#E8622A', color: 'white', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', opacity: notifSaving ? 0.7 : 1, marginTop: 4 }}>
+              {notifSaving ? 'Kaydediliyor...' : notifSaved ? 'Tercihler Kaydedildi!' : 'Tercihleri Kaydet'}
             </button>
           </div>
-        ))}
-        <button onClick={saveNotifs} disabled={notifSaving} style={{ width: '100%', padding: '12px 0', background: notifSaved ? '#3D6B47' : '#E8622A', color: 'white', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', opacity: notifSaving ? 0.7 : 1, marginTop: 4 }}>
-          {notifSaving ? 'Kaydediliyor...' : notifSaved ? 'Tercihler Kaydedildi!' : 'Tercihleri Kaydet'}
-        </button>
+        )}
       </div>
 
+      {/* Kayıtlı Adreslerim */}
       <div style={{ background: 'white', borderRadius: 16, boxShadow: '0 2px 12px rgba(74,44,14,0.08)', overflow: 'hidden' }}>
-        <button onClick={() => setAdreslerAcik(p => !p)} style={{ width: '100%', padding: '16px 24px', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontFamily: 'inherit' }}>
-          <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 17, fontWeight: 700, color: '#4A2C0E' }}>Kayitli Adreslerim</span>
-          <span style={{ fontSize: 20, color: '#8A7B6B' }}>{adreslerAcik ? '▲' : '▼'}</span>
-        </button>
+        <AccordionHeader title="Kayıtlı Adreslerim" acik={adreslerAcik} setAcik={setAdreslerAcik} />
         {adreslerAcik && (
           <div style={{ padding: '0 24px 24px' }}>
             {adresYukleniyor ? (
@@ -276,9 +309,7 @@ export default function ProfilForm({ user, chefData, isAdmin }) {
                   {adresler.length === 0 && <div style={{ color: '#8A7B6B', fontSize: 13, textAlign: 'center', padding: '12px 0' }}>Henuz kayitli adres yok.</div>}
                   {adresler.map(addr => (
                     <div key={addr.id} style={{ border: addr.is_default ? '2px solid #3D6B47' : '1.5px solid #E8E0D4', borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
-                      <div style={{ width: 40, height: 40, background: '#F5EDD8', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>
-                        {labelIcon(addr.label)}
-                      </div>
+                      <div style={{ width: 40, height: 40, background: '#F5EDD8', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>{labelIcon(addr.label)}</div>
                       <div style={{ flex: 1 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
                           <span style={{ fontWeight: 700, fontSize: 13, color: '#4A2C0E' }}>{addr.label}</span>
@@ -288,9 +319,7 @@ export default function ProfilForm({ user, chefData, isAdmin }) {
                         {addr.city && <div style={{ fontSize: 11, color: '#8A7B6B' }}>{addr.city}</div>}
                       </div>
                       <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-                        {!addr.is_default && (
-                          <button onClick={() => varsayilanYap(addr.id)} style={{ padding: '5px 8px', background: '#ECFDF5', color: '#3D6B47', border: 'none', borderRadius: 7, fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>v</button>
-                        )}
+                        {!addr.is_default && <button onClick={() => varsayilanYap(addr.id)} style={{ padding: '5px 8px', background: '#ECFDF5', color: '#3D6B47', border: 'none', borderRadius: 7, fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>v</button>}
                         <button onClick={() => adresDuzenle(addr)} style={{ padding: '5px 8px', background: '#FEF3EC', color: '#E8622A', border: 'none', borderRadius: 7, fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>Duzenle</button>
                         <button onClick={() => adresSil(addr.id)} style={{ padding: '5px 8px', background: '#FEE2E2', color: '#DC2626', border: 'none', borderRadius: 7, fontSize: 11, cursor: 'pointer' }}>Sil</button>
                       </div>
@@ -309,27 +338,23 @@ export default function ProfilForm({ user, chefData, isAdmin }) {
                       <label style={{ fontSize: 12, fontWeight: 600, color: '#7A4A20', display: 'block', marginBottom: 5 }}>Etiket</label>
                       <div style={{ display: 'flex', gap: 8 }}>
                         {['Ev', 'Is', 'Diger'].map(l => (
-                          <button key={l} onClick={() => setAdresForm(p => ({ ...p, label: l }))} style={{ padding: '6px 14px', borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: 'pointer', border: 'none', fontFamily: 'inherit', background: adresForm.label === l ? '#E8622A' : '#F5EDD8', color: adresForm.label === l ? 'white' : '#4A2C0E' }}>
-                            {l}
-                          </button>
+                          <button key={l} onClick={() => setAdresForm(p => ({ ...p, label: l }))} style={{ padding: '6px 14px', borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: 'pointer', border: 'none', fontFamily: 'inherit', background: adresForm.label === l ? '#E8622A' : '#F5EDD8', color: adresForm.label === l ? 'white' : '#4A2C0E' }}>{l}</button>
                         ))}
                       </div>
                     </div>
                     <div style={{ marginBottom: 10 }}>
-                      <label style={{ fontSize: 12, fontWeight: 600, color: '#7A4A20', display: 'block', marginBottom: 5 }}>Acik Adres</label>
+                      <label style={{ fontSize: 12, fontWeight: 600, color: '#7A4A20', display: 'block', marginBottom: 5 }}>Açık Adres</label>
                       <input value={adresForm.full_address} onChange={e => setAdresForm(p => ({ ...p, full_address: e.target.value }))} placeholder="Mahalle, cadde, sokak, bina no..." style={inputStyle} />
                     </div>
                     <div style={{ marginBottom: 14 }}>
-                      <label style={{ fontSize: 12, fontWeight: 600, color: '#7A4A20', display: 'block', marginBottom: 5 }}>Ilce, Sehir</label>
+                      <label style={{ fontSize: 12, fontWeight: 600, color: '#7A4A20', display: 'block', marginBottom: 5 }}>İlçe, Şehir</label>
                       <input value={adresForm.city} onChange={e => setAdresForm(p => ({ ...p, city: e.target.value }))} placeholder="Orn: Seyhan, Adana" style={inputStyle} />
                     </div>
                     <div style={{ display: 'flex', gap: 8 }}>
                       <button onClick={adresKaydet} disabled={adresSaving} style={{ flex: 1, padding: '11px 0', background: adresSaved ? '#3D6B47' : '#E8622A', color: 'white', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', opacity: adresSaving ? 0.7 : 1 }}>
                         {adresSaving ? '...' : adresSaved ? 'Kaydedildi!' : 'Kaydet'}
                       </button>
-                      <button onClick={() => { setAdresFormAcik(false); setAdresDuzenleId(null) }} style={{ padding: '11px 16px', background: '#F5EDD8', color: '#4A2C0E', border: '1.5px solid #E8E0D4', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
-                        Iptal
-                      </button>
+                      <button onClick={() => { setAdresFormAcik(false); setAdresDuzenleId(null) }} style={{ padding: '11px 16px', background: '#F5EDD8', color: '#4A2C0E', border: '1.5px solid #E8E0D4', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>İptal</button>
                     </div>
                   </div>
                 )}
@@ -346,7 +371,7 @@ export default function ProfilForm({ user, chefData, isAdmin }) {
       )}
 
       <button onClick={cikisYap} style={{ width: '100%', padding: '12px 0', background: '#FEE2E2', color: '#DC2626', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
-        Cikis Yap
+        Çıkış Yap
       </button>
     </div>
   )
