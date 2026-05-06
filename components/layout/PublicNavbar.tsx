@@ -20,7 +20,7 @@ const AUTH_LINKS = [
   { href: '/siparislerim', label: 'Siparişlerim', roles: ['buyer','chef','admin'] },
   { href: '/mesajlar',     label: 'Mesajlar',     roles: ['buyer','chef','admin'], badge: true },
   { href: '/favorilerim',  label: 'Favoriler',    roles: ['buyer','admin']        },
-  { href: '/profil',       label: 'Profil',       roles: ['buyer','chef','admin'] },
+  { href: '/profil',       label: 'Profil',       roles: ['buyer','chef','admin'], isDropdown: true },
 ]
 
 const HIDDEN_PATHS = ['/giris', '/kayit', '/admin']
@@ -124,8 +124,27 @@ export function PublicNavbar() {
           <div style={{ display:'flex', alignItems:'center', gap:20 }} className="hidden-mobile">
             {visibleLinks.map(item => {
               const active = pathname?.startsWith(item.href)
-              return (
-                <Link key={item.href} href={item.href} style={{ fontSize:13, fontWeight:600, textDecoration:'none', color: active ? '#E8622A' : '#8A7B6B', borderBottom: active ? '2px solid #E8622A' : '2px solid transparent', paddingBottom:2, position:'relative', display:'inline-flex', alignItems:'center', gap:4 }}>
+              return item.isDropdown ? (
+  <div key={item.href} style={{ position:'relative' }}>
+    <div onClick={() => setDropdownAcik(v => !v)} style={{ fontSize:13, fontWeight:600, cursor:'pointer', color: active ? '#E8622A' : '#8A7B6B', borderBottom: active ? '2px solid #E8622A' : '2px solid transparent', paddingBottom:2, display:'inline-flex', alignItems:'center', gap:4 }}>
+      {item.label} ▾
+    </div>
+    {dropdownAcik && (
+      <div style={{ position:'absolute', right:0, top:'100%', marginTop:8, width:200, background:'white', borderRadius:12, border:'1px solid #E8E0D4', boxShadow:'0 4px 20px rgba(0,0,0,0.1)', zIndex:100, overflow:'hidden' }}>
+        <Link href="/profil" onClick={() => setDropdownAcik(false)} style={{ display:'flex', alignItems:'center', gap:8, padding:'10px 16px', fontSize:13, color:'#4A2C0E', textDecoration:'none', fontWeight:600, borderBottom:'1px solid #F0EBE0' }}>👤 Profil & Ayarlar</Link>
+        {user?.role === 'chef' && <>
+          <Link href="/dashboard" onClick={() => setDropdownAcik(false)} style={{ display:'flex', alignItems:'center', gap:8, padding:'10px 16px', fontSize:13, color:'#4A2C0E', textDecoration:'none', fontWeight:600 }}>🍲 Panelim</Link>
+          <Link href="/menu" onClick={() => setDropdownAcik(false)} style={{ display:'flex', alignItems:'center', gap:8, padding:'10px 16px', fontSize:13, color:'#4A2C0E', textDecoration:'none', fontWeight:600 }}>📋 Menüm</Link>
+          <Link href="/kazanc" onClick={() => setDropdownAcik(false)} style={{ display:'flex', alignItems:'center', gap:8, padding:'10px 16px', fontSize:13, color:'#4A2C0E', textDecoration:'none', fontWeight:600 }}>💰 Kazancım</Link>
+          <Link href="/asci-ayarlar" onClick={() => setDropdownAcik(false)} style={{ display:'flex', alignItems:'center', gap:8, padding:'10px 16px', fontSize:13, color:'#4A2C0E', textDecoration:'none', fontWeight:600 }}>⚙️ Aşçı Ayarları</Link>
+          <Link href="/paylasim" onClick={() => setDropdownAcik(false)} style={{ display:'flex', alignItems:'center', gap:8, padding:'10px 16px', fontSize:13, color:'#4A2C0E', textDecoration:'none', fontWeight:600 }}>📸 Hikaye Paylaş</Link>
+        </>}
+        <button onClick={() => { setDropdownAcik(false); handleLogout() }} style={{ display:'flex', alignItems:'center', gap:8, padding:'10px 16px', fontSize:13, color:'#DC2626', fontWeight:600, background:'none', border:'none', cursor:'pointer', width:'100%', textAlign:'left', fontFamily:'inherit', borderTop:'1px solid #F0EBE0' }}>🚪 Çıkış Yap</button>
+      </div>
+    )}
+  </div>
+) : (
+<Link key={item.href} href={item.href} style={{ fontSize:13, fontWeight:600, textDecoration:'none', color: active ? '#E8622A' : '#8A7B6B', borderBottom: active ? '2px solid #E8622A' : '2px solid transparent', paddingBottom:2, position:'relative', display:'inline-flex', alignItems:'center', gap:4 }}>
                   {item.label}
                   {item.badge && unreadMessages > 0 && (
                     <span style={{ background:'#ef4444', color:'white', fontSize:10, fontWeight:700, borderRadius:10, padding:'1px 5px', lineHeight:1.4 }}>
@@ -133,7 +152,7 @@ export function PublicNavbar() {
                     </span>
                   )}
                 </Link>
-              )
+            )
             })}
           </div>
 
