@@ -2,7 +2,7 @@
 // @ts-nocheck
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@supabase/supabase-js'
-
+import EmojiPicker from 'emoji-picker-react'
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -29,7 +29,7 @@ export default function YemekFotolarPage() {
   const [yeniKat, setYeniKat]                 = useState({ id: '', ad: '', emoji: '' })
   const [katSilYukleniyor, setKatSilYukleniyor] = useState<string | null>(null)
   const [katMesaj, setKatMesaj]               = useState<{tip: string, metin: string} | null>(null)
-
+const [emojiPickerAcik, setEmojiPickerAcik] = useState(false)
   useEffect(() => { kayitlariYukle(); kategorileriYukle() }, [])
 
   useEffect(() => {
@@ -161,8 +161,17 @@ export default function YemekFotolarPage() {
           </div>
           <div style={{ minWidth: 120 }}>
             <label style={{ fontSize: 12, fontWeight: 700, color: '#8A7B6B', display: 'block', marginBottom: 4 }}>Emoji</label>
-            <input value={yeniKat.emoji} onChange={e => setYeniKat(p => ({ ...p, emoji: e.target.value }))} placeholder="🥚"
-              style={{ ...inp, fontSize: 22, textAlign: 'center' }} />
+           <div style={{ position: 'relative' }}>
+  <button onClick={() => setEmojiPickerAcik(v => !v)}
+    style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1.5px solid #E8E0D4', fontSize: 22, textAlign: 'center', cursor: 'pointer', background: 'white', fontFamily: 'inherit' }}>
+    {yeniKat.emoji || '🥚'}
+  </button>
+  {emojiPickerAcik && (
+    <div style={{ position: 'absolute', top: '100%', right: 0, zIndex: 100 }}>
+      <EmojiPicker onEmojiClick={(e) => { setYeniKat(p => ({ ...p, emoji: e.emoji })); setEmojiPickerAcik(false) }} categories={[{ category: 'food-drink' as any, name: 'Yemek' }]} />
+    </div>
+  )}
+</div>
           </div>
         </div>
         <button onClick={katEkle} disabled={katSaving}
