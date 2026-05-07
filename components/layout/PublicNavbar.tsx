@@ -35,6 +35,17 @@ export function PublicNavbar() {
   const [duyuru, setDuyuru] = useState(null)
   const [dropdownAcik, setDropdownAcik] = useState(false)
   const channelRef = useRef(null)
+  const dropdownRef = useRef(null)
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setDropdownAcik(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
 
   useEffect(() => {
     const supabase = getSupabaseBrowserClient()
@@ -79,6 +90,7 @@ export function PublicNavbar() {
   useEffect(() => {
     if (pathname === '/bildirimler') setUnreadCount(0)
     if (pathname === '/mesajlar') setUnreadMessages(0)
+    setDropdownAcik(false)
   }, [pathname])
 
   const handleLogout = async () => {
@@ -125,26 +137,26 @@ export function PublicNavbar() {
             {visibleLinks.map(item => {
               const active = pathname?.startsWith(item.href)
               return item.isDropdown ? (
-  <div key={item.href} style={{ position:'relative' }}>
-    <div onClick={() => setDropdownAcik(v => !v)} style={{ fontSize:13, fontWeight:600, cursor:'pointer', color: active ? '#E8622A' : '#8A7B6B', borderBottom: active ? '2px solid #E8622A' : '2px solid transparent', paddingBottom:2, display:'inline-flex', alignItems:'center', gap:4 }}>
-      {item.label} ▾
-    </div>
-    {dropdownAcik && (
-      <div style={{ position:'absolute', right:0, top:'100%', marginTop:8, width:200, background:'white', borderRadius:12, border:'1px solid #E8E0D4', boxShadow:'0 4px 20px rgba(0,0,0,0.1)', zIndex:100, overflow:'hidden' }}>
-        <Link href="/profil" onClick={() => setDropdownAcik(false)} style={{ display:'flex', alignItems:'center', gap:8, padding:'10px 16px', fontSize:13, color:'#4A2C0E', textDecoration:'none', fontWeight:600, borderBottom:'1px solid #F0EBE0' }}>👤 Profil & Ayarlar</Link>
-        {user?.role === 'chef' && <>
-          <Link href="/dashboard" onClick={() => setDropdownAcik(false)} style={{ display:'flex', alignItems:'center', gap:8, padding:'10px 16px', fontSize:13, color:'#4A2C0E', textDecoration:'none', fontWeight:600 }}>🍲 Panelim</Link>
-          <Link href="/menu" onClick={() => setDropdownAcik(false)} style={{ display:'flex', alignItems:'center', gap:8, padding:'10px 16px', fontSize:13, color:'#4A2C0E', textDecoration:'none', fontWeight:600 }}>📋 Menüm</Link>
-          <Link href="/kazanc" onClick={() => setDropdownAcik(false)} style={{ display:'flex', alignItems:'center', gap:8, padding:'10px 16px', fontSize:13, color:'#4A2C0E', textDecoration:'none', fontWeight:600 }}>💰 Kazancım</Link>
-          <Link href="/asci-ayarlar" onClick={() => setDropdownAcik(false)} style={{ display:'flex', alignItems:'center', gap:8, padding:'10px 16px', fontSize:13, color:'#4A2C0E', textDecoration:'none', fontWeight:600 }}>⚙️ Aşçı Ayarları</Link>
-          <Link href="/paylasim" onClick={() => setDropdownAcik(false)} style={{ display:'flex', alignItems:'center', gap:8, padding:'10px 16px', fontSize:13, color:'#4A2C0E', textDecoration:'none', fontWeight:600 }}>📸 Hikaye Paylaş</Link>
-        </>}
-        <button onClick={() => { setDropdownAcik(false); handleLogout() }} style={{ display:'flex', alignItems:'center', gap:8, padding:'10px 16px', fontSize:13, color:'#DC2626', fontWeight:600, background:'none', border:'none', cursor:'pointer', width:'100%', textAlign:'left', fontFamily:'inherit', borderTop:'1px solid #F0EBE0' }}>🚪 Çıkış Yap</button>
-      </div>
-    )}
-  </div>
-) : (
-<Link key={item.href} href={item.href} style={{ fontSize:13, fontWeight:600, textDecoration:'none', color: active ? '#E8622A' : '#8A7B6B', borderBottom: active ? '2px solid #E8622A' : '2px solid transparent', paddingBottom:2, position:'relative', display:'inline-flex', alignItems:'center', gap:4 }}>
+                <div key={item.href} style={{ position:'relative' }} ref={dropdownRef}>
+                  <div onClick={() => setDropdownAcik(v => !v)} style={{ fontSize:13, fontWeight:600, cursor:'pointer', color: active ? '#E8622A' : '#8A7B6B', borderBottom: active ? '2px solid #E8622A' : '2px solid transparent', paddingBottom:2, display:'inline-flex', alignItems:'center', gap:4 }}>
+                    {item.label} ▾
+                  </div>
+                  {dropdownAcik && (
+                    <div style={{ position:'absolute', right:0, top:'100%', marginTop:8, width:200, background:'white', borderRadius:12, border:'1px solid #E8E0D4', boxShadow:'0 4px 20px rgba(0,0,0,0.1)', zIndex:100, overflow:'hidden' }}>
+                      <Link href="/profil" onClick={() => setDropdownAcik(false)} style={{ display:'flex', alignItems:'center', gap:8, padding:'10px 16px', fontSize:13, color:'#4A2C0E', textDecoration:'none', fontWeight:600, borderBottom:'1px solid #F0EBE0' }}>👤 Profil & Ayarlar</Link>
+                      {user?.role === 'chef' && <>
+                        <Link href="/dashboard" onClick={() => setDropdownAcik(false)} style={{ display:'flex', alignItems:'center', gap:8, padding:'10px 16px', fontSize:13, color:'#4A2C0E', textDecoration:'none', fontWeight:600 }}>🍲 Panelim</Link>
+                        <Link href="/menu" onClick={() => setDropdownAcik(false)} style={{ display:'flex', alignItems:'center', gap:8, padding:'10px 16px', fontSize:13, color:'#4A2C0E', textDecoration:'none', fontWeight:600 }}>📋 Menüm</Link>
+                        <Link href="/kazanc" onClick={() => setDropdownAcik(false)} style={{ display:'flex', alignItems:'center', gap:8, padding:'10px 16px', fontSize:13, color:'#4A2C0E', textDecoration:'none', fontWeight:600 }}>💰 Kazancım</Link>
+                        <Link href="/asci-ayarlar" onClick={() => setDropdownAcik(false)} style={{ display:'flex', alignItems:'center', gap:8, padding:'10px 16px', fontSize:13, color:'#4A2C0E', textDecoration:'none', fontWeight:600 }}>⚙️ Aşçı Ayarları</Link>
+                        <Link href="/paylasim" onClick={() => setDropdownAcik(false)} style={{ display:'flex', alignItems:'center', gap:8, padding:'10px 16px', fontSize:13, color:'#4A2C0E', textDecoration:'none', fontWeight:600 }}>📸 Hikaye Paylaş</Link>
+                      </>}
+                      <button onClick={() => { setDropdownAcik(false); handleLogout() }} style={{ display:'flex', alignItems:'center', gap:8, padding:'10px 16px', fontSize:13, color:'#DC2626', fontWeight:600, background:'none', border:'none', cursor:'pointer', width:'100%', textAlign:'left', fontFamily:'inherit', borderTop:'1px solid #F0EBE0' }}>🚪 Çıkış Yap</button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <Link key={item.href} href={item.href} style={{ fontSize:13, fontWeight:600, textDecoration:'none', color: active ? '#E8622A' : '#8A7B6B', borderBottom: active ? '2px solid #E8622A' : '2px solid transparent', paddingBottom:2, position:'relative', display:'inline-flex', alignItems:'center', gap:4 }}>
                   {item.label}
                   {item.badge && unreadMessages > 0 && (
                     <span style={{ background:'#ef4444', color:'white', fontSize:10, fontWeight:700, borderRadius:10, padding:'1px 5px', lineHeight:1.4 }}>
@@ -152,7 +164,7 @@ export function PublicNavbar() {
                     </span>
                   )}
                 </Link>
-            )
+              )
             })}
           </div>
 
@@ -174,11 +186,11 @@ export function PublicNavbar() {
 
             {loaded && (user ? (
               <div className="hidden-mobile" style={{ display:'flex', alignItems:'center', gap:8 }}>
-  <div style={{ width:34, height:34, borderRadius:'50%', background:'#E8622A', display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontSize:14, fontWeight:700 }}>
-    {user.full_name?.charAt(0).toUpperCase() ?? '?'}
-  </div>
-  <span style={{ fontSize:13, fontWeight:600, color:'#4A2C0E' }}>{user.full_name}</span>
-</div>
+                <div style={{ width:34, height:34, borderRadius:'50%', background:'#E8622A', display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontSize:14, fontWeight:700 }}>
+                  {user.full_name?.charAt(0).toUpperCase() ?? '?'}
+                </div>
+                <span style={{ fontSize:13, fontWeight:600, color:'#4A2C0E' }}>{user.full_name}</span>
+              </div>
             ) : (
               <>
                 <Link href="/giris" className="hidden-mobile" style={{ padding:'7px 14px', fontSize:12, fontWeight:600, color:'#4A2C0E', border:'1.5px solid #E8E0D4', borderRadius:8, textDecoration:'none' }}>Giriş Yap</Link>
