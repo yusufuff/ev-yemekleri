@@ -242,7 +242,7 @@ function MenuItemForm({ item, onSave, onClose }: { item?: MenuItem | null; onSav
             label="🏷️ İndirim"
             value={String(form.discount_percent)}
             onChange={v => setForm(p => ({ ...p, discount_percent: Number(v) }))}
-            options={[0,5,10,15,20,25,30,40,50].map(p => ({ value: String(p), label: p === 0 ? 'İndirim Yok' : `%${p}` }))}
+            options={[0,5,10,15,20,25,30,40,50,60,70,80,90,100].map(p => ({ value: String(p), label: p === 0 ? 'İndirim Yok' : `%${p}` }))}
           />
           {form.discount_percent > 0 && form.price && (
             <div style={{ fontSize: 13, color: '#3D6B47', fontWeight: 600, padding: '8px 14px', background: '#ECFDF5', borderRadius: 8 }}>
@@ -255,7 +255,7 @@ function MenuItemForm({ item, onSave, onClose }: { item?: MenuItem | null; onSav
             label="⏱️ Hazırlık Süresi"
             value={String(form.prep_time_min)}
             onChange={v => setForm(p => ({ ...p, prep_time_min: Number(v) }))}
-            options={[10,15,20,30,45,60,90].map(m => ({ value: String(m), label: `${m} dakika` }))}
+            options={[10,15,20,30,45,60,...[1,2,3,4,6,8,12,24].map(h => h*60)].map(m => ({ value: String(m), label: m < 60 ? `${m} dakika` : `${m/60} saat` }))}
           />
 
           {/* Aktif/Pasif */}
