@@ -1,7 +1,8 @@
 'use client'
+import { getSupabaseBrowserClient } from '@/lib/supabase/client'
 import { useState, useEffect, useRef } from 'react'
 
-const CATEGORIES = [
+const DEFAULT_categories = [
   { value: 'main',    label: 'Ana Yemek', emoji: '🍲' },
   { value: 'soup',    label: 'Çorba',     emoji: '🥣' },
   { value: 'dessert', label: 'Tatlı',     emoji: '🍮' },
@@ -113,7 +114,7 @@ function MultiSelectDropdown({ label, values, onChange, options }: {
   )
 }
 
-function MenuItemForm({ item, onSave, onClose }: { item?: MenuItem | null; onSave: (data: any) => void; onClose: () => void }) {
+function MenuItemForm({ item, categories, onSave, onClose }: { item?: MenuItem | null; categories: any[]; onSave: (data: any) => void; onClose: () => void }) {
   const [form, setForm] = useState({
     name: item?.name ?? '',
     price: item?.price ?? '',
@@ -196,7 +197,7 @@ function MenuItemForm({ item, onSave, onClose }: { item?: MenuItem | null; onSav
             label="Kategori *"
             value={form.category}
             onChange={v => setForm(p => ({ ...p, category: v }))}
-            options={CATEGORIES.map(c => ({ value: c.value, label: c.label, emoji: c.emoji }))}
+            options={categories.map(c => ({ value: c.value, label: c.label, emoji: c.emoji }))}
           />
 
           {/* Açıklama */}
@@ -282,6 +283,22 @@ function MenuItemForm({ item, onSave, onClose }: { item?: MenuItem | null; onSav
 
 export default function MenuPage() {
   const [items, setItems] = useState<MenuItem[]>([])
+  const [categories, setcategories] = useState(DEFAULT_categories)
+
+useEffect(() => {
+  const supabase = getSupabaseBrowserClient()
+  const yukle = async () => {
+    const { data } = await supabase.from('food_categories').select('*').order('sort_order', { ascending: true })
+    if (data && data.length > 0) {
+      setcategories(data.map((c: any) => ({ value: c.slug ?? c.id, label: c.name, emoji: c.emoji ?? '🍽️' })))
+    }
+  }
+  yukle()
+  const channel = supabase.channel('categories-realtime')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'food_categories' }, () => yukle())
+    .subscribe()
+  return () => { supabase.removeChannel(channel) }
+}, [])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [editItem, setEditItem] = useState<MenuItem | null>(null)
@@ -336,7 +353,7 @@ export default function MenuPage() {
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
             {items.map(item => {
-              const cat = CATEGORIES.find(c => c.value === item.category)
+              const cat = categories.find(c => c.value === item.category)
               const stockPct = item.daily_stock > 0 ? (item.remaining_stock / item.daily_stock) * 100 : 0
               const stockColor = STATUS_COLOR[item.stock_status] ?? '#3D6B47'
               return (
@@ -381,6 +398,7 @@ export default function MenuPage() {
       {showForm && (
         <MenuItemForm
           item={editItem}
+          categories={categories}
           onSave={handleSave}
           onClose={() => { setShowForm(false); setEditItem(null) }}
         />
