@@ -283,14 +283,14 @@ function MenuItemForm({ item, categories, onSave, onClose }: { item?: MenuItem |
 
 export default function MenuPage() {
   const [items, setItems] = useState<MenuItem[]>([])
-  const [categories, setcategories] = useState(DEFAULT_categories)
+  const [categories, setCategories] = useState(DEFAULT_categories)
 
 useEffect(() => {
   const supabase = getSupabaseBrowserClient()
   const yukle = async () => {
     const { data } = await supabase.from('food_categories').select('*').order('sort_order', { ascending: true })
     if (data && data.length > 0) {
-      setcategories(data.map((c: any) => ({ value: c.slug ?? c.id, label: c.name, emoji: c.emoji ?? '🍽️' })))
+      setCategories(data.map((c: any) => ({ value: c.id, label: c.name, emoji: c.emoji ?? '🍽️' })))
     }
   }
   yukle()
