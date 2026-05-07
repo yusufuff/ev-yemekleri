@@ -288,14 +288,14 @@ export default function MenuPage() {
 useEffect(() => {
   const supabase = getSupabaseBrowserClient()
   const yukle = async () => {
-    const { data } = await supabase.from('food_categories').select('*').order('sort_order', { ascending: true })
+    const { data } = await supabase.from('menu_categories').select('*').order('sira', { ascending: true })
     if (data && data.length > 0) {
-      setCategories(data.map((c: any) => ({ value: c.id, label: c.name, emoji: c.emoji ?? '🍽️' })))
+      setCategories(data.map((c: any) => ({ value: c.id, label: c.ad, emoji: c.emoji ?? '🍽️' })))
     }
   }
   yukle()
   const channel = supabase.channel('categories-realtime')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'food_categories' }, () => yukle())
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'menu_categories' }, () => yukle())
     .subscribe()
   return () => { supabase.removeChannel(channel) }
 }, [])
