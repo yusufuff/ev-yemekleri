@@ -10,6 +10,8 @@ import {
 } from '@/hooks/useChefProfile'
 import { CATEGORY_META, ALLERGEN_META, type MenuItem, type MenuCategory } from '@/types/menu'
 import { useCart } from '@/hooks/useCart'
+import { useRouter } from 'next/navigation'
+import { getSupabaseBrowserClient } from '@/lib/supabase/client'
 
 // ─── Yıldız render ────────────────────────────────────────────────────────────
 
@@ -240,7 +242,17 @@ export default function AsciProfilPage({ params }: { params: { id: string } }) {
   useEffect(() => {
     fetch(`/api/chefs/${params.id}/view`, { method: 'POST' }).catch(() => {})
   }, [params.id])
+useEffect(() => {
+  const supabase = getSupabaseBrowserClient()
+  const channel = supabase.channel(`asci-${params.id}-realtime`)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'menu_items' }, () => {
+      router.refresh()
+    })
+    .subscribe()
+  return () => { supabase.removeChannel(channel) }
+}, [params.id])
 
+const router = useRouter()
   const {
     data, loading, error,
     reviewPage, setReviewPage,
