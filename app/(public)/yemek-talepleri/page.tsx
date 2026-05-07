@@ -24,7 +24,17 @@ export default function YemekTalepleriSayfasi() {
   const [teklifForm, setTeklifForm] = useState({ fiyat: '', mesaj: '' })
 
   useEffect(() => { baslat() }, [])
-
+useEffect(() => {
+  const channel = supabase.channel('food-requests-realtime')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'food_requests' }, () => {
+      taleplerYukle()
+    })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'food_request_offers' }, () => {
+      taleplerYukle()
+    })
+    .subscribe()
+  return () => { supabase.removeChannel(channel) }
+}, [])
   const baslat = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser()
