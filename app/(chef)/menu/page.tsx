@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
 const CATEGORIES = [
   { value: 'main',    label: 'Ana Yemek', emoji: '🍲' },
@@ -36,6 +36,83 @@ interface MenuItem {
   photos: string[]
 }
 
+function SelectDropdown({ label, value, onChange, options }: {
+  label: string
+  value: string
+  onChange: (v: string) => void
+  options: { value: string; label: string; emoji?: string }[]
+}) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+  const selected = options.find(o => o.value === value)
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false) }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  return (
+    <div ref={ref} style={{ position: 'relative' }}>
+      <label style={{ fontSize: 12, fontWeight: 600, color: '#7A4A20', display: 'block', marginBottom: 6 }}>{label}</label>
+      <button onClick={() => setOpen(v => !v)} style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #E8E0D4', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', background: 'white', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#4A2C0E', fontWeight: 600 }}>
+        <span>{selected?.emoji} {selected?.label}</span>
+        <span style={{ fontSize: 10 }}>{open ? '▲' : '▼'}</span>
+      </button>
+      {open && (
+        <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: 'white', border: '1.5px solid #E8E0D4', borderRadius: 8, boxShadow: '0 4px 20px rgba(0,0,0,0.1)', zIndex: 100, overflow: 'hidden', marginTop: 4 }}>
+          {options.map(o => (
+            <div key={o.value} onClick={() => { onChange(o.value); setOpen(false) }}
+              style={{ padding: '10px 14px', fontSize: 13, cursor: 'pointer', fontWeight: o.value === value ? 700 : 400, background: o.value === value ? '#FEF3EC' : 'white', color: o.value === value ? '#E8622A' : '#4A2C0E', display: 'flex', alignItems: 'center', gap: 8 }}>
+              {o.emoji && <span>{o.emoji}</span>} {o.label}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function MultiSelectDropdown({ label, values, onChange, options }: {
+  label: string
+  values: string[]
+  onChange: (v: string[]) => void
+  options: { value: string; label: string }[]
+}) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false) }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  const toggle = (v: string) => {
+    onChange(values.includes(v) ? values.filter(x => x !== v) : [...values, v])
+  }
+
+  return (
+    <div ref={ref} style={{ position: 'relative' }}>
+      <label style={{ fontSize: 12, fontWeight: 600, color: '#7A4A20', display: 'block', marginBottom: 6 }}>{label}</label>
+      <button onClick={() => setOpen(v => !v)} style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #E8E0D4', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', background: 'white', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#4A2C0E' }}>
+        <span>{values.length > 0 ? values.map(v => options.find(o => o.value === v)?.label).join(', ') : 'Seçiniz...'}</span>
+        <span style={{ fontSize: 10 }}>{open ? '▲' : '▼'}</span>
+      </button>
+      {open && (
+        <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: 'white', border: '1.5px solid #E8E0D4', borderRadius: 8, boxShadow: '0 4px 20px rgba(0,0,0,0.1)', zIndex: 100, overflow: 'hidden', marginTop: 4 }}>
+          {options.map(o => (
+            <div key={o.value} onClick={() => toggle(o.value)}
+              style={{ padding: '10px 14px', fontSize: 13, cursor: 'pointer', background: values.includes(o.value) ? '#FEF3EC' : 'white', color: values.includes(o.value) ? '#E8622A' : '#4A2C0E', display: 'flex', alignItems: 'center', gap: 8, fontWeight: values.includes(o.value) ? 700 : 400 }}>
+              <span>{values.includes(o.value) ? '✓' : '○'}</span> {o.label}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 function MenuItemForm({ item, onSave, onClose }: { item?: MenuItem | null; onSave: (data: any) => void; onClose: () => void }) {
   const [form, setForm] = useState({
     name: item?.name ?? '',
@@ -52,7 +129,6 @@ function MenuItemForm({ item, onSave, onClose }: { item?: MenuItem | null; onSav
   })
   const [suggestions, setSuggestions] = useState<any[]>([])
   const [uploading, setUploading] = useState(false)
-  const [acikSekme, setAcikSekme] = useState<string | null>(null)
 
   useEffect(() => {
     if (form.name.length < 2) { setSuggestions([]); return }
@@ -73,16 +149,6 @@ function MenuItemForm({ item, onSave, onClose }: { item?: MenuItem | null; onSav
     setUploading(false)
   }
 
-  const toggleAllergen = (v: string) =>
-    setForm(p => ({ ...p, allergens: p.allergens.includes(v) ? p.allergens.filter(a => a !== v) : [...p.allergens, v] }))
-
-  const SekmeBaslik = ({ id, label }: { id: string; label: string }) => (
-    <button onClick={() => setAcikSekme(acikSekme === id ? null : id)}
-      style={{ width: '100%', padding: '12px 14px', background: acikSekme === id ? '#FEF3EC' : '#FAF6EF', border: '1.5px solid #E8E0D4', borderRadius: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600, fontSize: 13, color: '#4A2C0E' }}>
-      {label} <span>{acikSekme === id ? '▲' : '▼'}</span>
-    </button>
-  )
-
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(74,44,14,0.4)', zIndex: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
       onClick={e => e.target === e.currentTarget && onClose()}>
@@ -94,7 +160,8 @@ function MenuItemForm({ item, onSave, onClose }: { item?: MenuItem | null; onSav
           <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: 8, background: '#F5EDD8', border: '1.5px solid #E8E0D4', cursor: 'pointer', fontSize: 16 }}>✕</button>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          {/* Yemek Adı */}
           <div>
             <label style={{ fontSize: 12, fontWeight: 600, color: '#7A4A20', display: 'block', marginBottom: 6 }}>Yemek Adı *</label>
             <input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
@@ -112,117 +179,86 @@ function MenuItemForm({ item, onSave, onClose }: { item?: MenuItem | null; onSav
             )}
           </div>
 
+          {/* Fotoğraf */}
           <div>
             <label style={{ fontSize: 12, fontWeight: 600, color: '#7A4A20', display: 'block', marginBottom: 6 }}>Fotoğraf</label>
             <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-              {form.photo_url && (
-                <img src={form.photo_url} style={{ width: 60, height: 60, borderRadius: 10, objectFit: 'cover', border: '1.5px solid #E8E0D4' }} />
-              )}
-              <label style={{ flex: 1, padding: '10px 14px', background: '#F5EDD8', border: '1.5px dashed #E8622A', borderRadius: 8, fontSize: 12, fontWeight: 600, color: '#E8622A', cursor: 'pointer', textAlign: 'center' }}>
+              {form.photo_url && <img src={form.photo_url} style={{ width: 60, height: 60, borderRadius: 10, objectFit: 'cover', border: '1.5px solid #E8E0D4' }} />}
+              <label style={{ flex: 1, padding: '10px 14px', background: '#F5EDD8', border: '1.5px dashed #E8622A', borderRadius: 8, fontSize: 12, fontWeight: 600, color: '#E8622A', cursor: 'pointer', textAlign: 'center' as const }}>
                 {uploading ? '⏳ Yükleniyor...' : '📷 Kendi Fotoğrafını Yükle'}
                 <input type="file" accept="image/*" onChange={handleUpload} style={{ display: 'none' }} />
               </label>
             </div>
           </div>
 
-          <SekmeBaslik id="kategori" label={`🍽️ Kategori · ${CATEGORIES.find(c => c.value === form.category)?.label ?? ''}`} />
-          {acikSekme === 'kategori' && (
-          <div style={{ background: '#FAF6EF', borderRadius: 8, padding: 14, border: '1.5px solid #E8E0D4' }}>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              {CATEGORIES.map(c => (
-                <button key={c.value} onClick={() => setForm(p => ({ ...p, category: c.value }))} style={{
-                  padding: '7px 14px', borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: 'pointer', border: 'none', fontFamily: 'inherit',
-                  background: form.category === c.value ? '#E8622A' : '#F5EDD8',
-                  color: form.category === c.value ? 'white' : '#4A2C0E',
-                }}>{c.emoji} {c.label}</button>
-              ))}
-            </div>
-          </div>
-          )}
+          {/* Kategori Dropdown */}
+          <SelectDropdown
+            label="Kategori *"
+            value={form.category}
+            onChange={v => setForm(p => ({ ...p, category: v }))}
+            options={CATEGORIES.map(c => ({ value: c.value, label: c.label, emoji: c.emoji }))}
+          />
 
-          <SekmeBaslik id="aciklama" label="📝 Açıklama" />
-          {acikSekme === 'aciklama' && (
-          <div style={{ background: '#FAF6EF', borderRadius: 8, padding: 14, border: '1.5px solid #E8E0D4' }}>
+          {/* Açıklama */}
+          <div>
+            <label style={{ fontSize: 12, fontWeight: 600, color: '#7A4A20', display: 'block', marginBottom: 6 }}>Açıklama</label>
             <textarea value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
               rows={2} placeholder="Yemeğin içeriği ve lezzet notu..."
-              style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #E8E0D4', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', resize: 'none', boxSizing: 'border-box' }} />
+              style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #E8E0D4', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', resize: 'none', boxSizing: 'border-box' as const }} />
           </div>
-          )}
 
-          <SekmeBaslik id="alerjenler" label="⚠️ Alerjenler" />
-          {acikSekme === 'alerjenler' && (
-          <div style={{ background: '#FAF6EF', borderRadius: 8, padding: 14, border: '1.5px solid #E8E0D4' }}>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              {ALLERGENS.map(a => (
-                <button key={a.value} onClick={() => toggleAllergen(a.value)} style={{
-                  padding: '6px 12px', borderRadius: 20, fontSize: 11, fontWeight: 600, cursor: 'pointer', border: 'none', fontFamily: 'inherit',
-                  background: form.allergens.includes(a.value) ? '#FEF3C7' : '#F5EDD8',
-                  color: form.allergens.includes(a.value) ? '#D97706' : '#8A7B6B',
-                }}>{a.label}</button>
-              ))}
+          {/* Alerjenler MultiSelect */}
+          <MultiSelectDropdown
+            label="Alerjenler"
+            values={form.allergens}
+            onChange={v => setForm(p => ({ ...p, allergens: v }))}
+            options={ALLERGENS}
+          />
+
+          {/* Fiyat & Stok */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div>
+              <label style={{ fontSize: 12, fontWeight: 600, color: '#7A4A20', display: 'block', marginBottom: 6 }}>Fiyat (₺) *</label>
+              <input type="number" value={form.price} onChange={e => setForm(p => ({ ...p, price: e.target.value }))}
+                placeholder="55" style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #E8E0D4', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', boxSizing: 'border-box' as const }} />
+            </div>
+            <div>
+              <label style={{ fontSize: 12, fontWeight: 600, color: '#7A4A20', display: 'block', marginBottom: 6 }}>Günlük Stok *</label>
+              <input type="number" value={form.daily_stock} onChange={e => setForm(p => ({ ...p, daily_stock: Number(e.target.value) }))}
+                style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #E8E0D4', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', boxSizing: 'border-box' as const }} />
             </div>
           </div>
-          )}
 
-          <SekmeBaslik id="fiyat" label={`💰 Fiyat & Stok${form.price ? ` · ₺${form.price}` : ''}`} />
-          {acikSekme === 'fiyat' && (
-            <div style={{ background: '#FAF6EF', borderRadius: 8, padding: 14, border: '1.5px solid #E8E0D4', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-              <div>
-                <label style={{ fontSize: 12, fontWeight: 600, color: '#7A4A20', display: 'block', marginBottom: 6 }}>Fiyat (₺) *</label>
-                <input type="number" value={form.price} onChange={e => setForm(p => ({ ...p, price: e.target.value }))}
-                  placeholder="55" style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #E8E0D4', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', boxSizing: 'border-box' }} />
-              </div>
-              <div>
-                <label style={{ fontSize: 12, fontWeight: 600, color: '#7A4A20', display: 'block', marginBottom: 6 }}>Günlük Stok *</label>
-                <input type="number" value={form.daily_stock} onChange={e => setForm(p => ({ ...p, daily_stock: Number(e.target.value) }))}
-                  style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #E8E0D4', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', boxSizing: 'border-box' }} />
-              </div>
+          {/* Yayın Süresi Dropdown */}
+          <SelectDropdown
+            label="⏰ Yayın Süresi"
+            value={String(form.publish_hours)}
+            onChange={v => setForm(p => ({ ...p, publish_hours: Number(v) }))}
+            options={[1,2,3,6,12,24].map(h => ({ value: String(h), label: `${h} saat` }))}
+          />
+
+          {/* İndirim Dropdown */}
+          <SelectDropdown
+            label="🏷️ İndirim"
+            value={String(form.discount_percent)}
+            onChange={v => setForm(p => ({ ...p, discount_percent: Number(v) }))}
+            options={[0,5,10,15,20,25,30,40,50].map(p => ({ value: String(p), label: p === 0 ? 'İndirim Yok' : `%${p}` }))}
+          />
+          {form.discount_percent > 0 && form.price && (
+            <div style={{ fontSize: 13, color: '#3D6B47', fontWeight: 600, padding: '8px 14px', background: '#ECFDF5', borderRadius: 8 }}>
+              İndirimli fiyat: ₺{Math.round(Number(form.price) * (1 - form.discount_percent / 100))}
             </div>
           )}
 
-          <SekmeBaslik id="yayin" label={`⏰ Yayın Süresi · ${form.publish_hours} saat`} />
-          {acikSekme === 'yayin' && (
-            <div style={{ background: '#FAF6EF', borderRadius: 8, padding: 14, border: '1.5px solid #E8E0D4' }}>
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                {[1, 2, 3, 6, 12, 24].map(h => (
-                  <button key={h} onClick={() => setForm(p => ({ ...p, publish_hours: h }))} style={{
-                    padding: '8px 16px', borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: 'pointer', border: 'none', fontFamily: 'inherit',
-                    background: form.publish_hours === h ? '#E8622A' : '#F5EDD8',
-                    color: form.publish_hours === h ? 'white' : '#4A2C0E',
-                  }}>{h} saat</button>
-                ))}
-              </div>
-            </div>
-          )}
+          {/* Hazırlık Süresi Dropdown */}
+          <SelectDropdown
+            label="⏱️ Hazırlık Süresi"
+            value={String(form.prep_time_min)}
+            onChange={v => setForm(p => ({ ...p, prep_time_min: Number(v) }))}
+            options={[10,15,20,30,45,60,90].map(m => ({ value: String(m), label: `${m} dakika` }))}
+          />
 
-          <SekmeBaslik id="indirim" label={`🏷️ İndirim · %${form.discount_percent}`} />
-          {acikSekme === 'indirim' && (
-            <div style={{ background: '#FAF6EF', borderRadius: 8, padding: 14, border: '1.5px solid #E8E0D4' }}>
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                {[0, 5, 10, 15, 20, 25, 30, 40, 50].map(p => (
-                  <button key={p} onClick={() => setForm(prev => ({ ...prev, discount_percent: p }))} style={{
-                    padding: '8px 14px', borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: 'pointer', border: 'none', fontFamily: 'inherit',
-                    background: form.discount_percent === p ? '#E8622A' : '#F5EDD8',
-                    color: form.discount_percent === p ? 'white' : '#4A2C0E',
-                  }}>{p === 0 ? 'Yok' : `%${p}`}</button>
-                ))}
-              </div>
-              {form.discount_percent > 0 && form.price && (
-                <div style={{ marginTop: 10, fontSize: 13, color: '#3D6B47', fontWeight: 600 }}>
-                  İndirimli fiyat: ₺{Math.round(Number(form.price) * (1 - form.discount_percent / 100))}
-                </div>
-              )}
-            </div>
-          )}
-
-          <SekmeBaslik id="hazirlik" label={`⏱️ Hazırlık Süresi · ${form.prep_time_min} dk`} />
-          {acikSekme === 'hazirlik' && (
-            <div style={{ background: '#FAF6EF', borderRadius: 8, padding: 14, border: '1.5px solid #E8E0D4' }}>
-              <input type="number" value={form.prep_time_min} onChange={e => setForm(p => ({ ...p, prep_time_min: Number(e.target.value) }))}
-                style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #E8E0D4', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', boxSizing: 'border-box' }} />
-            </div>
-          )}
-
+          {/* Aktif/Pasif */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: '#FAF6EF', borderRadius: 8, border: '1.5px solid #E8E0D4' }}>
             <button onClick={() => setForm(p => ({ ...p, is_active: !p.is_active }))} style={{
               width: 44, height: 24, borderRadius: 12, border: 'none', cursor: 'pointer',
@@ -233,6 +269,7 @@ function MenuItemForm({ item, onSave, onClose }: { item?: MenuItem | null; onSav
             <span style={{ fontSize: 13, color: '#4A2C0E', fontWeight: 600 }}>{form.is_active ? '✅ Aktif — Yayında' : '⏸️ Pasif — Yayında Değil'}</span>
           </div>
 
+          {/* Kaydet Butonu */}
           <button onClick={() => onSave({ ...form, standard_photo: form.photo_url })}
             style={{ width: '100%', padding: '14px 0', background: '#E8622A', color: 'white', border: 'none', borderRadius: 10, fontSize: 15, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', marginTop: 4 }}>
             {item ? '💾 Güncelle' : '🚀 Yayına Çıkar'}
@@ -304,7 +341,7 @@ export default function MenuPage() {
               const stockColor = STATUS_COLOR[item.stock_status] ?? '#3D6B47'
               return (
                 <div key={item.id} style={{ background: 'white', borderRadius: 16, overflow: 'hidden', boxShadow: '0 2px 12px rgba(74,44,14,0.08)', border: '1px solid rgba(232,224,212,0.6)', opacity: item.is_active ? 1 : 0.6 }}>
-                  <div style={{ height: 100, background: 'linear-gradient(135deg,#FFECD2,#FCB69F)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 48, position: 'relative' }}>
+                  <div style={{ height: 100, background: 'linear-gradient(135deg,#FFECD2,#FCB69F)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 48, position: 'relative', overflow: 'hidden' }}>
                     {item.photos?.[0] ? <img src={item.photos[0]} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : cat?.emoji ?? '🍽️'}
                     <div style={{ position: 'absolute', top: 8, right: 8, background: item.is_active ? '#3D6B47' : '#9CA3AF', color: 'white', fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 10 }}>
                       {item.is_active ? 'AKTİF' : 'PASİF'}
