@@ -217,6 +217,19 @@ export default function HomePage() {
   }, [])
 
   useEffect(() => { yemekleriYukle(); chefleriYukle() }, [yemekleriYukle, chefleriYukle])
+  useEffect(() => {
+  const supabase = getSupabaseBrowserClient()
+  const channel = supabase.channel('menu-realtime')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'menu_items' }, () => {
+      yemekleriYukle()
+      chefleriYukle()
+    })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'chef_profiles' }, () => {
+      chefleriYukle()
+    })
+    .subscribe()
+  return () => { supabase.removeChannel(channel) }
+}, [yemekleriYukle, chefleriYukle])
 
   useEffect(() => {
     if (navigator.geolocation) {

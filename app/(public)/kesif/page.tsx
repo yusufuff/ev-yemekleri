@@ -1,5 +1,5 @@
 'use client'
-
+import { getSupabaseBrowserClient } from '@/lib/supabase/client'
 import { Suspense, useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -242,6 +242,18 @@ function KesifInner() {
       })
       .catch(() => setLoading(false))
   }, [activeSort, activeCategory, radius, isSearchActive])
+  useEffect(() => {
+  const supabase = getSupabaseBrowserClient()
+  const channel = supabase.channel('kesif-realtime')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'menu_items' }, () => {
+      if (!isSearchActive) setLoading(true)
+    })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'chef_profiles' }, () => {
+      if (!isSearchActive) setLoading(true)
+    })
+    .subscribe()
+  return () => { supabase.removeChannel(channel) }
+}, [isSearchActive])
 
   function toggleFilter(key: string, type: string) {
     setActiveFilters(prev => {
