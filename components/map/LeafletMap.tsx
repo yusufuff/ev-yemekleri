@@ -51,7 +51,7 @@ export default function LeafletMap({ chefs, userCoords, radius, onRadius, select
         iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
         shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
       })
-
+if (!mapRef.current) return
       const map = L.map(mapRef.current, {
         center: [center.lat, center.lng],
         zoom: 13,
