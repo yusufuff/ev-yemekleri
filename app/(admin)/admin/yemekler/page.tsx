@@ -162,7 +162,7 @@ const [emojiPickerAcik, setEmojiPickerAcik] = useState(false)
           <div style={{ minWidth: 120 }}>
             <label style={{ fontSize: 12, fontWeight: 700, color: '#8A7B6B', display: 'block', marginBottom: 4 }}>Emoji</label>
            <div style={{ position: 'relative' }}>
-  <button onClick={() => setEmojiPickerAcik(v => !v)}
+  <button type="button" onClick={() => setEmojiPickerAcik(v => !v)}
     style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1.5px solid #E8E0D4', fontSize: 22, textAlign: 'center', cursor: 'pointer', background: 'white', fontFamily: 'inherit' }}>
     {yeniKat.emoji || '🥚'}
   </button>
