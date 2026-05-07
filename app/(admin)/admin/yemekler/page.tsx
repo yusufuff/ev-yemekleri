@@ -168,7 +168,7 @@ const [emojiPickerAcik, setEmojiPickerAcik] = useState(false)
   </button>
   {emojiPickerAcik && (
     <div style={{ position: 'absolute', top: '100%', right: 0, zIndex: 100 }}>
-      <EmojiPicker onEmojiClick={(e) => { setYeniKat(p => ({ ...p, emoji: e.emoji })); setEmojiPickerAcik(false) }} categories={[{ category: 'food-drink' as any, name: 'Yemek' }]} />
+      <EmojiPicker onEmojiClick={(e) => { setYeniKat(p => ({ ...p, emoji: e.emoji })); setEmojiPickerAcik(false) }}  />
     </div>
   )}
 </div>
