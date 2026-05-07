@@ -125,8 +125,9 @@ function MenuItemForm({ item, onSave, onClose }: { item?: MenuItem | null; onSav
             </div>
           </div>
 
-          <div>
-            <label style={{ fontSize: 12, fontWeight: 600, color: '#7A4A20', display: 'block', marginBottom: 6 }}>Kategori *</label>
+          <SekmeBaslik id="kategori" label={`🍽️ Kategori · ${CATEGORIES.find(c => c.value === form.category)?.label ?? ''}`} />
+          {acikSekme === 'kategori' && (
+          <div style={{ background: '#FAF6EF', borderRadius: 8, padding: 14, border: '1.5px solid #E8E0D4' }}>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               {CATEGORIES.map(c => (
                 <button key={c.value} onClick={() => setForm(p => ({ ...p, category: c.value }))} style={{
@@ -137,16 +138,20 @@ function MenuItemForm({ item, onSave, onClose }: { item?: MenuItem | null; onSav
               ))}
             </div>
           </div>
+          )}
 
-          <div>
-            <label style={{ fontSize: 12, fontWeight: 600, color: '#7A4A20', display: 'block', marginBottom: 6 }}>Açıklama</label>
+          <SekmeBaslik id="aciklama" label="📝 Açıklama" />
+          {acikSekme === 'aciklama' && (
+          <div style={{ background: '#FAF6EF', borderRadius: 8, padding: 14, border: '1.5px solid #E8E0D4' }}>
             <textarea value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
               rows={2} placeholder="Yemeğin içeriği ve lezzet notu..."
               style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #E8E0D4', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', resize: 'none', boxSizing: 'border-box' }} />
           </div>
+          )}
 
-          <div>
-            <label style={{ fontSize: 12, fontWeight: 600, color: '#7A4A20', display: 'block', marginBottom: 6 }}>Alerjenler</label>
+          <SekmeBaslik id="alerjenler" label="⚠️ Alerjenler" />
+          {acikSekme === 'alerjenler' && (
+          <div style={{ background: '#FAF6EF', borderRadius: 8, padding: 14, border: '1.5px solid #E8E0D4' }}>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               {ALLERGENS.map(a => (
                 <button key={a.value} onClick={() => toggleAllergen(a.value)} style={{
@@ -157,6 +162,7 @@ function MenuItemForm({ item, onSave, onClose }: { item?: MenuItem | null; onSav
               ))}
             </div>
           </div>
+          )}
 
           <SekmeBaslik id="fiyat" label={`💰 Fiyat & Stok${form.price ? ` · ₺${form.price}` : ''}`} />
           {acikSekme === 'fiyat' && (
